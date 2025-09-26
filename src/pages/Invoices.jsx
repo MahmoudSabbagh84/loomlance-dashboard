@@ -8,12 +8,16 @@ import {
   Trash2, 
   Download, 
   Eye,
-  X
+  X,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  CheckCheck
 } from 'lucide-react'
 import { format } from 'date-fns'
 
 const Invoices = () => {
-  const { invoices, addInvoice, updateInvoice, deleteInvoice } = useData()
+  const { invoices, addInvoice, updateInvoice, deleteInvoice, markInvoiceAsPaid, markInvoiceAsPending, markAllInvoicesAsPaid } = useData()
   const { theme } = useTheme()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState(null)
@@ -96,24 +100,34 @@ const Invoices = () => {
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button
-            type="button"
-            onClick={() => {
-              setEditingInvoice(null)
-              setFormData({
-                clientName: '',
-                amount: '',
-                dueDate: '',
-                status: 'pending',
-                description: ''
-              })
-              setIsModalOpen(true)
-            }}
-            className={combineThemeClasses("block rounded-md bg-primary-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600", themeClasses.button.primary)}
-          >
-            <Plus className="h-4 w-4 inline mr-2" />
-            Add Invoice
-          </button>
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={markAllInvoicesAsPaid}
+              className={combineThemeClasses("inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600", themeClasses.button.primary)}
+            >
+              <CheckCheck className="h-4 w-4 mr-2" />
+              Mark All Paid
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingInvoice(null)
+                setFormData({
+                  clientName: '',
+                  amount: '',
+                  dueDate: '',
+                  status: 'pending',
+                  description: ''
+                })
+                setIsModalOpen(true)
+              }}
+              className={combineThemeClasses("block rounded-md bg-primary-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600", themeClasses.button.primary)}
+            >
+              <Plus className="h-4 w-4 inline mr-2" />
+              Add Invoice
+            </button>
+          </div>
         </div>
       </div>
 
@@ -158,19 +172,54 @@ const Invoices = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center space-x-2">
+                    {/* Quick Status Actions */}
+                    {invoice.status === 'pending' && (
+                      <button
+                        onClick={() => markInvoiceAsPaid(invoice.id)}
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        title="Mark as Paid"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </button>
+                    )}
+                    {invoice.status === 'paid' && (
+                      <button
+                        onClick={() => markInvoiceAsPending(invoice.id)}
+                        className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                        title="Mark as Pending"
+                      >
+                        <Clock className="h-4 w-4" />
+                      </button>
+                    )}
+                    {invoice.status === 'overdue' && (
+                      <button
+                        onClick={() => markInvoiceAsPaid(invoice.id)}
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        title="Mark as Paid"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </button>
+                    )}
+                    
+                    {/* Standard Actions */}
                     <button
                       onClick={() => handleEdit(invoice)}
                       className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
+                      title="Edit Invoice"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(invoice.id)}
                       className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      title="Delete Invoice"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
-                    <button className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300">
+                    <button 
+                      className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                      title="Download Invoice"
+                    >
                       <Download className="h-4 w-4" />
                     </button>
                   </div>
@@ -201,68 +250,85 @@ const Invoices = () => {
                       <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
                         {editingInvoice ? 'Edit Invoice' : 'Create Invoice'}
                       </h3>
-                      <div className="mt-4 space-y-4">
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Client Name
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.clientName}
-                            onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                          />
+                      <div className="mt-4 space-y-6">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Client Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Enter client name"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.clientName}
+                              onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Amount <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span className="text-gray-500 sm:text-sm">$</span>
+                              </div>
+                              <input
+                                type="number"
+                                step="0.01"
+                                required
+                                placeholder="0.00"
+                                className={combineThemeClasses("mt-1 block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                                value={formData.amount}
+                                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Amount
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            required
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.amount}
-                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                          />
+                        
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Due Date <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="date"
+                              required
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.dueDate}
+                              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Status
+                            </label>
+                            <select
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.status}
+                              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="paid">Paid</option>
+                              <option value="overdue">Overdue</option>
+                            </select>
+                          </div>
                         </div>
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Due Date
-                          </label>
-                          <input
-                            type="date"
-                            required
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.dueDate}
-                            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Status
-                          </label>
-                          <select
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
-                            <option value="overdue">Overdue</option>
-                          </select>
-                        </div>
+                        
                         <div>
                           <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
                             Description
                           </label>
                           <textarea
                             rows={3}
+                            placeholder="Enter invoice description or project details..."
                             className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           />
+                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Optional: Add details about the work performed or services provided
+                          </p>
                         </div>
                       </div>
                     </div>

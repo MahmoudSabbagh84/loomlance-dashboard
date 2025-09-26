@@ -190,62 +190,76 @@ const Clients = () => {
                       <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
                         {editingClient ? 'Edit Client' : 'Add Client'}
                       </h3>
-                      <div className="mt-4 space-y-4">
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Name
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          />
+                      <div className="mt-4 space-y-6">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Full Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Enter client's full name"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.name}
+                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Company
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Company name (optional)"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.company}
+                              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Email
-                          </label>
-                          <input
-                            type="email"
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          />
+                        
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Email Address
+                            </label>
+                            <input
+                              type="email"
+                              placeholder="client@company.com"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.email}
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Phone Number
+                            </label>
+                            <input
+                              type="tel"
+                              placeholder="+1 (555) 123-4567"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.phone}
+                              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            />
+                          </div>
                         </div>
+                        
                         <div>
                           <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Phone
-                          </label>
-                          <input
-                            type="tel"
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Company
-                          </label>
-                          <input
-                            type="text"
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.company}
-                            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Address
+                            Business Address
                           </label>
                           <textarea
                             rows={3}
+                            placeholder="Enter complete business address..."
                             className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
                             value={formData.address}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                           />
+                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Include street address, city, state, and postal code
+                          </p>
                         </div>
                       </div>
                     </div>

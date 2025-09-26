@@ -7,12 +7,16 @@ import {
   Edit, 
   Trash2, 
   Eye,
-  X
+  X,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  PlayCircle
 } from 'lucide-react'
 import { format } from 'date-fns'
 
 const Contracts = () => {
-  const { contracts, addContract, updateContract, deleteContract } = useData()
+  const { contracts, addContract, updateContract, deleteContract, markContractAsActive, markContractAsCompleted, markContractAsPending } = useData()
   const { theme } = useTheme()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingContract, setEditingContract] = useState(null)
@@ -167,19 +171,63 @@ const Contracts = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center space-x-2">
+                    {/* Quick Status Actions */}
+                    {contract.status === 'pending' && (
+                      <button
+                        onClick={() => markContractAsActive(contract.id)}
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        title="Activate Contract"
+                      >
+                        <PlayCircle className="h-4 w-4" />
+                      </button>
+                    )}
+                    {contract.status === 'active' && (
+                      <button
+                        onClick={() => markContractAsCompleted(contract.id)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        title="Mark as Completed"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </button>
+                    )}
+                    {contract.status === 'completed' && (
+                      <button
+                        onClick={() => markContractAsActive(contract.id)}
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        title="Reactivate Contract"
+                      >
+                        <PlayCircle className="h-4 w-4" />
+                      </button>
+                    )}
+                    {contract.status === 'expired' && (
+                      <button
+                        onClick={() => markContractAsPending(contract.id)}
+                        className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                        title="Mark as Pending"
+                      >
+                        <Clock className="h-4 w-4" />
+                      </button>
+                    )}
+                    
+                    {/* Standard Actions */}
                     <button
                       onClick={() => handleEdit(contract)}
                       className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
+                      title="Edit Contract"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(contract.id)}
                       className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      title="Delete Contract"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
-                    <button className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300">
+                    <button 
+                      className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                      title="View Contract"
+                    >
                       <Eye className="h-4 w-4" />
                     </button>
                   </div>
@@ -210,35 +258,40 @@ const Contracts = () => {
                       <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
                         {editingContract ? 'Edit Contract' : 'Create Contract'}
                       </h3>
-                      <div className="mt-4 space-y-4">
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Title
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Client Name
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.clientName}
-                            onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="mt-4 space-y-6">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div>
                             <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                              Start Date
+                              Contract Title <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g., Web Development Agreement"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.title}
+                              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Client Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Enter client name"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.clientName}
+                              onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Start Date <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="date"
@@ -250,7 +303,7 @@ const Contracts = () => {
                           </div>
                           <div>
                             <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                              End Date
+                              End Date <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="date"
@@ -261,9 +314,10 @@ const Contracts = () => {
                             />
                           </div>
                         </div>
+                        
                         <div>
                           <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Status
+                            Contract Status
                           </label>
                           <select
                             className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
@@ -271,20 +325,29 @@ const Contracts = () => {
                             onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                           >
                             <option value="active">Active</option>
+                            <option value="pending">Pending</option>
                             <option value="completed">Completed</option>
                             <option value="expired">Expired</option>
                           </select>
+                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Set the current status of this contract
+                          </p>
                         </div>
+                        
                         <div>
                           <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Description
+                            Project Description
                           </label>
                           <textarea
-                            rows={3}
+                            rows={4}
+                            placeholder="Describe the scope of work, deliverables, and key terms..."
                             className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           />
+                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Include project scope, deliverables, and any important terms
+                          </p>
                         </div>
                       </div>
                     </div>

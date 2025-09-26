@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../context/DataContext'
 import { useTheme } from '../context/ThemeContext'
@@ -11,23 +11,50 @@ import {
   TrendingUp,
   Clock,
   Plus,
-  ArrowRight
+  ArrowRight,
+  AlertCircle,
+  CheckCircle,
+  X
 } from 'lucide-react'
 import { format } from 'date-fns'
 
 const Dashboard = () => {
   const { invoices, contracts, clients } = useData()
   const { theme } = useTheme()
+  const [showAutoUpdateNotification, setShowAutoUpdateNotification] = useState(false)
+
+  // Check for auto-updated items on component mount
+  useEffect(() => {
+    const hasOverdueInvoices = invoices.some(invoice => invoice.status === 'overdue')
+    const hasExpiredContracts = contracts.some(contract => contract.status === 'expired')
+    
+    if (hasOverdueInvoices || hasExpiredContracts) {
+      setShowAutoUpdateNotification(true)
+      // Hide notification after 5 seconds
+      setTimeout(() => setShowAutoUpdateNotification(false), 5000)
+    }
+  }, [invoices, contracts])
 
   // Calculate statistics
   const totalInvoices = invoices.length
   const paidInvoices = invoices.filter(invoice => invoice.status === 'paid').length
   const pendingInvoices = invoices.filter(invoice => invoice.status === 'pending').length
+  const overdueInvoices = invoices.filter(invoice => invoice.status === 'overdue').length
+  
   const totalRevenue = invoices
     .filter(invoice => invoice.status === 'paid')
     .reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0)
+  
+  const pendingRevenue = invoices
+    .filter(invoice => invoice.status === 'pending')
+    .reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0)
+  
+  const overdueRevenue = invoices
+    .filter(invoice => invoice.status === 'overdue')
+    .reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0)
 
   const activeContracts = contracts.filter(contract => contract.status === 'active').length
+  const pendingContracts = contracts.filter(contract => contract.status === 'pending').length
   const totalClients = clients.length
 
   // Recent items
@@ -63,34 +90,69 @@ const Dashboard = () => {
       name: 'Total Revenue',
       value: `$${totalRevenue.toLocaleString()}`,
       icon: DollarSign,
-      change: '+12%',
-      changeType: 'positive'
+      change: pendingRevenue > 0 ? `+$${pendingRevenue.toLocaleString()} pending` : 'No pending',
+      changeType: pendingRevenue > 0 ? 'positive' : 'neutral',
+      additionalInfo: overdueRevenue > 0 ? `$${overdueRevenue.toLocaleString()} overdue` : null,
+      additionalType: 'negative'
     },
     {
       name: 'Active Contracts',
       value: activeContracts,
       icon: FileCheck,
-      change: '+2',
-      changeType: 'positive'
+      change: pendingContracts > 0 ? `+${pendingContracts} pending` : 'No pending',
+      changeType: pendingContracts > 0 ? 'positive' : 'neutral'
     },
     {
       name: 'Total Clients',
       value: totalClients,
       icon: Users,
-      change: '+1',
-      changeType: 'positive'
+      change: null,
+      changeType: 'neutral'
     },
     {
       name: 'Pending Invoices',
       value: pendingInvoices,
       icon: Clock,
-      change: '-3',
-      changeType: 'negative'
+      change: overdueInvoices > 0 ? `${overdueInvoices} overdue` : 'All on time',
+      changeType: overdueInvoices > 0 ? 'negative' : 'positive'
     }
   ]
 
   return (
     <div className="space-y-6">
+      {/* Auto-Update Notification */}
+      {showAutoUpdateNotification && (
+        <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <CheckCircle className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                Auto-Update Complete
+              </h3>
+              <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                <p>
+                  Some invoices have been automatically marked as overdue and contracts as expired based on their due dates.
+                </p>
+              </div>
+            </div>
+            <div className="ml-auto pl-3">
+              <div className="-mx-1.5 -my-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowAutoUpdateNotification(false)}
+                  className="inline-flex rounded-md bg-blue-50 dark:bg-blue-900/20 p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-800/20 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-blue-50 dark:focus:ring-offset-blue-900"
+                >
+                  <span className="sr-only">Dismiss</span>
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between">
         <div className="min-w-0 flex-1">
@@ -117,17 +179,36 @@ const Dashboard = () => {
                   {stat.name}
                 </p>
               </dt>
-              <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {stat.value}
-                </p>
-                <p className={`ml-2 flex items-baseline text-sm font-semibold ${
-                  stat.changeType === 'positive' 
-                    ? 'text-green-600 dark:text-green-400' 
-                    : 'text-red-600 dark:text-red-400'
-                }`}>
-                  {stat.change}
-                </p>
+              <dd className="ml-16 pb-6 sm:pb-7">
+                <div className="flex items-baseline">
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                    {stat.value}
+                  </p>
+                </div>
+                {(stat.change || stat.additionalInfo) && (
+                  <div className="mt-1 flex items-center space-x-4">
+                    {stat.change && (
+                      <p className={`text-sm font-semibold ${
+                        stat.changeType === 'positive' 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : stat.changeType === 'negative'
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {stat.change}
+                      </p>
+                    )}
+                    {stat.additionalInfo && (
+                      <p className={`text-sm font-semibold ${
+                        stat.additionalType === 'negative'
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {stat.additionalInfo}
+                      </p>
+                    )}
+                  </div>
+                )}
               </dd>
             </div>
           )
@@ -146,7 +227,7 @@ const Dashboard = () => {
               <Link
                 key={action.name}
                 to={action.href}
-                className={combineThemeClasses("relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2", themeClasses.quickAction.container)}
+                className={combineThemeClasses("relative rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 dark:hover:border-gray-600 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2", themeClasses.quickAction.container)}
               >
                 <div className="flex-shrink-0">
                   <Icon className={`h-6 w-6 ${action.color}`} />

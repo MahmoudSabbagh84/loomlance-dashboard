@@ -69,7 +69,7 @@ const Login = () => {
             <span style={{ color: '#BDC3C7' }}>Lance</span>
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            All-in-one freelancer hub
+            Weave it all together
           </p>
         </div>
         

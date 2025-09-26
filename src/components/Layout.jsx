@@ -90,7 +90,7 @@ const Layout = ({ children }) => {
                 />
               </div>
               <span className="ml-2 text-xl font-bold">
-                <span style={{ color: '#2D3E50' }}>Loom</span>
+                <span style={{ color: '#3b5c80' }}>Loom</span>
                 <span style={{ color: '#BDC3C7' }}>Lance</span>
               </span>
             </div>
