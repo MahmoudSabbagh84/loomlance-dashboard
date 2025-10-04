@@ -10,9 +10,14 @@
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "build:prod": "NODE_ENV=production vite build",
-    "deploy:aws": "npm run build:prod && aws s3 sync dist/ s3://loomlance-dashboard-prod --delete"
+    "deploy:aws": "npm run build:prod && aws s3 sync dist/ s3://loomlance-dashboard-prod --delete",
+    "deploy:staging": "deploy-aws.bat staging",
+    "deploy:production": "deploy-aws.bat production",
+    "aws:configure": "aws configure",
+    "aws:status": "aws sts get-caller-identity"
   },
   "dependencies": {
+    "aws-sdk": "^2.1467.0",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
     "lucide-react": "^0.263.1",

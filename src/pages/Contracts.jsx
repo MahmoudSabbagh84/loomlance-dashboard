@@ -1,7 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useData } from '../context/DataContext'
 import { useTheme } from '../context/ThemeContext'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
+import InvoiceModal from '../components/InvoiceModal'
+import InvoiceListModal from '../components/InvoiceListModal'
 import { 
   Plus, 
   Edit, 
@@ -11,15 +14,35 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  PlayCircle
+  PlayCircle,
+  FileText,
+  Building2
 } from 'lucide-react'
 import { format } from 'date-fns'
 
 const Contracts = () => {
-  const { contracts, addContract, updateContract, deleteContract, markContractAsActive, markContractAsCompleted, markContractAsPending } = useData()
+  const { contracts, addContract, updateContract, deleteContract, markContractAsActive, markContractAsCompleted, markContractAsPending, invoices, addInvoice } = useData()
   const { theme } = useTheme()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingContract, setEditingContract] = useState(null)
+  const [showInvoiceNotification, setShowInvoiceNotification] = useState(false)
+  const [completedContractId, setCompletedContractId] = useState(null)
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
+  const [selectedContractForInvoice, setSelectedContractForInvoice] = useState(null)
+  const [selectedContractForInvoices, setSelectedContractForInvoices] = useState(null)
+  const [showInvoiceListModal, setShowInvoiceListModal] = useState(false)
+  const [highlightedContractId, setHighlightedContractId] = useState(null)
+
+  // Handle highlighting from navigation
+  useEffect(() => {
+    if (location.state?.highlightContractId) {
+      setHighlightedContractId(location.state.highlightContractId)
+      // Clear the highlight after 3 seconds
+      setTimeout(() => setHighlightedContractId(null), 3000)
+    }
+  }, [location.state])
   const [formData, setFormData] = useState({
     title: '',
     clientName: '',
@@ -76,28 +99,95 @@ const Contracts = () => {
     }
   }
 
+  const handleMarkCompleted = (id) => {
+    markContractAsCompleted(id)
+    setCompletedContractId(id)
+    setShowInvoiceNotification(true)
+    
+    // Hide notification after 5 seconds
+    setTimeout(() => {
+      setShowInvoiceNotification(false)
+      setCompletedContractId(null)
+    }, 5000)
+  }
+
+  const handleGenerateInvoice = (contract) => {
+    setSelectedContractForInvoice(contract)
+    setIsInvoiceModalOpen(true)
+  }
+
+  const handleInvoiceSave = (invoice) => {
+    addInvoice(invoice)
+    setIsInvoiceModalOpen(false)
+    setSelectedContractForInvoice(null)
+  }
+
+  const getContractInvoices = (contractId) => {
+    return invoices.filter(invoice => invoice.contractId === contractId)
+  }
+
+  const getContractInvoiceTotal = (contractId) => {
+    const contractInvoices = getContractInvoices(contractId)
+    return contractInvoices.reduce((total, invoice) => total + (invoice.amount || 0), 0)
+  }
+
+  const handleInvoiceListClick = (contract) => {
+    setSelectedContractForInvoices(contract)
+    setShowInvoiceListModal(true)
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+        return 'bg-success-50 text-success-600 dark:bg-success-900 dark:text-success-300'
       case 'completed':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+        return 'bg-primary-50 text-primary-600 dark:bg-primary-900 dark:text-primary-300'
       case 'expired':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+        return 'bg-error-50 text-error-600 dark:bg-error-900 dark:text-error-300'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'
     }
   }
 
   return (
     <div className="space-y-6">
+      {/* Invoice Generation Notification */}
+      {showInvoiceNotification && completedContractId && (
+        <div className="relative rounded-xl bg-success-50 dark:bg-success-900/20 p-4 border border-success-200 dark:border-success-800">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <CheckCircle className="h-5 w-5 text-success-500 dark:text-success-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-success-800 dark:text-success-200">
+                Contract Completed & Invoice Generated
+              </h3>
+              <div className="mt-2 text-sm text-success-700 dark:text-success-300">
+                <p>
+                  The contract has been marked as completed and an invoice has been automatically generated and added to your invoices list.
+                </p>
+              </div>
+            </div>
+            <div className="ml-auto pl-3">
+              <button
+                type="button"
+                onClick={() => setShowInvoiceNotification(false)}
+                className="inline-flex rounded-lg bg-success-50 dark:bg-success-900/20 p-1.5 text-success-500 hover:bg-success-100 dark:hover:bg-success-800/20 transition-all duration-300"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-semibold text-text-primary dark:text-white">
             Contracts
           </h1>
-          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+          <p className="mt-2 text-sm text-text-secondary dark:text-gray-300">
             Manage your contracts and agreements
           </p>
         </div>
@@ -116,7 +206,7 @@ const Contracts = () => {
               })
               setIsModalOpen(true)
             }}
-            className={combineThemeClasses("block rounded-md bg-primary-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600", themeClasses.button.primary)}
+            className={combineThemeClasses("btn btn-primary", themeClasses.button.primary)}
           >
             <Plus className="h-4 w-4 inline mr-2" />
             Add Contract
@@ -144,6 +234,12 @@ const Contracts = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Status
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Invoices
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Total Billed
+              </th>
               <th className="relative px-6 py-3">
                 <span className="sr-only">Actions</span>
               </th>
@@ -151,7 +247,12 @@ const Contracts = () => {
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {contracts.map((contract) => (
-              <tr key={contract.id} className={combineThemeClasses("hover:bg-gray-50 dark:hover:bg-gray-700", themeClasses.table.rowHover)}>
+              <tr 
+                key={contract.id} 
+                className={`${combineThemeClasses("hover:bg-gray-50 dark:hover:bg-gray-700", themeClasses.table.rowHover)} ${
+                  highlightedContractId === contract.id ? 'ring-2 ring-orange-500 bg-orange-50 dark:bg-orange-900/20' : ''
+                }`}
+              >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                   {contract.title}
                 </td>
@@ -169,6 +270,21 @@ const Contracts = () => {
                     {contract.status}
                   </span>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center">
+                    <FileText className="h-4 w-4 text-primary-500 mr-2" />
+                    <button
+                      onClick={() => handleInvoiceListClick(contract)}
+                      className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 underline"
+                      title="View Invoices"
+                    >
+                      {getContractInvoices(contract.id).length} invoice{getContractInvoices(contract.id).length !== 1 ? 's' : ''}
+                    </button>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  ${getContractInvoiceTotal(contract.id).toLocaleString()}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center space-x-2">
                     {/* Quick Status Actions */}
@@ -183,11 +299,20 @@ const Contracts = () => {
                     )}
                     {contract.status === 'active' && (
                       <button
-                        onClick={() => markContractAsCompleted(contract.id)}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        onClick={() => handleMarkCompleted(contract.id)}
+                        className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
                         title="Mark as Completed"
                       >
                         <CheckCircle className="h-4 w-4" />
+                      </button>
+                    )}
+                    {(contract.status === 'active' || contract.status === 'completed') && (
+                      <button
+                        onClick={() => handleGenerateInvoice(contract)}
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        title="Generate Invoice"
+                      >
+                        <FileText className="h-4 w-4" />
                       </button>
                     )}
                     {contract.status === 'completed' && (
@@ -236,7 +361,7 @@ const Contracts = () => {
             ))}
             {contracts.length === 0 && (
               <tr>
-                <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                   No contracts found. Create your first contract to get started.
                 </td>
               </tr>
@@ -373,6 +498,45 @@ const Contracts = () => {
           </div>
         </div>
       )}
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false)
+          setSelectedContractForInvoice(null)
+        }}
+        editingInvoice={selectedContractForInvoice ? {
+          type: 'contract-based',
+          contractId: selectedContractForInvoice.id,
+          clientName: selectedContractForInvoice.clientName,
+          description: `Invoice for ${selectedContractForInvoice.title}`,
+          lineItems: [{
+            description: selectedContractForInvoice.title,
+            quantity: selectedContractForInvoice.estimatedHours || 1,
+            rate: selectedContractForInvoice.hourlyRate || 0,
+            amount: selectedContractForInvoice.totalValue || 0
+          }],
+          subtotal: selectedContractForInvoice.totalValue || 0,
+          tax: 0,
+          taxPercentage: 0,
+          total: selectedContractForInvoice.totalValue || 0,
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: 'pending'
+        } : null}
+        onSave={handleInvoiceSave}
+      />
+
+      {/* Invoice List Modal */}
+      <InvoiceListModal
+        invoices={selectedContractForInvoices ? getContractInvoices(selectedContractForInvoices.id) : []}
+        contract={selectedContractForInvoices}
+        isOpen={showInvoiceListModal}
+        onClose={() => {
+          setShowInvoiceListModal(false)
+          setSelectedContractForInvoices(null)
+        }}
+      />
     </div>
   )
 }

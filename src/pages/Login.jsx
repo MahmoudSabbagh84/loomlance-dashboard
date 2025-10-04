@@ -65,10 +65,10 @@ const Login = () => {
             </div>
           </div>
           <h2 className="text-3xl font-bold">
-            <span style={{ color: '#2D3E50' }}>Loom</span>
-            <span style={{ color: '#BDC3C7' }}>Lance</span>
+            <span className="text-text-primary">Loom</span>
+            <span className="text-text-muted">Lance</span>
           </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm text-text-secondary dark:text-gray-400">
             Weave it all together
           </p>
         </div>
@@ -114,9 +114,9 @@ const Login = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    <EyeOff className="h-5 w-5 text-text-muted dark:text-gray-500" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    <Eye className="h-5 w-5 text-text-muted dark:text-gray-500" />
                   )}
                 </button>
               </div>
@@ -124,8 +124,8 @@ const Login = () => {
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-              <div className="text-sm text-red-800 dark:text-red-200">
+            <div className="rounded-lg bg-error-50 dark:bg-error-900/20 p-4 border border-error-200 dark:border-error-800">
+              <div className="text-sm text-error-600 dark:text-error-300">
                 {error}
               </div>
             </div>
@@ -149,14 +149,14 @@ const Login = () => {
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-darkMode-background text-gray-500 dark:text-gray-400">
-                  Demo Credentials
-                </span>
+              <span className="px-2 bg-white dark:bg-darkMode-background text-text-secondary dark:text-gray-400">
+                Demo Credentials
+              </span>
               </div>
             </div>
             
-            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-              <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
+            <div className="mt-6 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
+              <p className="text-sm text-primary-800 dark:text-primary-200 text-center">
                 <strong>Email:</strong> demo@loomlance.com<br />
                 <strong>Password:</strong> demo123
               </p>

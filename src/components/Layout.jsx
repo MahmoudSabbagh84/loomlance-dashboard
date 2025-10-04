@@ -90,8 +90,8 @@ const Layout = ({ children }) => {
                 />
               </div>
               <span className="ml-2 text-xl font-bold">
-                <span style={{ color: '#3b5c80' }}>Loom</span>
-                <span style={{ color: '#BDC3C7' }}>Lance</span>
+                <span className="text-text-primary">Loom</span>
+                <span className="text-text-muted">Lance</span>
               </span>
             </div>
             <button
@@ -110,10 +110,10 @@ const Layout = ({ children }) => {
                     <Link
                       to={item.href}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                         isActive(item.href)
                           ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                          : 'text-text-secondary dark:text-gray-300 hover:bg-bg-secondary dark:hover:bg-gray-700 hover:text-text-primary dark:hover:text-gray-100'
                       }`}
                     >
                       <Icon className="mr-3 h-5 w-5" />
@@ -132,10 +132,10 @@ const Layout = ({ children }) => {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                <p className="text-sm font-medium text-text-primary dark:text-gray-100 truncate">
                   {user?.name || 'User'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
                   {user?.role || 'Freelancer'}
                 </p>
               </div>
@@ -157,8 +157,8 @@ const Layout = ({ children }) => {
                 />
               </div>
               <span className="ml-2 text-xl font-bold">
-                <span style={{ color: '#2D3E50' }}>Loom</span>
-                <span style={{ color: '#BDC3C7' }}>Lance</span>
+                <span className="text-text-primary">Loom</span>
+                <span className="text-text-muted">Lance</span>
               </span>
             </div>
           </div>
@@ -170,10 +170,10 @@ const Layout = ({ children }) => {
                   <li key={item.name}>
                     <Link
                       to={item.href}
-                      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                         isActive(item.href)
                           ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                          : 'text-text-secondary dark:text-gray-300 hover:bg-bg-secondary dark:hover:bg-gray-700 hover:text-text-primary dark:hover:text-gray-100'
                       }`}
                     >
                       <Icon className="mr-3 h-5 w-5" />
@@ -192,10 +192,10 @@ const Layout = ({ children }) => {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                <p className="text-sm font-medium text-text-primary dark:text-gray-100 truncate">
                   {user?.name || 'User'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
                   {user?.role || 'Freelancer'}
                 </p>
               </div>
@@ -243,25 +243,25 @@ const Layout = ({ children }) => {
                 {accountDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.name || 'User'}</p>
+                      <p className="text-sm font-medium text-text-primary dark:text-gray-100">{user?.name || 'User'}</p>
                     </div>
                     <button
                       onClick={handleProfileClick}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                      className="flex items-center w-full px-4 py-2 text-sm text-text-primary hover:bg-bg-secondary dark:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-300"
                     >
                       <User className="h-4 w-4 mr-3" />
                       Profile
                     </button>
                     <button
                       onClick={handleSettingsClick}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                      className="flex items-center w-full px-4 py-2 text-sm text-text-primary hover:bg-bg-secondary dark:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-300"
                     >
                       <Settings className="h-4 w-4 mr-3" />
                       Settings
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                      className="flex items-center w-full px-4 py-2 text-sm text-text-primary hover:bg-bg-secondary dark:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-300"
                     >
                       <LogOut className="h-4 w-4 mr-3" />
                       Logout

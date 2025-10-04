@@ -1,0 +1,44 @@
+{
+  "aws": {
+    "region": "us-east-1",
+    "services": {
+      "s3": {
+        "bucketName": "loomlance-dashboard-static",
+        "description": "Static website hosting for LoomLance Dashboard"
+      },
+      "cloudfront": {
+        "distributionId": "E1234567890ABC",
+        "description": "CDN for global content delivery"
+      },
+      "lambda": {
+        "functionName": "loomlance-api",
+        "description": "Serverless API for data operations",
+        "runtime": "nodejs18.x"
+      },
+      "dynamodb": {
+        "tableName": "loomlance-data",
+        "description": "NoSQL database for contracts, invoices, and clients"
+      },
+      "cognito": {
+        "userPoolId": "us-east-1_ABC123DEF",
+        "description": "User authentication and management"
+      },
+      "apiGateway": {
+        "restApiId": "abc123def4",
+        "description": "REST API endpoint for Lambda functions"
+      }
+    },
+    "environment": {
+      "production": {
+        "apiEndpoint": "https://api.loomlance.com",
+        "cdnUrl": "https://cdn.loomlance.com",
+        "domain": "loomlance.com"
+      },
+      "staging": {
+        "apiEndpoint": "https://staging-api.loomlance.com",
+        "cdnUrl": "https://staging-cdn.loomlance.com",
+        "domain": "staging.loomlance.com"
+      }
+    }
+  }
+}

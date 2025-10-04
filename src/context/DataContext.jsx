@@ -38,6 +38,19 @@ const updateContractStatuses = (contracts) => {
   })
 }
 
+// Generate unique ID
+const generateUID = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
+
+// Get next invoice number
+const getNextInvoiceNumber = () => {
+  const lastInvoiceNumber = localStorage.getItem('loomlance-last-invoice-number') || '0'
+  const nextNumber = parseInt(lastInvoiceNumber) + 1
+  localStorage.setItem('loomlance-last-invoice-number', nextNumber.toString())
+  return `INV-${nextNumber.toString().padStart(4, '0')}`
+}
+
 // Get initial data and apply auto-updates
 const getInitialInvoices = () => {
   const invoices = JSON.parse(localStorage.getItem('loomlance-invoices') || '[]')
@@ -78,84 +91,120 @@ if (initialState.contracts.length === 0) {
   const sampleContracts = [
     {
       id: 1,
+      uid: generateUID(),
       title: 'Web Development Project',
       clientName: 'Tech Corp',
       startDate: '2024-01-01',
       endDate: '2024-06-30',
       status: 'active',
-      description: 'Full-stack web development for e-commerce platform'
+      description: 'Full-stack web development for e-commerce platform',
+      totalValue: 15000,
+      hourlyRate: 75,
+      estimatedHours: 200
     },
     {
       id: 2,
+      uid: generateUID(),
       title: 'Mobile App Development',
       clientName: 'StartupXYZ',
       startDate: '2024-02-01',
       endDate: '2024-08-31',
       status: 'active',
-      description: 'React Native mobile application development'
+      description: 'React Native mobile application development',
+      totalValue: 12000,
+      hourlyRate: 80,
+      estimatedHours: 150
     },
     {
       id: 3,
+      uid: generateUID(),
       title: 'UI/UX Design Project',
       clientName: 'Design Studio',
       startDate: '2024-01-15',
       endDate: '2024-04-15',
       status: 'active',
-      description: 'Complete UI/UX redesign for existing web application'
+      description: 'Complete UI/UX redesign for existing web application',
+      totalValue: 8000,
+      hourlyRate: 65,
+      estimatedHours: 123
     },
     {
       id: 4,
+      uid: generateUID(),
       title: 'Database Migration',
       clientName: 'Enterprise Inc',
       startDate: '2024-03-01',
       endDate: '2024-05-31',
       status: 'pending',
-      description: 'Migrate legacy database to modern cloud solution'
+      description: 'Migrate legacy database to modern cloud solution',
+      totalValue: 20000,
+      hourlyRate: 100,
+      estimatedHours: 200
     },
     {
       id: 5,
+      uid: generateUID(),
       title: 'API Integration',
       clientName: 'SaaS Company',
       startDate: '2024-02-15',
       endDate: '2024-04-15',
       status: 'pending',
-      description: 'Integrate third-party APIs with existing system'
+      description: 'Integrate third-party APIs with existing system',
+      totalValue: 6000,
+      hourlyRate: 70,
+      estimatedHours: 86
     },
     {
       id: 6,
+      uid: generateUID(),
       title: 'Security Audit',
       clientName: 'Finance Corp',
       startDate: '2024-01-01',
       endDate: '2024-03-31',
       status: 'pending',
-      description: 'Comprehensive security audit and recommendations'
+      description: 'Comprehensive security audit and recommendations',
+      totalValue: 10000,
+      hourlyRate: 90,
+      estimatedHours: 111
     },
     {
       id: 7,
+      uid: generateUID(),
       title: 'Legacy System Maintenance',
       clientName: 'Old Corp',
       startDate: '2023-06-01',
       endDate: '2023-12-31',
       status: 'completed',
-      description: 'Maintenance and updates for legacy system'
+      description: 'Maintenance and updates for legacy system',
+      totalValue: 5000,
+      hourlyRate: 60,
+      estimatedHours: 83
     },
     {
       id: 8,
+      uid: generateUID(),
       title: 'Cloud Migration',
       clientName: 'Tech Startup',
       startDate: '2023-09-01',
       endDate: '2023-11-30',
       status: 'completed',
-      description: 'Migrate on-premise infrastructure to AWS'
+      description: 'Migrate on-premise infrastructure to AWS',
+      totalValue: 18000,
+      hourlyRate: 85,
+      estimatedHours: 212
     },
     {
       id: 9,
+      uid: generateUID(),
       title: 'Performance Optimization',
       clientName: 'E-commerce Site',
       startDate: '2023-10-01',
       endDate: '2023-12-31',
       status: 'completed',
-      description: 'Optimize website performance and loading times'
+      description: 'Optimize website performance and loading times',
+      totalValue: 7500,
+      hourlyRate: 75,
+      estimatedHours: 100
     }
   ]
   
@@ -165,54 +214,135 @@ if (initialState.contracts.length === 0) {
 
 // Add sample invoices if no data exists
 if (initialState.invoices.length === 0) {
+  // Initialize invoice numbering
+  localStorage.setItem('loomlance-last-invoice-number', '6')
+  
   const sampleInvoices = [
     {
       id: 1,
+      uid: generateUID(),
+      invoiceNumber: 'INV-0001',
       clientName: 'Tech Corp',
       amount: 5000,
       dueDate: '2024-02-15',
       status: 'paid',
-      description: 'Web development project milestone 1'
+      description: 'Web development project milestone 1',
+      contractId: 1,
+      type: 'contract-based',
+      lineItems: [
+        { description: 'Frontend Development', quantity: 40, rate: 75, amount: 3000 },
+        { description: 'Backend API Setup', quantity: 20, rate: 75, amount: 1500 },
+        { description: 'Database Design', quantity: 6.67, rate: 75, amount: 500 }
+      ],
+        subtotal: 5000,
+        tax: 0,
+        taxPercentage: 0,
+        total: 5000
     },
     {
       id: 2,
+      uid: generateUID(),
+      invoiceNumber: 'INV-0002',
       clientName: 'StartupXYZ',
       amount: 3500,
       dueDate: '2024-02-20',
       status: 'pending',
-      description: 'Mobile app development - Phase 1'
+      description: 'Mobile app development - Phase 1',
+      contractId: 2,
+      type: 'contract-based',
+      lineItems: [
+        { description: 'React Native Setup', quantity: 20, rate: 80, amount: 1600 },
+        { description: 'UI Components', quantity: 15, rate: 80, amount: 1200 },
+        { description: 'API Integration', quantity: 8.75, rate: 80, amount: 700 }
+      ],
+      subtotal: 3500,
+      tax: 0,
+      taxPercentage: 0,
+      total: 3500
     },
     {
       id: 3,
+      uid: generateUID(),
+      invoiceNumber: 'INV-0003',
       clientName: 'Design Studio',
       amount: 2800,
       dueDate: '2024-02-10',
       status: 'overdue',
-      description: 'UI/UX design project'
+      description: 'UI/UX design project',
+      contractId: 3,
+      type: 'contract-based',
+      lineItems: [
+        { description: 'User Research', quantity: 20, rate: 65, amount: 1300 },
+        { description: 'Wireframing', quantity: 15, rate: 65, amount: 975 },
+        { description: 'Visual Design', quantity: 8.08, rate: 65, amount: 525 }
+      ],
+      subtotal: 2800,
+      tax: 0,
+      taxPercentage: 0,
+      total: 2800
     },
     {
       id: 4,
+      uid: generateUID(),
+      invoiceNumber: 'INV-0004',
       clientName: 'Enterprise Inc',
       amount: 7500,
       dueDate: '2024-03-01',
       status: 'pending',
-      description: 'Database migration project'
+      description: 'Database migration project',
+      contractId: 4,
+      type: 'contract-based',
+      lineItems: [
+        { description: 'Data Analysis', quantity: 30, rate: 100, amount: 3000 },
+        { description: 'Migration Scripts', quantity: 25, rate: 100, amount: 2500 },
+        { description: 'Testing & Validation', quantity: 20, rate: 100, amount: 2000 }
+      ],
+      subtotal: 7500,
+      tax: 0,
+      taxPercentage: 0,
+      total: 7500
     },
     {
       id: 5,
+      uid: generateUID(),
+      invoiceNumber: 'INV-0005',
       clientName: 'SaaS Company',
       amount: 4200,
       dueDate: '2024-01-25',
       status: 'overdue',
-      description: 'API integration services'
+      description: 'API integration services',
+      contractId: 5,
+      type: 'contract-based',
+      lineItems: [
+        { description: 'API Documentation Review', quantity: 10, rate: 70, amount: 700 },
+        { description: 'Integration Development', quantity: 40, rate: 70, amount: 2800 },
+        { description: 'Testing & Debugging', quantity: 10, rate: 70, amount: 700 }
+      ],
+      subtotal: 4200,
+      tax: 0,
+      taxPercentage: 0,
+      total: 4200
     },
     {
       id: 6,
+      uid: generateUID(),
+      invoiceNumber: 'INV-0006',
       clientName: 'Finance Corp',
       amount: 3200,
       dueDate: '2024-02-28',
       status: 'pending',
-      description: 'Security audit consultation'
+      description: 'Security audit consultation',
+      contractId: 6,
+      type: 'contract-based',
+      lineItems: [
+        { description: 'Security Assessment', quantity: 20, rate: 90, amount: 1800 },
+        { description: 'Vulnerability Testing', quantity: 10, rate: 90, amount: 900 },
+        { description: 'Report & Recommendations', quantity: 5.56, rate: 90, amount: 500 }
+      ],
+      subtotal: 3200,
+      tax: 0,
+      taxPercentage: 0,
+      total: 3200
     }
   ]
   
@@ -342,7 +472,13 @@ export function DataProvider({ children }) {
   const [state, dispatch] = useReducer(dataReducer, initialState)
 
   const addInvoice = (invoice) => {
-    dispatch({ type: 'ADD_INVOICE', payload: invoice })
+    const newInvoice = {
+      ...invoice,
+      uid: invoice.uid || generateUID(),
+      invoiceNumber: invoice.invoiceNumber || getNextInvoiceNumber(),
+      createdAt: invoice.createdAt || new Date().toISOString()
+    }
+    dispatch({ type: 'ADD_INVOICE', payload: newInvoice })
   }
 
   const updateInvoice = (invoice) => {
@@ -354,7 +490,12 @@ export function DataProvider({ children }) {
   }
 
   const addContract = (contract) => {
-    dispatch({ type: 'ADD_CONTRACT', payload: contract })
+    const newContract = {
+      ...contract,
+      uid: contract.uid || generateUID(),
+      createdAt: contract.createdAt || new Date().toISOString()
+    }
+    dispatch({ type: 'ADD_CONTRACT', payload: newContract })
   }
 
   const updateContract = (contract) => {
@@ -403,6 +544,37 @@ export function DataProvider({ children }) {
     const contract = state.contracts.find(cont => cont.id === id)
     if (contract) {
       updateContract({ ...contract, status: 'completed' })
+      
+      // Auto-generate invoice when contract is completed
+      const existingInvoice = state.invoices.find(inv => inv.contractId === id)
+      if (!existingInvoice) {
+        const autoInvoice = {
+          id: Date.now(),
+          uid: generateUID(),
+          invoiceNumber: getNextInvoiceNumber(),
+          clientName: contract.clientName,
+          amount: contract.totalValue,
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+          status: 'pending',
+          description: `Final invoice for ${contract.title}`,
+          contractId: id,
+          type: 'contract-based',
+                lineItems: [
+                  { 
+                    description: contract.title, 
+                    quantity: contract.estimatedHours, 
+                    rate: contract.hourlyRate, 
+                    amount: contract.totalValue 
+                  }
+                ],
+                subtotal: contract.totalValue,
+                tax: 0,
+                taxPercentage: 0,
+                total: contract.totalValue,
+          createdAt: new Date().toISOString()
+        }
+        addInvoice(autoInvoice)
+      }
     }
   }
 

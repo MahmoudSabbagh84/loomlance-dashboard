@@ -93,21 +93,21 @@ const Dashboard = () => {
       href: '/invoices',
       icon: FileText,
       description: 'Send a new invoice',
-      color: 'text-blue-600 dark:text-blue-400'
+      color: 'text-primary-500 dark:text-primary-400'
     },
     {
       name: 'Add Contract',
       href: '/contracts',
       icon: FileCheck,
       description: 'Create a new contract',
-      color: 'text-green-600 dark:text-green-400'
+      color: 'text-success-500 dark:text-success-400'
     },
     {
       name: 'Add Client',
       href: '/clients',
       icon: Users,
       description: 'Add a new client',
-      color: 'text-purple-600 dark:text-purple-400'
+      color: 'text-primary-600 dark:text-primary-300'
     }
   ]
 
@@ -148,16 +148,16 @@ const Dashboard = () => {
     <div className="space-y-6">
       {/* Auto-Update Notification */}
       {showAutoUpdateNotification && (
-        <div className="relative rounded-md bg-blue-50 dark:bg-blue-900/20 p-4 overflow-hidden">
+        <div className="relative rounded-xl bg-primary-50 dark:bg-primary-900/20 p-4 overflow-hidden border border-primary-200 dark:border-primary-800">
           <div className="flex">
             <div className="flex-shrink-0">
-              <CheckCircle className="h-5 w-5 text-blue-400" />
+              <CheckCircle className="h-5 w-5 text-primary-500 dark:text-primary-400" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              <h3 className="text-sm font-medium text-primary-800 dark:text-primary-200">
                 Auto-Update Complete
               </h3>
-              <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+              <div className="mt-2 text-sm text-primary-700 dark:text-primary-300">
                 <p>
                   Some invoices have been automatically marked as overdue and contracts as expired based on their due dates.
                 </p>
@@ -168,7 +168,7 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => setShowAutoUpdateNotification(false)}
-                  className="inline-flex rounded-md bg-blue-50 dark:bg-blue-900/20 p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-800/20 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-blue-50 dark:focus:ring-offset-blue-900"
+                  className="inline-flex rounded-lg bg-primary-50 dark:bg-primary-900/20 p-1.5 text-primary-500 hover:bg-primary-100 dark:hover:bg-primary-800/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-primary-50 dark:focus:ring-offset-primary-900 transition-all duration-300"
                 >
                   <span className="sr-only">Dismiss</span>
                   <X className="h-3 w-3" />
@@ -178,9 +178,9 @@ const Dashboard = () => {
           </div>
           
           {/* Countdown Bar */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-200 dark:bg-blue-800">
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-200 dark:bg-primary-800">
             <div 
-              className="h-full bg-blue-500 dark:bg-blue-400"
+              className="h-full bg-primary-500 dark:bg-primary-400 transition-all duration-1000"
               style={{ 
                 width: `${countdownBarWidth}%`
               }}
@@ -192,10 +192,10 @@ const Dashboard = () => {
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between">
         <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
+          <h2 className="text-2xl font-bold leading-7 text-text-primary dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
             Dashboard
           </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
             Welcome back! Here's what's happening with your business.
           </p>
         </div>
@@ -211,13 +211,13 @@ const Dashboard = () => {
                 <div className="absolute rounded-md bg-primary-500 p-3">
                   <Icon className="h-6 w-6 text-white" />
                 </div>
-                <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p className="ml-16 truncate text-sm font-medium text-text-secondary dark:text-gray-400">
                   {stat.name}
                 </p>
               </dt>
               <dd className="ml-16 pb-6 sm:pb-7">
                 <div className="flex items-baseline">
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  <p className="text-2xl font-semibold text-text-primary dark:text-white">
                     {stat.value}
                   </p>
                 </div>
@@ -226,10 +226,10 @@ const Dashboard = () => {
                     {stat.change && (
                       <p className={`text-sm font-semibold ${
                         stat.changeType === 'positive' 
-                          ? 'text-green-600 dark:text-green-400' 
+                          ? 'text-success-600 dark:text-success-400' 
                           : stat.changeType === 'negative'
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-gray-600 dark:text-gray-400'
+                          ? 'text-error-600 dark:text-error-400'
+                          : 'text-text-secondary dark:text-gray-400'
                       }`}>
                         {stat.change}
                       </p>
@@ -237,8 +237,8 @@ const Dashboard = () => {
                     {stat.additionalInfo && (
                       <p className={`text-sm font-semibold ${
                         stat.additionalType === 'negative'
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-gray-600 dark:text-gray-400'
+                          ? 'text-error-600 dark:text-error-400'
+                          : 'text-text-secondary dark:text-gray-400'
                       }`}>
                         {stat.additionalInfo}
                       </p>
@@ -253,7 +253,7 @@ const Dashboard = () => {
 
       {/* Quick Actions */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg font-medium text-text-primary dark:text-white mb-4">
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -277,7 +277,7 @@ const Dashboard = () => {
                     {action.description}
                   </p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <ArrowRight className="h-5 w-5 text-text-muted dark:text-gray-500" />
               </Link>
             )
           })}
@@ -290,12 +290,12 @@ const Dashboard = () => {
         <div className={combineThemeClasses("bg-white shadow rounded-lg", themeClasses.card)}>
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              <h3 className="text-lg font-medium text-text-primary dark:text-white">
                 Recent Invoices
               </h3>
               <Link
                 to="/invoices"
-                className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+                className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-300"
               >
                 View all
               </Link>
@@ -306,21 +306,21 @@ const Dashboard = () => {
                   <li key={invoice.id} className="py-4">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
-                        <FileText className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                        <FileText className="h-5 w-5 text-text-muted dark:text-gray-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <p className="text-sm font-medium text-text-primary dark:text-white truncate">
                           {invoice.clientName}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-text-secondary dark:text-gray-400">
                           ${invoice.amount} • {format(new Date(invoice.dueDate), 'MMM dd, yyyy')}
                         </p>
                       </div>
                       <div className="flex-shrink-0">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           invoice.status === 'paid' 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                            ? 'bg-success-50 text-success-600 dark:bg-success-900 dark:text-success-300'
+                            : 'bg-warning-50 text-warning-600 dark:bg-warning-900 dark:text-warning-300'
                         }`}>
                           {invoice.status}
                         </span>
@@ -329,7 +329,7 @@ const Dashboard = () => {
                   </li>
                 ))}
                 {recentInvoices.length === 0 && (
-                  <li className="py-4 text-center text-gray-500 dark:text-gray-400">
+                  <li className="py-4 text-center text-text-secondary dark:text-gray-400">
                     No invoices yet
                   </li>
                 )}
@@ -342,12 +342,12 @@ const Dashboard = () => {
         <div className={combineThemeClasses("bg-white shadow rounded-lg", themeClasses.card)}>
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              <h3 className="text-lg font-medium text-text-primary dark:text-white">
                 Recent Contracts
               </h3>
               <Link
                 to="/contracts"
-                className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+                className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-300"
               >
                 View all
               </Link>
@@ -358,21 +358,21 @@ const Dashboard = () => {
                   <li key={contract.id} className="py-4">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
-                        <FileCheck className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                        <FileCheck className="h-5 w-5 text-text-muted dark:text-gray-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <p className="text-sm font-medium text-text-primary dark:text-white truncate">
                           {contract.title}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-text-secondary dark:text-gray-400">
                           {contract.clientName} • {format(new Date(contract.startDate), 'MMM dd, yyyy')}
                         </p>
                       </div>
                       <div className="flex-shrink-0">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           contract.status === 'active' 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                            ? 'bg-success-50 text-success-600 dark:bg-success-900 dark:text-success-300'
+                            : 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'
                         }`}>
                           {contract.status}
                         </span>
@@ -381,7 +381,7 @@ const Dashboard = () => {
                   </li>
                 ))}
                 {recentContracts.length === 0 && (
-                  <li className="py-4 text-center text-gray-500 dark:text-gray-400">
+                  <li className="py-4 text-center text-text-secondary dark:text-gray-400">
                     No contracts yet
                   </li>
                 )}
