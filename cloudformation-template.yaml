@@ -321,3 +321,4 @@ Outputs:
     Value: !Ref DataTable
     Export:
       Name: !Sub '${AWS::StackName}-DataTableName'
+

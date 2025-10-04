@@ -171,3 +171,4 @@ const ContractDetailsModal = ({ contract, isOpen, onClose }) => {
 }
 
 export default ContractDetailsModal
+

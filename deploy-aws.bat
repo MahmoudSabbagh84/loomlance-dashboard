@@ -126,3 +126,4 @@ echo   "cloudfrontDistributionId": "%CLOUDFRONT_DISTRIBUTION_ID%">> deployment-i
 echo }>> deployment-info.json
 
 echo ✅ Deployment info saved to deployment-info.json
+
