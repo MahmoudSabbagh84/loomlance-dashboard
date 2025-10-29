@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useData } from '../context/DataContext'
+import React, { useState, useMemo, useCallback, memo, useTransition, useDeferredValue } from 'react'
+import { useClients, useClientActions } from '../context/DataContext'
 import { useTheme } from '../context/ThemeContext'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
 import { 
@@ -12,20 +12,60 @@ import {
   MapPin
 } from 'lucide-react'
 
-const Clients = () => {
-  const { clients, addClient, updateClient, deleteClient } = useData()
+const Clients = memo(() => {
+  const clients = useClients()
+  const { addClient, updateClient, deleteClient } = useClientActions()
   const { theme } = useTheme()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isPending, startTransition] = useTransition()
+  
+  // Defer search term for better performance
+  const deferredSearchTerm = useDeferredValue(searchTerm)
+
+  // Memoized filtered clients
+  const filteredClients = useMemo(() => {
+    return clients.filter(client => {
+      const matchesSearch = !deferredSearchTerm || 
+        client.name?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+        client.email?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+        client.company?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+        client.city?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+      
+      return matchesSearch
+    })
+  }, [clients, deferredSearchTerm])
+
+  // Memoized statistics
+  const statistics = useMemo(() => {
+    const totalClients = clients.length
+    const clientsWithContracts = clients.filter(client => 
+      client.contracts && client.contracts.length > 0
+    ).length
+    const clientsWithInvoices = clients.filter(client => 
+      client.invoices && client.invoices.length > 0
+    ).length
+
+    return {
+      totalClients,
+      clientsWithContracts,
+      clientsWithInvoices
+    }
+  }, [clients])
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     company: '',
-    address: ''
+    streetAddress: '',
+    city: '',
+    state: '',
+    zipCode: ''
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault()
     const client = {
       ...formData,
@@ -46,27 +86,49 @@ const Clients = () => {
       email: '',
       phone: '',
       company: '',
-      address: ''
+      streetAddress: '',
+      city: '',
+      state: '',
+      zipCode: ''
     })
-  }
+  }, [formData, editingClient, updateClient, addClient])
 
-  const handleEdit = (client) => {
+  const handleEdit = useCallback((client) => {
     setEditingClient(client)
     setFormData({
       name: client.name,
       email: client.email,
       phone: client.phone,
       company: client.company,
-      address: client.address
+      streetAddress: client.streetAddress || '',
+      city: client.city || '',
+      state: client.state || '',
+      zipCode: client.zipCode || ''
     })
     setIsModalOpen(true)
-  }
+  }, [])
 
-  const handleDelete = (id) => {
+  const handleDelete = useCallback((id) => {
     if (window.confirm('Are you sure you want to delete this client?')) {
       deleteClient(id)
     }
-  }
+  }, [deleteClient])
+
+  const handleSearchChange = useCallback((e) => {
+    startTransition(() => {
+      setSearchTerm(e.target.value)
+    })
+  }, [])
+
+  const handleCreateNew = useCallback(() => {
+    setEditingClient(null)
+    setIsModalOpen(true)
+  }, [])
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false)
+    setEditingClient(null)
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -90,7 +152,10 @@ const Clients = () => {
                 email: '',
                 phone: '',
                 company: '',
-                address: ''
+                streetAddress: '',
+                city: '',
+                state: '',
+                zipCode: ''
               })
               setIsModalOpen(true)
             }}
@@ -120,13 +185,19 @@ const Clients = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => handleEdit(client)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEdit(client)
+                    }}
                     className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(client.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(client.id)
+                    }}
                     className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -147,19 +218,16 @@ const Clients = () => {
                     <span className="truncate">{client.phone}</span>
                   </div>
                 )}
-                {client.address && (
+                {(client.streetAddress || client.city || client.state || client.zipCode) && (
                   <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                     <MapPin className="h-4 w-4 mr-2" />
-                    <span className="truncate">{client.address}</span>
+                    <span className="truncate">
+                      {[client.streetAddress, client.city, client.state, client.zipCode].filter(Boolean).join(', ')}
+                    </span>
                   </div>
                 )}
               </div>
               
-              <div className="mt-4">
-                <button className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300">
-                  View Profile
-                </button>
-              </div>
             </div>
           </div>
         ))}
@@ -248,18 +316,112 @@ const Clients = () => {
                         
                         <div>
                           <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
-                            Business Address
+                            Street Address
                           </label>
-                          <textarea
-                            rows={3}
-                            placeholder="Enter complete business address..."
+                          <input
+                            type="text"
+                            placeholder="123 Main Street"
                             className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                            value={formData.address}
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            value={formData.streetAddress}
+                            onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })}
                           />
-                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            Include street address, city, state, and postal code
-                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              City
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="City"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.city}
+                              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              State
+                            </label>
+                            <select
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.state}
+                              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                            >
+                              <option value="">Select State</option>
+                              <option value="AL">Alabama</option>
+                              <option value="AK">Alaska</option>
+                              <option value="AZ">Arizona</option>
+                              <option value="AR">Arkansas</option>
+                              <option value="CA">California</option>
+                              <option value="CO">Colorado</option>
+                              <option value="CT">Connecticut</option>
+                              <option value="DE">Delaware</option>
+                              <option value="FL">Florida</option>
+                              <option value="GA">Georgia</option>
+                              <option value="HI">Hawaii</option>
+                              <option value="ID">Idaho</option>
+                              <option value="IL">Illinois</option>
+                              <option value="IN">Indiana</option>
+                              <option value="IA">Iowa</option>
+                              <option value="KS">Kansas</option>
+                              <option value="KY">Kentucky</option>
+                              <option value="LA">Louisiana</option>
+                              <option value="ME">Maine</option>
+                              <option value="MD">Maryland</option>
+                              <option value="MA">Massachusetts</option>
+                              <option value="MI">Michigan</option>
+                              <option value="MN">Minnesota</option>
+                              <option value="MS">Mississippi</option>
+                              <option value="MO">Missouri</option>
+                              <option value="MT">Montana</option>
+                              <option value="NE">Nebraska</option>
+                              <option value="NV">Nevada</option>
+                              <option value="NH">New Hampshire</option>
+                              <option value="NJ">New Jersey</option>
+                              <option value="NM">New Mexico</option>
+                              <option value="NY">New York</option>
+                              <option value="NC">North Carolina</option>
+                              <option value="ND">North Dakota</option>
+                              <option value="OH">Ohio</option>
+                              <option value="OK">Oklahoma</option>
+                              <option value="OR">Oregon</option>
+                              <option value="PA">Pennsylvania</option>
+                              <option value="RI">Rhode Island</option>
+                              <option value="SC">South Carolina</option>
+                              <option value="SD">South Dakota</option>
+                              <option value="TN">Tennessee</option>
+                              <option value="TX">Texas</option>
+                              <option value="UT">Utah</option>
+                              <option value="VT">Vermont</option>
+                              <option value="VA">Virginia</option>
+                              <option value="WA">Washington</option>
+                              <option value="WV">West Virginia</option>
+                              <option value="WI">Wisconsin</option>
+                              <option value="WY">Wyoming</option>
+                              <option value="DC">District of Columbia</option>
+                              <option value="AS">American Samoa</option>
+                              <option value="GU">Guam</option>
+                              <option value="MP">Northern Mariana Islands</option>
+                              <option value="PR">Puerto Rico</option>
+                              <option value="VI">U.S. Virgin Islands</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                            ZIP Code
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="12345"
+                            pattern="[0-9]{5}(-[0-9]{4})?"
+                            className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                            value={formData.zipCode}
+                            onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                          />
                         </div>
                       </div>
                     </div>
@@ -287,6 +449,8 @@ const Clients = () => {
       )}
     </div>
   )
-}
+})
+
+Clients.displayName = 'Clients'
 
 export default Clients

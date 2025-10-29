@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo, useTransition, useDeferredValue } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useData } from '../context/DataContext'
+import { useInvoices, useContracts, useInvoiceActions, useArchiveActions } from '../context/DataContext'
 import { useTheme } from '../context/ThemeContext'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
 import InvoiceModal from '../components/InvoiceModal'
 import InvoiceTemplate from '../components/InvoiceTemplate'
+import InvoiceDetailsModal from '../components/InvoiceDetailsModal'
 import ContractDetailsModal from '../components/ContractDetailsModal'
+import ArchiveButton from '../components/ArchiveButton'
 import { 
   Plus, 
   Edit, 
@@ -22,17 +24,27 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 
-const Invoices = () => {
-  const { invoices, addInvoice, updateInvoice, deleteInvoice, markInvoiceAsPaid, markInvoiceAsPending, markAllInvoicesAsPaid, contracts } = useData()
+const Invoices = memo(() => {
+  const invoices = useInvoices()
+  const contracts = useContracts()
+  const { addInvoice, updateInvoice, deleteInvoice, markInvoiceAsPaid, markInvoiceAsPending, markAllInvoicesAsPaid } = useInvoiceActions()
+  const { archiveInvoice } = useArchiveActions()
   const { theme } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState(null)
   const [viewingInvoice, setViewingInvoice] = useState(null)
+  const [viewingDetails, setViewingDetails] = useState(null)
   const [selectedContract, setSelectedContract] = useState(null)
   const [showContractModal, setShowContractModal] = useState(false)
   const [highlightedInvoiceId, setHighlightedInvoiceId] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [isPending, startTransition] = useTransition()
+  
+  // Defer search term for better performance
+  const deferredSearchTerm = useDeferredValue(searchTerm)
 
   // Handle highlighting from navigation
   useEffect(() => {
@@ -43,7 +55,59 @@ const Invoices = () => {
     }
   }, [location.state])
 
-  const handleSave = (invoice) => {
+  // Memoized filtered invoices
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(invoice => {
+      const matchesSearch = !deferredSearchTerm || 
+        invoice.clientName?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+        invoice.invoiceNumber?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+        invoice.description?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+      
+      const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter
+      
+      return matchesSearch && matchesStatus
+    })
+  }, [invoices, deferredSearchTerm, statusFilter])
+
+  // Memoized statistics
+  const statistics = useMemo(() => {
+    const totalInvoices = invoices.length
+    const paidInvoices = invoices.filter(invoice => invoice.status === 'paid').length
+    const pendingInvoices = invoices.filter(invoice => invoice.status === 'pending').length
+    const overdueInvoices = invoices.filter(invoice => invoice.status === 'overdue').length
+    
+    const totalRevenue = invoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + parseFloat(invoice.amount ?? 0), 0)
+    
+    const pendingRevenue = invoices
+      .filter(invoice => invoice.status === 'pending')
+      .reduce((sum, invoice) => sum + parseFloat(invoice.amount ?? 0), 0)
+    
+    const overdueRevenue = invoices
+      .filter(invoice => invoice.status === 'overdue')
+      .reduce((sum, invoice) => sum + parseFloat(invoice.amount ?? 0), 0)
+
+    return {
+      totalInvoices,
+      paidInvoices,
+      pendingInvoices,
+      overdueInvoices,
+      totalRevenue,
+      pendingRevenue,
+      overdueRevenue
+    }
+  }, [invoices])
+
+  // Memoized status options
+  const statusOptions = useMemo(() => [
+    { value: 'all', label: 'All Invoices', count: statistics.totalInvoices },
+    { value: 'paid', label: 'Paid', count: statistics.paidInvoices },
+    { value: 'pending', label: 'Pending', count: statistics.pendingInvoices },
+    { value: 'overdue', label: 'Overdue', count: statistics.overdueInvoices }
+  ], [statistics])
+
+  const handleSave = useCallback((invoice) => {
     if (editingInvoice) {
       updateInvoice(invoice)
     } else {
@@ -51,32 +115,48 @@ const Invoices = () => {
     }
     setIsModalOpen(false)
     setEditingInvoice(null)
-  }
+  }, [editingInvoice, updateInvoice, addInvoice])
 
-  const handleEdit = (invoice) => {
+  const handleEdit = useCallback((invoice) => {
     setEditingInvoice(invoice)
     setIsModalOpen(true)
-  }
+  }, [])
 
-  const handleView = (invoice) => {
+  const handleView = useCallback((invoice) => {
     setViewingInvoice(invoice)
-  }
+  }, [])
 
-  const handleContractClick = (contractId) => {
+  const handleRowClick = useCallback((invoice) => {
+    // Remove focus from any active elements to prevent header styling issues
+    if (document.activeElement) {
+      document.activeElement.blur()
+    }
+    setViewingDetails(invoice)
+  }, [])
+
+  const handleArchiveSelected = useCallback((invoicesToArchive) => {
+    invoicesToArchive.forEach(invoice => archiveInvoice(invoice.id))
+  }, [archiveInvoice])
+
+  const handleArchiveAll = useCallback((invoicesToArchive) => {
+    invoicesToArchive.forEach(invoice => archiveInvoice(invoice.id))
+  }, [archiveInvoice])
+
+  const handleContractClick = useCallback((contractId) => {
     const contract = contracts.find(c => c.id === contractId)
     if (contract) {
       setSelectedContract(contract)
       setShowContractModal(true)
     }
-  }
+  }, [contracts])
 
-  const handleDelete = (id) => {
+  const handleDelete = useCallback((id) => {
     if (window.confirm('Are you sure you want to delete this invoice?')) {
       deleteInvoice(id)
     }
-  }
+  }, [deleteInvoice])
 
-  const getStatusColor = (status) => {
+  const getStatusColor = useCallback((status) => {
     switch (status) {
       case 'paid':
         return 'bg-success-50 text-success-600 dark:bg-success-900 dark:text-success-300'
@@ -87,11 +167,58 @@ const Invoices = () => {
       default:
         return 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'
     }
-  }
+  }, [])
+
+  const handleSearchChange = useCallback((e) => {
+    startTransition(() => {
+      setSearchTerm(e.target.value)
+    })
+  }, [])
+
+  const handleStatusFilterChange = useCallback((status) => {
+    startTransition(() => {
+      setStatusFilter(status)
+    })
+  }, [])
+
+  const handleMarkAsPaid = useCallback((id) => {
+    markInvoiceAsPaid(id)
+  }, [markInvoiceAsPaid])
+
+  const handleMarkAsPending = useCallback((id) => {
+    markInvoiceAsPending(id)
+  }, [markInvoiceAsPending])
+
+  const handleMarkAllAsPaid = useCallback(() => {
+    markAllInvoicesAsPaid()
+  }, [markAllInvoicesAsPaid])
+
+  const handleCreateNew = useCallback(() => {
+    setEditingInvoice(null)
+    setIsModalOpen(true)
+  }, [])
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false)
+    setEditingInvoice(null)
+  }, [])
+
+  const handleCloseDetails = useCallback(() => {
+    setViewingDetails(null)
+  }, [])
+
+  const handleCloseContractModal = useCallback(() => {
+    setShowContractModal(false)
+    setSelectedContract(null)
+  }, [])
+
+  const handleCloseViewModal = useCallback(() => {
+    setViewingInvoice(null)
+  }, [])
 
   // Show invoice template if viewing
   if (viewingInvoice) {
-    return <InvoiceTemplate invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} />
+    return <InvoiceTemplate invoice={viewingInvoice} onClose={handleCloseViewModal} />
   }
 
   return (
@@ -108,6 +235,15 @@ const Invoices = () => {
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <div className="flex space-x-3">
+            <ArchiveButton
+              items={invoices}
+              onArchiveSelected={handleArchiveSelected}
+              onArchiveAll={handleArchiveAll}
+              archiveAllLabel="Archive All Paid"
+              archiveSelectedLabel="Archive Selected"
+              archiveAllCondition={(invoice) => invoice.status === 'paid'}
+              archiveSelectedCondition={(invoice) => invoice.status === 'paid'}
+            />
             <button
               type="button"
               onClick={markAllInvoicesAsPaid}
@@ -163,9 +299,10 @@ const Invoices = () => {
             {invoices.map((invoice) => (
               <tr 
                 key={invoice.id} 
-                className={`${combineThemeClasses("hover:bg-gray-50 dark:hover:bg-gray-700", themeClasses.table.rowHover)} ${
+                className={`${combineThemeClasses("hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer", themeClasses.table.rowHover)} ${
                   highlightedInvoiceId === invoice.id ? 'ring-2 ring-orange-500 bg-orange-50 dark:bg-orange-900/20' : ''
                 }`}
+                onClick={() => handleRowClick(invoice)}
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -214,7 +351,10 @@ const Invoices = () => {
                     {/* Quick Status Actions */}
                     {(invoice.status || 'pending') === 'pending' && (
                       <button
-                        onClick={() => markInvoiceAsPaid(invoice.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMarkAsPaid(invoice.id)
+                        }}
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                         title="Mark as Paid"
                       >
@@ -223,7 +363,10 @@ const Invoices = () => {
                     )}
                     {(invoice.status || 'pending') === 'paid' && (
                       <button
-                        onClick={() => markInvoiceAsPending(invoice.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMarkAsPending(invoice.id)
+                        }}
                         className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
                         title="Mark as Pending"
                       >
@@ -232,7 +375,10 @@ const Invoices = () => {
                     )}
                     {(invoice.status || 'pending') === 'overdue' && (
                       <button
-                        onClick={() => markInvoiceAsPaid(invoice.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMarkAsPaid(invoice.id)
+                        }}
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                         title="Mark as Paid"
                       >
@@ -242,21 +388,30 @@ const Invoices = () => {
                     
                     {/* Standard Actions */}
                     <button
-                      onClick={() => handleView(invoice)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleView(invoice)
+                      }}
                       className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
                       title="View Invoice"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleEdit(invoice)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEdit(invoice)
+                      }}
                       className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
                       title="Edit Invoice"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(invoice.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(invoice.id)
+                      }}
                       className="text-error-600 hover:text-error-900 dark:text-error-400 dark:hover:text-error-300"
                       title="Delete Invoice"
                     >
@@ -292,13 +447,23 @@ const Invoices = () => {
       <ContractDetailsModal
         contract={selectedContract}
         isOpen={showContractModal}
-        onClose={() => {
-          setShowContractModal(false)
-          setSelectedContract(null)
+        onClose={handleCloseContractModal}
+      />
+
+      {/* Invoice Details Modal */}
+      <InvoiceDetailsModal
+        invoice={viewingDetails}
+        isOpen={!!viewingDetails}
+        onClose={handleCloseDetails}
+        onViewInInvoices={() => {
+          handleCloseDetails()
+          navigate('/invoices')
         }}
       />
     </div>
   )
-}
+})
+
+Invoices.displayName = 'Invoices'
 
 export default Invoices

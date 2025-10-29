@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+
+import React, { useState, useEffect, useMemo, useCallback, memo, useTransition } from 'react'
 import { Link } from 'react-router-dom'
-import { useData } from '../context/DataContext'
+import { useInvoices, useContracts, useClients } from '../context/DataContext'
 import { useTheme } from '../context/ThemeContext'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
 import { 
@@ -18,12 +19,15 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 
-const Dashboard = () => {
-  const { invoices, contracts, clients } = useData()
+const Dashboard = memo(() => {
+  const invoices = useInvoices()
+  const contracts = useContracts()
+  const clients = useClients()
   const { theme } = useTheme()
   const [showAutoUpdateNotification, setShowAutoUpdateNotification] = useState(false)
   const [notificationCountdown, setNotificationCountdown] = useState(8)
   const [hasAutoUpdated, setHasAutoUpdated] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   // Check for auto-updated items on component mount
   useEffect(() => {
@@ -59,35 +63,53 @@ const Dashboard = () => {
   }, [showAutoUpdateNotification, notificationCountdown])
 
   // Calculate countdown bar width based on remaining time
-  const countdownBarWidth = (notificationCountdown / 8) * 100
+  const countdownBarWidth = useMemo(() => (notificationCountdown / 8) * 100, [notificationCountdown])
 
-  // Calculate statistics
-  const totalInvoices = invoices.length
-  const paidInvoices = invoices.filter(invoice => invoice.status === 'paid').length
-  const pendingInvoices = invoices.filter(invoice => invoice.status === 'pending').length
-  const overdueInvoices = invoices.filter(invoice => invoice.status === 'overdue').length
-  
-  const totalRevenue = invoices
-    .filter(invoice => invoice.status === 'paid')
-    .reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0)
-  
-  const pendingRevenue = invoices
-    .filter(invoice => invoice.status === 'pending')
-    .reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0)
-  
-  const overdueRevenue = invoices
-    .filter(invoice => invoice.status === 'overdue')
-    .reduce((sum, invoice) => sum + parseFloat(invoice.amount || 0), 0)
+  // Memoized statistics calculations
+  const statistics = useMemo(() => {
+    const totalInvoices = invoices.length
+    const paidInvoices = invoices.filter(invoice => invoice.status === 'paid').length
+    const pendingInvoices = invoices.filter(invoice => invoice.status === 'pending').length
+    const overdueInvoices = invoices.filter(invoice => invoice.status === 'overdue').length
+    
+    const totalRevenue = invoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + parseFloat(invoice.amount ?? 0), 0)
+    
+    const pendingRevenue = invoices
+      .filter(invoice => invoice.status === 'pending')
+      .reduce((sum, invoice) => sum + parseFloat(invoice.amount ?? 0), 0)
+    
+    const overdueRevenue = invoices
+      .filter(invoice => invoice.status === 'overdue')
+      .reduce((sum, invoice) => sum + parseFloat(invoice.amount ?? 0), 0)
 
-  const activeContracts = contracts.filter(contract => contract.status === 'active').length
-  const pendingContracts = contracts.filter(contract => contract.status === 'pending').length
-  const totalClients = clients.length
+    const activeContracts = contracts.filter(contract => contract.status === 'active').length
+    const pendingContracts = contracts.filter(contract => contract.status === 'pending').length
+    const totalClients = clients.length
 
-  // Recent items
-  const recentInvoices = invoices.slice(-3).reverse()
-  const recentContracts = contracts.slice(-3).reverse()
+    return {
+      totalInvoices,
+      paidInvoices,
+      pendingInvoices,
+      overdueInvoices,
+      totalRevenue,
+      pendingRevenue,
+      overdueRevenue,
+      activeContracts,
+      pendingContracts,
+      totalClients
+    }
+  }, [invoices, contracts, clients])
 
-  const quickActions = [
+  // Memoized recent items
+  const recentItems = useMemo(() => ({
+    recentInvoices: invoices.slice(-3).toReversed(),
+    recentContracts: contracts.slice(-3).toReversed()
+  }), [invoices, contracts])
+
+  // Memoized quick actions
+  const quickActions = useMemo(() => [
     {
       name: 'Create Invoice',
       href: '/invoices',
@@ -109,40 +131,45 @@ const Dashboard = () => {
       description: 'Add a new client',
       color: 'text-primary-600 dark:text-primary-300'
     }
-  ]
+  ], [])
 
-  const stats = [
+  // Memoized stats array
+  const stats = useMemo(() => [
     {
       name: 'Total Revenue',
-      value: `$${totalRevenue.toLocaleString()}`,
+      value: `$${statistics.totalRevenue.toLocaleString()}`,
       icon: DollarSign,
-      change: pendingRevenue > 0 ? `+$${pendingRevenue.toLocaleString()} pending` : 'No pending',
-      changeType: pendingRevenue > 0 ? 'positive' : 'neutral',
-      additionalInfo: overdueRevenue > 0 ? `$${overdueRevenue.toLocaleString()} overdue` : null,
+      change: statistics.pendingRevenue > 0 ? `+$${statistics.pendingRevenue.toLocaleString()} pending` : 'No pending',
+      changeType: statistics.pendingRevenue > 0 ? 'positive' : 'neutral',
+      additionalInfo: statistics.overdueRevenue > 0 ? `$${statistics.overdueRevenue.toLocaleString()} overdue` : null,
       additionalType: 'negative'
     },
     {
       name: 'Active Contracts',
-      value: activeContracts,
+      value: statistics.activeContracts,
       icon: FileCheck,
-      change: pendingContracts > 0 ? `+${pendingContracts} pending` : 'No pending',
-      changeType: pendingContracts > 0 ? 'positive' : 'neutral'
+      change: statistics.pendingContracts > 0 ? `+${statistics.pendingContracts} pending` : 'No pending',
+      changeType: statistics.pendingContracts > 0 ? 'positive' : 'neutral'
     },
     {
       name: 'Total Clients',
-      value: totalClients,
+      value: statistics.totalClients,
       icon: Users,
       change: null,
       changeType: 'neutral'
     },
     {
       name: 'Pending Invoices',
-      value: pendingInvoices,
+      value: statistics.pendingInvoices,
       icon: Clock,
-      change: overdueInvoices > 0 ? `${overdueInvoices} overdue` : 'All on time',
-      changeType: overdueInvoices > 0 ? 'negative' : 'positive'
+      change: statistics.overdueInvoices > 0 ? `${statistics.overdueInvoices} overdue` : 'All on time',
+      changeType: statistics.overdueInvoices > 0 ? 'negative' : 'positive'
     }
-  ]
+  ], [statistics])
+
+  const dismissNotification = useCallback(() => {
+    setShowAutoUpdateNotification(false)
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -167,7 +194,7 @@ const Dashboard = () => {
               <div className="-mx-1.5 -my-1.5">
                 <button
                   type="button"
-                  onClick={() => setShowAutoUpdateNotification(false)}
+                  onClick={dismissNotification}
                   className="inline-flex rounded-lg bg-primary-50 dark:bg-primary-900/20 p-1.5 text-primary-500 hover:bg-primary-100 dark:hover:bg-primary-800/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-primary-50 dark:focus:ring-offset-primary-900 transition-all duration-300"
                 >
                   <span className="sr-only">Dismiss</span>
@@ -302,7 +329,7 @@ const Dashboard = () => {
             </div>
             <div className="flow-root">
               <ul className="-my-5 divide-y divide-gray-200 dark:divide-gray-700">
-                {recentInvoices.map((invoice) => (
+                {recentItems.recentInvoices.map((invoice) => (
                   <li key={invoice.id} className="py-4">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
@@ -328,7 +355,7 @@ const Dashboard = () => {
                     </div>
                   </li>
                 ))}
-                {recentInvoices.length === 0 && (
+                {recentItems.recentInvoices.length === 0 && (
                   <li className="py-4 text-center text-text-secondary dark:text-gray-400">
                     No invoices yet
                   </li>
@@ -354,7 +381,7 @@ const Dashboard = () => {
             </div>
             <div className="flow-root">
               <ul className="-my-5 divide-y divide-gray-200 dark:divide-gray-700">
-                {recentContracts.map((contract) => (
+                {recentItems.recentContracts.map((contract) => (
                   <li key={contract.id} className="py-4">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
@@ -380,7 +407,7 @@ const Dashboard = () => {
                     </div>
                   </li>
                 ))}
-                {recentContracts.length === 0 && (
+                {recentItems.recentContracts.length === 0 && (
                   <li className="py-4 text-center text-text-secondary dark:text-gray-400">
                     No contracts yet
                   </li>
@@ -392,6 +419,8 @@ const Dashboard = () => {
       </div>
     </div>
   )
-}
+})
+
+Dashboard.displayName = 'Dashboard'
 
 export default Dashboard

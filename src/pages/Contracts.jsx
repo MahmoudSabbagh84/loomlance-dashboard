@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, memo, useTransition, useDeferredValue } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useData } from '../context/DataContext'
+import { useContracts, useInvoices, useClients, useContractActions, useInvoiceActions, useArchiveActions } from '../context/DataContext'
 import { useTheme } from '../context/ThemeContext'
+import { useSettings } from '../context/SettingsContext'
+import ArchiveButton from '../components/ArchiveButton'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
 import InvoiceModal from '../components/InvoiceModal'
 import InvoiceListModal from '../components/InvoiceListModal'
@@ -9,7 +11,6 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Eye,
   X,
   CheckCircle,
   Clock,
@@ -20,9 +21,15 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 
-const Contracts = () => {
-  const { contracts, addContract, updateContract, deleteContract, markContractAsActive, markContractAsCompleted, markContractAsPending, invoices, addInvoice } = useData()
+const Contracts = memo(() => {
+  const contracts = useContracts()
+  const invoices = useInvoices()
+  const clients = useClients()
+  const { addContract, updateContract, deleteContract, markContractAsActive, markContractAsCompleted, markContractAsPending, markContractAsCancelled, nullifyContractValue } = useContractActions()
+  const { addInvoice } = useInvoiceActions()
+  const { archiveContract } = useArchiveActions()
   const { theme } = useTheme()
+  const { invoiceBilledDisplay } = useSettings()
   const navigate = useNavigate()
   const location = useLocation()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -34,6 +41,12 @@ const Contracts = () => {
   const [selectedContractForInvoices, setSelectedContractForInvoices] = useState(null)
   const [showInvoiceListModal, setShowInvoiceListModal] = useState(false)
   const [highlightedContractId, setHighlightedContractId] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [isPending, startTransition] = useTransition()
+  
+  // Defer search term for better performance
+  const deferredSearchTerm = useDeferredValue(searchTerm)
 
   // Handle highlighting from navigation
   useEffect(() => {
@@ -43,22 +56,82 @@ const Contracts = () => {
       setTimeout(() => setHighlightedContractId(null), 3000)
     }
   }, [location.state])
+
+  // Memoized filtered contracts
+  const filteredContracts = useMemo(() => {
+    return contracts.filter(contract => {
+      const matchesSearch = !deferredSearchTerm || 
+        contract.title?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+        contract.clientName?.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+        contract.description?.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+      
+      const matchesStatus = statusFilter === 'all' || contract.status === statusFilter
+      
+      return matchesSearch && matchesStatus
+    })
+  }, [contracts, deferredSearchTerm, statusFilter])
+
+  // Memoized statistics
+  const statistics = useMemo(() => {
+    const totalContracts = contracts.length
+    const activeContracts = contracts.filter(contract => contract.status === 'active').length
+    const pendingContracts = contracts.filter(contract => contract.status === 'pending').length
+    const completedContracts = contracts.filter(contract => contract.status === 'completed').length
+    const cancelledContracts = contracts.filter(contract => contract.status === 'cancelled').length
+    
+    const totalValue = contracts
+      .filter(contract => contract.status === 'active' || contract.status === 'completed')
+      .reduce((sum, contract) => sum + parseFloat(contract.totalValue ?? 0), 0)
+
+    return {
+      totalContracts,
+      activeContracts,
+      pendingContracts,
+      completedContracts,
+      cancelledContracts,
+      totalValue
+    }
+  }, [contracts])
+
+  // Memoized status options
+  const statusOptions = useMemo(() => [
+    { value: 'all', label: 'All Contracts', count: statistics.totalContracts },
+    { value: 'active', label: 'Active', count: statistics.activeContracts },
+    { value: 'pending', label: 'Pending', count: statistics.pendingContracts },
+    { value: 'completed', label: 'Completed', count: statistics.completedContracts },
+    { value: 'cancelled', label: 'Cancelled', count: statistics.cancelledContracts }
+  ], [statistics])
+
   const [formData, setFormData] = useState({
     title: '',
     clientName: '',
     startDate: '',
     endDate: '',
     status: 'active',
-    description: ''
+    description: '',
+    totalValue: '',
+    hourlyRate: '',
+    estimatedHours: ''
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault()
+    
+    // Validate contract value
+    const totalValue = parseFloat(formData.totalValue) || 0
+    if (totalValue <= 0) {
+      alert('Contract value must be greater than zero')
+      return
+    }
+    
     const contract = {
       ...formData,
       id: editingContract?.id || Date.now(),
       startDate: formData.startDate,
       endDate: formData.endDate,
+      totalValue: totalValue,
+      hourlyRate: parseFloat(formData.hourlyRate) || 0,
+      estimatedHours: parseFloat(formData.estimatedHours) || 0,
       createdAt: editingContract?.createdAt || new Date().toISOString()
     }
 
@@ -76,11 +149,14 @@ const Contracts = () => {
       startDate: '',
       endDate: '',
       status: 'active',
-      description: ''
+      description: '',
+      totalValue: '',
+      hourlyRate: '',
+      estimatedHours: ''
     })
-  }
+  }, [formData, editingContract, updateContract, addContract])
 
-  const handleEdit = (contract) => {
+  const handleEdit = useCallback((contract) => {
     setEditingContract(contract)
     setFormData({
       title: contract.title,
@@ -88,18 +164,21 @@ const Contracts = () => {
       startDate: contract.startDate,
       endDate: contract.endDate,
       status: contract.status,
-      description: contract.description || ''
+      description: contract.description || '',
+      totalValue: contract.totalValue?.toString() || '',
+      hourlyRate: contract.hourlyRate?.toString() || '',
+      estimatedHours: contract.estimatedHours?.toString() || ''
     })
     setIsModalOpen(true)
-  }
+  }, [])
 
-  const handleDelete = (id) => {
+  const handleDelete = useCallback((id) => {
     if (window.confirm('Are you sure you want to delete this contract?')) {
       deleteContract(id)
     }
-  }
+  }, [deleteContract])
 
-  const handleMarkCompleted = (id) => {
+  const handleMarkCompleted = useCallback((id) => {
     markContractAsCompleted(id)
     setCompletedContractId(id)
     setShowInvoiceNotification(true)
@@ -109,12 +188,44 @@ const Contracts = () => {
       setShowInvoiceNotification(false)
       setCompletedContractId(null)
     }, 5000)
-  }
+  }, [markContractAsCompleted])
 
-  const handleGenerateInvoice = (contract) => {
+  const handleGenerateInvoice = useCallback((contract) => {
     setSelectedContractForInvoice(contract)
     setIsInvoiceModalOpen(true)
-  }
+  }, [])
+
+  const handleSearchChange = useCallback((e) => {
+    startTransition(() => {
+      setSearchTerm(e.target.value)
+    })
+  }, [])
+
+  const handleStatusFilterChange = useCallback((status) => {
+    startTransition(() => {
+      setStatusFilter(status)
+    })
+  }, [])
+
+  const handleCreateNew = useCallback(() => {
+    setEditingContract(null)
+    setIsModalOpen(true)
+  }, [])
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false)
+    setEditingContract(null)
+  }, [])
+
+  const handleCloseInvoiceModal = useCallback(() => {
+    setIsInvoiceModalOpen(false)
+    setSelectedContractForInvoice(null)
+  }, [])
+
+  const handleCloseInvoiceListModal = useCallback(() => {
+    setShowInvoiceListModal(false)
+    setSelectedContractForInvoices(null)
+  }, [])
 
   const handleInvoiceSave = (invoice) => {
     addInvoice(invoice)
@@ -123,17 +234,39 @@ const Contracts = () => {
   }
 
   const getContractInvoices = (contractId) => {
-    return invoices.filter(invoice => invoice.contractId === contractId)
+    const contract = contracts.find(c => c.id === contractId)
+    if (!contract) return []
+    return invoices.filter(invoice => invoice.contractUid === contract.uid)
   }
 
   const getContractInvoiceTotal = (contractId) => {
     const contractInvoices = getContractInvoices(contractId)
-    return contractInvoices.reduce((total, invoice) => total + (invoice.amount || 0), 0)
+    const paidInvoices = contractInvoices.filter(invoice => invoice.status === 'paid')
+    const paidTotal = paidInvoices.reduce((total, invoice) => total + (invoice.amount || 0), 0)
+    const allTotal = contractInvoices.reduce((total, invoice) => total + (invoice.amount || 0), 0)
+    
+    switch (invoiceBilledDisplay) {
+      case 'paid-only':
+        return paidTotal
+      case 'all-invoices':
+        return allTotal
+      case 'paid-vs-total':
+      default:
+        return { paid: paidTotal, total: allTotal }
+    }
   }
 
   const handleInvoiceListClick = (contract) => {
     setSelectedContractForInvoices(contract)
     setShowInvoiceListModal(true)
+  }
+
+  const handleArchiveSelected = (contractsToArchive) => {
+    contractsToArchive.forEach(contract => archiveContract(contract.id))
+  }
+
+  const handleArchiveAll = (contractsToArchive) => {
+    contractsToArchive.forEach(contract => archiveContract(contract.id))
   }
 
   const getStatusColor = (status) => {
@@ -191,7 +324,16 @@ const Contracts = () => {
             Manage your contracts and agreements
           </p>
         </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex space-x-3">
+          <ArchiveButton
+            items={contracts}
+            onArchiveSelected={handleArchiveSelected}
+            onArchiveAll={handleArchiveAll}
+            archiveAllLabel="Archive All Completed/Cancelled"
+            archiveSelectedLabel="Archive Selected"
+            archiveAllCondition={(contract) => contract.status === 'completed' || contract.status === 'cancelled'}
+            archiveSelectedCondition={(contract) => contract.status === 'completed' || contract.status === 'cancelled'}
+          />
           <button
             type="button"
             onClick={() => {
@@ -202,7 +344,10 @@ const Contracts = () => {
                 startDate: '',
                 endDate: '',
                 status: 'active',
-                description: ''
+                description: '',
+                totalValue: '',
+                hourlyRate: '',
+                estimatedHours: ''
               })
               setIsModalOpen(true)
             }}
@@ -233,6 +378,9 @@ const Contracts = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Contract Value
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Invoices
@@ -270,6 +418,9 @@ const Contracts = () => {
                     {contract.status}
                   </span>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  ${(contract.totalValue || 0).toLocaleString()}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   <div className="flex items-center">
                     <FileText className="h-4 w-4 text-primary-500 mr-2" />
@@ -283,14 +434,23 @@ const Contracts = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  ${getContractInvoiceTotal(contract.id).toLocaleString()}
+                  {(() => {
+                    const total = getContractInvoiceTotal(contract.id)
+                    if (typeof total === 'object') {
+                      return `$${total.paid.toLocaleString()}/$${total.total.toLocaleString()}`
+                    }
+                    return `$${total.toLocaleString()}`
+                  })()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center space-x-2">
                     {/* Quick Status Actions */}
                     {contract.status === 'pending' && (
                       <button
-                        onClick={() => markContractAsActive(contract.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markContractAsActive(contract.id)
+                        }}
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                         title="Activate Contract"
                       >
@@ -299,7 +459,10 @@ const Contracts = () => {
                     )}
                     {contract.status === 'active' && (
                       <button
-                        onClick={() => handleMarkCompleted(contract.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMarkCompleted(contract.id)
+                        }}
                         className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
                         title="Mark as Completed"
                       >
@@ -308,7 +471,10 @@ const Contracts = () => {
                     )}
                     {(contract.status === 'active' || contract.status === 'completed') && (
                       <button
-                        onClick={() => handleGenerateInvoice(contract)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleGenerateInvoice(contract)
+                        }}
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                         title="Generate Invoice"
                       >
@@ -317,7 +483,10 @@ const Contracts = () => {
                     )}
                     {contract.status === 'completed' && (
                       <button
-                        onClick={() => markContractAsActive(contract.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markContractAsActive(contract.id)
+                        }}
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                         title="Reactivate Contract"
                       >
@@ -326,7 +495,10 @@ const Contracts = () => {
                     )}
                     {contract.status === 'expired' && (
                       <button
-                        onClick={() => markContractAsPending(contract.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markContractAsPending(contract.id)
+                        }}
                         className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
                         title="Mark as Pending"
                       >
@@ -336,25 +508,39 @@ const Contracts = () => {
                     
                     {/* Standard Actions */}
                     <button
-                      onClick={() => handleEdit(contract)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEdit(contract)
+                      }}
                       className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
                       title="Edit Contract"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(contract.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(contract.id)
+                      }}
                       className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                       title="Delete Contract"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
-                    <button 
-                      className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
-                      title="View Contract"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
+                    {contract.status !== 'cancelled' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (window.confirm('Are you sure you want to void this contract? This will set its value to $0 and mark it as cancelled.')) {
+                            nullifyContractValue(contract.id)
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        title="Void Contract"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -402,14 +588,35 @@ const Contracts = () => {
                             <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
                               Client Name <span className="text-red-500">*</span>
                             </label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="Enter client name"
-                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
-                              value={formData.clientName}
-                              onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                            />
+                            {clients.length > 0 ? (
+                              <select
+                                required
+                                className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                                value={formData.clientName}
+                                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                              >
+                                <option value="">Select a client...</option>
+                                {clients.map(client => (
+                                  <option key={client.id} value={client.name}>
+                                    {client.name} {client.company && `(${client.company})`}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div className="space-y-2">
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Enter client name"
+                                  className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                                  value={formData.clientName}
+                                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                                />
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  No clients found. Add clients first to use the dropdown.
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
@@ -453,10 +660,57 @@ const Contracts = () => {
                             <option value="pending">Pending</option>
                             <option value="completed">Completed</option>
                             <option value="expired">Expired</option>
+                            <option value="cancelled">Cancelled</option>
                           </select>
                           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             Set the current status of this contract
                           </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Total Value <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              required
+                              min="0.01"
+                              step="0.01"
+                              placeholder="0.00"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.totalValue}
+                              onChange={(e) => setFormData({ ...formData, totalValue: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Hourly Rate
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.hourlyRate}
+                              onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className={combineThemeClasses("block text-sm font-medium", themeClasses.form.label)}>
+                              Estimated Hours
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              placeholder="0"
+                              className={combineThemeClasses("mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm", themeClasses.input)}
+                              value={formData.estimatedHours}
+                              onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
+                            />
+                          </div>
                         </div>
                         
                         <div>
@@ -539,6 +793,8 @@ const Contracts = () => {
       />
     </div>
   )
-}
+})
+
+Contracts.displayName = 'Contracts'
 
 export default Contracts

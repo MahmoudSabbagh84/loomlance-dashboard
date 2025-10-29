@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
@@ -13,18 +13,18 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 
-const ContractDetailsModal = ({ contract, isOpen, onClose }) => {
+const ContractDetailsModal = memo(({ contract, isOpen, onClose }) => {
   const { theme } = useTheme()
   const navigate = useNavigate()
 
   if (!isOpen || !contract) return null
 
-  const handleViewContract = () => {
+  const handleViewContract = useCallback(() => {
     navigate('/contracts', { state: { highlightContractId: contract.id } })
     onClose()
-  }
+  }, [navigate, contract.id, onClose])
 
-  const getStatusColor = (status) => {
+  const getStatusColor = useCallback((status) => {
     switch (status) {
       case 'active':
         return 'bg-success-50 text-success-600 dark:bg-success-900 dark:text-success-300'
@@ -35,7 +35,7 @@ const ContractDetailsModal = ({ contract, isOpen, onClose }) => {
       default:
         return 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'
     }
-  }
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -168,7 +168,9 @@ const ContractDetailsModal = ({ contract, isOpen, onClose }) => {
       </div>
     </div>
   )
-}
+})
+
+ContractDetailsModal.displayName = 'ContractDetailsModal'
 
 export default ContractDetailsModal
 

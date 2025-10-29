@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
-import { useData } from '../context/DataContext'
-import { useAuth } from '../context/AuthContext'
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
+import { useContracts, useClients } from '../context/DataContext'
+import { useUser } from '../context/AuthContext'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
 import { 
   X, 
@@ -12,9 +12,11 @@ import {
   User
 } from 'lucide-react'
 
-const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
-  const { contracts, clients } = useData()
-  const { user } = useAuth()
+const InvoiceModal = memo(({ isOpen, onClose, editingInvoice, onSave }) => {
+  const contracts = useContracts()
+  const clients = useClients()
+  const user = useUser()
+  const modalRef = useRef(null)
   const [formData, setFormData] = useState({
     type: 'standalone', // 'standalone' or 'contract-based'
     contractId: '',
@@ -30,19 +32,37 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
     total: 0
   })
 
+  // Memoized filtered contracts
+  const filteredContracts = useMemo(() => {
+    return contracts.filter(contract => contract.status === 'active' || contract.status === 'completed')
+  }, [contracts])
+
+  // Memoized client options
+  const clientOptions = useMemo(() => {
+    return clients.map(client => ({
+      value: client.name,
+      label: client.name
+    }))
+  }, [clients])
+
   // Reset form when modal opens/closes or when editing changes
   useEffect(() => {
     if (isOpen) {
       if (editingInvoice) {
+        // Safely handle potentially undefined properties
+        const safeLineItems = editingInvoice.lineItems && Array.isArray(editingInvoice.lineItems) && editingInvoice.lineItems.length > 0
+          ? editingInvoice.lineItems
+          : [{ description: '', quantity: 1, rate: 0, amount: 0 }]
+        
         setFormData({
           type: editingInvoice.type || 'standalone',
-          contractId: editingInvoice.contractId || '',
+          contractId: editingInvoice.contractId ? editingInvoice.contractId.toString() : '',
           clientName: editingInvoice.clientName || '',
           amount: editingInvoice.amount?.toString() || '',
           dueDate: editingInvoice.dueDate || '',
           status: editingInvoice.status || 'pending',
           description: editingInvoice.description || '',
-          lineItems: editingInvoice.lineItems || [{ description: '', quantity: 1, rate: 0, amount: 0 }],
+          lineItems: safeLineItems,
           subtotal: editingInvoice.subtotal || 0,
           tax: editingInvoice.tax || 0,
           taxPercentage: editingInvoice.taxPercentage || 0,
@@ -74,21 +94,21 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
       if (selectedContract) {
         setFormData(prev => ({
           ...prev,
-          clientName: selectedContract.clientName,
-          description: `Invoice for ${selectedContract.title}`,
+          clientName: selectedContract.clientName || '',
+          description: `Invoice for ${selectedContract.title || 'Contract'}`,
           lineItems: [{
-            description: selectedContract.title,
-            quantity: selectedContract.estimatedHours,
-            rate: selectedContract.hourlyRate,
-            amount: selectedContract.totalValue
+            description: selectedContract.title || 'Contract Work',
+            quantity: selectedContract.estimatedHours || 1,
+            rate: selectedContract.hourlyRate || 0,
+            amount: selectedContract.totalValue || 0
           }],
-          subtotal: selectedContract.totalValue,
-          total: selectedContract.totalValue,
-          amount: selectedContract.totalValue.toString()
+          subtotal: selectedContract.totalValue || 0,
+          total: selectedContract.totalValue || 0,
+          amount: (selectedContract.totalValue || 0).toString()
         }))
       }
     }
-  }, [formData.type, formData.contractId, contracts])
+  }, [formData.type, formData.contractId, contracts.length])
 
   // Calculate totals when line items or tax percentage change
   useEffect(() => {
@@ -96,57 +116,87 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
     const tax = subtotal * (formData.taxPercentage / 100)
     const total = subtotal + tax
 
-    setFormData(prev => ({
-      ...prev,
-      subtotal,
-      tax,
-      total,
-      amount: total.toString()
-    }))
-  }, [formData.lineItems, formData.taxPercentage])
+    // Only update if values have actually changed to prevent infinite loops
+    if (formData.subtotal !== subtotal || formData.tax !== tax || formData.total !== total) {
+      setFormData(prev => ({
+        ...prev,
+        subtotal,
+        tax,
+        total,
+        amount: total.toString()
+      }))
+    }
+  }, [formData.lineItems, formData.taxPercentage, formData.subtotal, formData.tax, formData.total])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault()
     
-    const invoice = {
-      ...formData,
-      id: editingInvoice?.id || Date.now(),
-      amount: parseFloat(formData.total),
-      contractId: formData.type === 'contract-based' ? parseInt(formData.contractId) : null,
-      createdAt: editingInvoice?.createdAt || new Date().toISOString()
-    }
+    try {
+      // Validate required fields
+      if (!formData.clientName || !formData.dueDate) {
+        alert('Please fill in all required fields (Client and Due Date)')
+        return
+      }
 
-    onSave(invoice)
-    onClose()
-  }
+      // Validate line items
+      if (!formData.lineItems || formData.lineItems.length === 0) {
+        alert('Please add at least one line item')
+        return
+      }
+
+      const invoice = {
+        ...formData,
+        id: editingInvoice?.id || Date.now(),
+        amount: parseFloat(formData.total) || 0,
+        contractUid: formData.type === 'contract-based' && formData.contractId ? contracts.find(c => c.id === parseInt(formData.contractId))?.uid : null,
+        createdAt: editingInvoice?.createdAt || new Date().toISOString()
+      }
+
+      onSave(invoice)
+      onClose()
+    } catch (error) {
+      console.error('Error submitting invoice:', error)
+      alert('An error occurred while saving the invoice. Please try again.')
+    }
+  }, [formData, editingInvoice, contracts, onSave, onClose])
 
   const addLineItem = () => {
     setFormData(prev => ({
       ...prev,
-      lineItems: [...prev.lineItems, { description: '', quantity: 1, rate: 0, amount: 0 }]
+      lineItems: [...(prev.lineItems || []), { description: '', quantity: 1, rate: 0, amount: 0 }]
     }))
   }
 
   const removeLineItem = (index) => {
-    if (formData.lineItems.length > 1) {
+    if (formData.lineItems && formData.lineItems.length > 1) {
       setFormData(prev => ({
         ...prev,
-        lineItems: prev.lineItems.filter((_, i) => i !== index)
+        lineItems: (prev.lineItems || []).filter((_, i) => i !== index)
       }))
     }
   }
 
   const updateLineItem = (index, field, value) => {
+    if (!formData.lineItems || index < 0 || index >= formData.lineItems.length) {
+      console.error('Invalid line item index:', index)
+      return
+    }
+
     const newLineItems = [...formData.lineItems]
+    // Ensure the line item has all required properties with defaults
+    const currentItem = newLineItems[index] || { description: '', quantity: 1, rate: 0, amount: 0 }
     newLineItems[index] = {
-      ...newLineItems[index],
+      description: currentItem.description || '',
+      quantity: currentItem.quantity || 1,
+      rate: currentItem.rate || 0,
+      amount: currentItem.amount || 0,
       [field]: value
     }
 
     // Calculate amount for this line item
     if (field === 'quantity' || field === 'rate') {
-      const quantity = field === 'quantity' ? parseFloat(value) || 0 : newLineItems[index].quantity
-      const rate = field === 'rate' ? parseFloat(value) || 0 : newLineItems[index].rate
+      const quantity = field === 'quantity' ? parseFloat(value) || 0 : (newLineItems[index].quantity || 0)
+      const rate = field === 'rate' ? parseFloat(value) || 0 : (newLineItems[index].rate || 0)
       newLineItems[index].amount = quantity * rate
     }
 
@@ -160,13 +210,31 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
   const availableContracts = contracts.filter(c => c.status === 'completed' || c.status === 'active')
   const availableClients = clients
 
+  // Focus management for modal
+  useEffect(() => {
+    if (isOpen) {
+      // Remove focus from any active elements
+      if (document.activeElement) {
+        document.activeElement.blur()
+      }
+      // Focus the modal for accessibility
+      if (modalRef.current) {
+        modalRef.current.focus()
+      }
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className={combineThemeClasses("flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0", themeClasses.modal.overlay)}>
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose} />
-        <div className="inline-block transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle dark:bg-gray-800">
+        <div 
+          ref={modalRef}
+          className="inline-block transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle dark:bg-gray-800"
+          tabIndex={-1}
+        >
           <form onSubmit={handleSubmit}>
             <div className={combineThemeClasses("px-6 pt-6 pb-4", themeClasses.modal.header)}>
               <div className="flex items-center justify-between mb-6">
@@ -246,13 +314,13 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                       <select
                         required
                         className={combineThemeClasses("w-full", themeClasses.input)}
-                        value={formData.contractId}
+                        value={formData.contractId || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, contractId: e.target.value }))}
                       >
                         <option value="">Choose a contract...</option>
                         {availableContracts.map(contract => (
                           <option key={contract.id} value={contract.id}>
-                            {contract.title} - {contract.clientName} (${contract.totalValue.toLocaleString()}) - {contract.status}
+                            {contract.title} - {contract.clientName} (${(contract.totalValue || 0).toLocaleString()}) - {contract.status}
                           </option>
                         ))}
                       </select>
@@ -280,16 +348,16 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                                 </div>
                                 <div className="space-y-1">
                                   <p className="text-primary-600 dark:text-primary-400">
-                                    <span className="font-medium">Period:</span> {new Date(selectedContract.startDate).toLocaleDateString()} - {new Date(selectedContract.endDate).toLocaleDateString()}
+                                    <span className="font-medium">Period:</span> {selectedContract.startDate ? new Date(selectedContract.startDate).toLocaleDateString() : 'N/A'} - {selectedContract.endDate ? new Date(selectedContract.endDate).toLocaleDateString() : 'N/A'}
                                   </p>
                                   <p className="text-primary-600 dark:text-primary-400">
-                                    <span className="font-medium">Total Value:</span> ${selectedContract.totalValue?.toLocaleString() || '0'}
+                                    <span className="font-medium">Total Value:</span> ${(selectedContract.totalValue || 0).toLocaleString()}
                                   </p>
                                   <p className="text-primary-600 dark:text-primary-400">
-                                    <span className="font-medium">Hourly Rate:</span> ${selectedContract.hourlyRate || '0'}/hr
+                                    <span className="font-medium">Hourly Rate:</span> ${selectedContract.hourlyRate || 0}/hr
                                   </p>
                                   <p className="text-primary-600 dark:text-primary-400">
-                                    <span className="font-medium">Estimated Hours:</span> {selectedContract.estimatedHours || '0'} hrs
+                                    <span className="font-medium">Estimated Hours:</span> {selectedContract.estimatedHours || 0} hrs
                                   </p>
                                 </div>
                               </div>
@@ -308,7 +376,7 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                     <select
                       required
                       className={combineThemeClasses("w-full", themeClasses.input)}
-                      value={formData.clientName}
+                      value={formData.clientName || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
                     >
                       <option value="">Choose a client...</option>
@@ -329,7 +397,7 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                       type="date"
                       required
                       className={combineThemeClasses("w-full", themeClasses.input)}
-                      value={formData.dueDate}
+                      value={formData.dueDate || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
                     />
                   </div>
@@ -341,7 +409,7 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                     </label>
                     <select
                       className={combineThemeClasses("w-full", themeClasses.input)}
-                      value={formData.status}
+                      value={formData.status || 'pending'}
                       onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                     >
                       <option value="pending">Pending</option>
@@ -358,7 +426,7 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                     <textarea
                       rows={3}
                       className={combineThemeClasses("w-full", themeClasses.input)}
-                      value={formData.description}
+                      value={formData.description || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="Enter invoice description..."
                     />
@@ -392,7 +460,7 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                             <input
                               type="text"
                               className={combineThemeClasses("w-full text-sm", themeClasses.input)}
-                              value={item.description}
+                              value={item.description || ''}
                               onChange={(e) => updateLineItem(index, 'description', e.target.value)}
                               placeholder="Item description..."
                             />
@@ -405,7 +473,7 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                               type="number"
                               step="0.1"
                               className={combineThemeClasses("w-full text-sm", themeClasses.input)}
-                              value={item.quantity}
+                              value={item.quantity || ''}
                               onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
                             />
                           </div>
@@ -417,14 +485,14 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                               type="number"
                               step="0.01"
                               className={combineThemeClasses("w-full text-sm", themeClasses.input)}
-                              value={item.rate}
+                              value={item.rate || ''}
                               onChange={(e) => updateLineItem(index, 'rate', e.target.value)}
                             />
                           </div>
                         </div>
                         <div className="flex items-center justify-between mt-3">
                           <div className="text-sm font-medium text-text-primary dark:text-white">
-                            Amount: ${(item.amount || 0).toFixed(2)}
+                            Amount: ${(parseFloat(item.amount) || 0).toFixed(2)}
                           </div>
                           {formData.lineItems.length > 1 && (
                             <button
@@ -445,7 +513,7 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-text-secondary dark:text-gray-400">Subtotal:</span>
-                        <span className="text-text-primary dark:text-white">${formData.subtotal.toFixed(2)}</span>
+                        <span className="text-text-primary dark:text-white">${(parseFloat(formData.subtotal) || 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <div className="flex items-center space-x-2">
@@ -456,16 +524,16 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
                             min="0"
                             max="100"
                             className="w-16 px-2 py-1 text-xs border border-text-muted rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            value={formData.taxPercentage}
+                            value={formData.taxPercentage || 0}
                             onChange={(e) => setFormData(prev => ({ ...prev, taxPercentage: parseFloat(e.target.value) || 0 }))}
                           />
                           <span className="text-text-secondary dark:text-gray-400">%</span>
                         </div>
-                        <span className="text-text-primary dark:text-white">${formData.tax.toFixed(2)}</span>
+                        <span className="text-text-primary dark:text-white">${(parseFloat(formData.tax) || 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-lg font-bold border-t border-text-muted dark:border-gray-600 pt-2">
                         <span className="text-text-primary dark:text-white">Total:</span>
-                        <span className="text-primary-500">${formData.total.toFixed(2)}</span>
+                        <span className="text-primary-500">${(parseFloat(formData.total) || 0).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -493,7 +561,9 @@ const InvoiceModal = ({ isOpen, onClose, editingInvoice, onSave }) => {
       </div>
     </div>
   )
-}
+})
+
+InvoiceModal.displayName = 'InvoiceModal'
 
 export default InvoiceModal
 

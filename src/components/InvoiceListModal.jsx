@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
@@ -12,21 +12,21 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 
-const InvoiceListModal = ({ invoices, contract, isOpen, onClose }) => {
+const InvoiceListModal = memo(({ invoices, contract, isOpen, onClose }) => {
   const { theme } = useTheme()
   const navigate = useNavigate()
 
   if (!isOpen || !contract) return null
 
-  const handleViewInvoice = (invoice) => {
+  const handleViewInvoice = useCallback((invoice) => {
     navigate('/invoices', { state: { highlightInvoiceId: invoice.id } })
     onClose()
-  }
+  }, [navigate, onClose])
 
-  const handleViewAllInvoices = () => {
+  const handleViewAllInvoices = useCallback(() => {
     navigate('/invoices')
     onClose()
-  }
+  }, [navigate, onClose])
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -142,6 +142,8 @@ const InvoiceListModal = ({ invoices, contract, isOpen, onClose }) => {
       </div>
     </div>
   )
-}
+})
+
+InvoiceListModal.displayName = 'InvoiceListModal'
 
 export default InvoiceListModal

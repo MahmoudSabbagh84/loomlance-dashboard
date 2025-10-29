@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, memo, useCallback } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { themeClasses, combineThemeClasses } from '../styles/theme'
 import { 
@@ -12,8 +12,30 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 
-const InvoiceDetailsModal = ({ invoice, isOpen, onClose, onViewInInvoices }) => {
+const InvoiceDetailsModal = memo(({ invoice, isOpen, onClose, onViewInInvoices }) => {
   const { theme } = useTheme()
+  const modalRef = useRef(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      // Remove focus from any active elements
+      if (document.activeElement) {
+        document.activeElement.blur()
+      }
+      // Focus the modal for accessibility
+      if (modalRef.current) {
+        modalRef.current.focus()
+      }
+    }
+  }, [isOpen])
+
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
+
+  const handleViewInInvoices = useCallback(() => {
+    onViewInInvoices()
+  }, [onViewInInvoices])
 
   if (!isOpen || !invoice) return null
 
@@ -34,7 +56,11 @@ const InvoiceDetailsModal = ({ invoice, isOpen, onClose, onViewInInvoices }) => 
     <div className="fixed inset-0 z-60 overflow-y-auto">
       <div className={combineThemeClasses("flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0", themeClasses.modal.overlay)}>
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose} />
-        <div className="inline-block transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl sm:align-middle dark:bg-gray-800">
+        <div 
+          ref={modalRef}
+          className="inline-block transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl sm:align-middle dark:bg-gray-800"
+          tabIndex={-1}
+        >
           <div className={combineThemeClasses("px-6 pt-6 pb-4", themeClasses.modal.header)}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center">
@@ -162,11 +188,11 @@ const InvoiceDetailsModal = ({ invoice, isOpen, onClose, onViewInInvoices }) => 
                         <div>
                           <p className="text-text-primary dark:text-white font-medium">{item.description || 'No description'}</p>
                           <p className="text-sm text-text-secondary dark:text-gray-400">
-                            {item.quantity || 0} × ${(item.rate || 0).toFixed(2)}
+                            {item.quantity || 0} × ${(parseFloat(item.rate) || 0).toFixed(2)}
                           </p>
                         </div>
                         <p className="text-text-primary dark:text-white font-medium">
-                          ${(item.amount || 0).toFixed(2)}
+                          ${(parseFloat(item.amount) || 0).toFixed(2)}
                         </p>
                       </div>
                     ))}
@@ -218,6 +244,8 @@ const InvoiceDetailsModal = ({ invoice, isOpen, onClose, onViewInInvoices }) => 
       </div>
     </div>
   )
-}
+})
+
+InvoiceDetailsModal.displayName = 'InvoiceDetailsModal'
 
 export default InvoiceDetailsModal

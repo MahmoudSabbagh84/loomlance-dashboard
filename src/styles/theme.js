@@ -105,7 +105,7 @@ export const themeClasses = {
     header: 'bg-bg-secondary dark:bg-darkMode-backgroundSecondary',
     cell: 'text-text-primary dark:text-darkMode-textPrimary',
     cellMuted: 'text-text-secondary dark:text-darkMode-textSecondary',
-    row: 'bg-white hover:bg-bg-secondary transition-colors dark:bg-darkMode-backgroundSecondary dark:hover:bg-darkMode-background',
+    row: 'bg-white hover:bg-bg-secondary dark:bg-darkMode-backgroundSecondary dark:hover:bg-darkMode-background',
     rowHover: 'hover:bg-bg-secondary dark:hover:bg-darkMode-background',
   },
 

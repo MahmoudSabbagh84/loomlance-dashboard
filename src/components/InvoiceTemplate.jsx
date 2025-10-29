@@ -112,7 +112,7 @@ const InvoiceTemplate = ({ invoice, onClose }) => {
                 <div>
                   <p className="text-sm text-text-secondary dark:text-gray-400 mb-1">Invoice Date</p>
                   <p className="text-text-primary dark:text-white font-medium">
-                    {format(new Date(invoice.createdAt), 'MMM dd, yyyy')}
+                    {invoice.createdAt ? format(new Date(invoice.createdAt), 'MMM dd, yyyy') : 'N/A'}
                   </p>
                 </div>
                 <div>
@@ -208,10 +208,10 @@ const InvoiceTemplate = ({ invoice, onClose }) => {
                             {item.quantity || 0}
                           </td>
                           <td className="px-6 py-4 text-sm text-text-primary dark:text-white text-right">
-                            ${(item.rate || 0).toFixed(2)}
+                            ${(parseFloat(item.rate) || 0).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 text-sm text-text-primary dark:text-white text-right font-medium">
-                            ${(item.amount || 0).toFixed(2)}
+                            ${(parseFloat(item.amount) || 0).toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -226,19 +226,19 @@ const InvoiceTemplate = ({ invoice, onClose }) => {
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-text-secondary dark:text-gray-400">Subtotal:</span>
-                      <span className="text-text-primary dark:text-white">${invoice.subtotal?.toFixed(2) || invoice.amount.toFixed(2)}</span>
+                      <span className="text-text-primary dark:text-white">${(parseFloat(invoice.subtotal) || parseFloat(invoice.amount) || 0).toFixed(2)}</span>
                     </div>
                     {invoice.tax > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-text-secondary dark:text-gray-400">
                           Tax {invoice.taxPercentage ? `(${invoice.taxPercentage}%)` : ''}:
                         </span>
-                        <span className="text-text-primary dark:text-white">${invoice.tax.toFixed(2)}</span>
+                        <span className="text-text-primary dark:text-white">${(parseFloat(invoice.tax) || 0).toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-lg font-bold border-t border-text-muted dark:border-gray-600 pt-3">
                       <span className="text-text-primary dark:text-white">Total:</span>
-                      <span className="text-primary-500">${invoice.total?.toFixed(2) || invoice.amount.toFixed(2)}</span>
+                      <span className="text-primary-500">${(parseFloat(invoice.total) || parseFloat(invoice.amount) || 0).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

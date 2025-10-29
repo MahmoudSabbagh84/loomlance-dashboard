@@ -1,8 +1,18 @@
-import React, { createContext, useContext, useReducer } from 'react'
+import React, { createContext, useContext, useReducer, useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { memoryOptimizations } from '../utils/performance'
 
 const DataContext = createContext()
 
-// Helper function to check and update invoice statuses
+// Debounced localStorage operations
+const debouncedSetItem = memoryOptimizations.debounce((key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch (error) {
+    console.error(`Failed to save ${key} to localStorage:`, error)
+  }
+}, 100)
+
+// Helper function to check and update invoice statuses with modern patterns
 const updateInvoiceStatuses = (invoices) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0) // Reset time to start of day
@@ -20,7 +30,7 @@ const updateInvoiceStatuses = (invoices) => {
   })
 }
 
-// Helper function to check and update contract statuses
+// Helper function to check and update contract statuses with modern patterns
 const updateContractStatuses = (contracts) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -38,52 +48,72 @@ const updateContractStatuses = (contracts) => {
   })
 }
 
-// Generate unique ID
+// Generate unique ID with modern crypto API fallback
 const generateUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
   return Date.now().toString(36) + Math.random().toString(36).substr(2)
 }
 
-// Get next invoice number
+// Get next invoice number with modern patterns
 const getNextInvoiceNumber = () => {
-  const lastInvoiceNumber = localStorage.getItem('loomlance-last-invoice-number') || '0'
+  const lastInvoiceNumber = localStorage.getItem('loomlance-last-invoice-number') ?? '0'
   const nextNumber = parseInt(lastInvoiceNumber) + 1
   localStorage.setItem('loomlance-last-invoice-number', nextNumber.toString())
   return `INV-${nextNumber.toString().padStart(4, '0')}`
 }
 
-// Get initial data and apply auto-updates
+// Memoized data retrieval functions
 const getInitialInvoices = () => {
-  const invoices = JSON.parse(localStorage.getItem('loomlance-invoices') || '[]')
-  const updatedInvoices = updateInvoiceStatuses(invoices)
-  
-  // Save updated statuses if any changes were made
-  if (JSON.stringify(invoices) !== JSON.stringify(updatedInvoices)) {
-    localStorage.setItem('loomlance-invoices', JSON.stringify(updatedInvoices))
-    // Mark that auto-updates occurred
-    localStorage.setItem('loomlance-auto-updated', 'true')
+  try {
+    const invoices = JSON.parse(localStorage.getItem('loomlance-invoices') ?? '[]')
+    const updatedInvoices = updateInvoiceStatuses(invoices)
+    
+    // Save updated statuses if any changes were made
+    if (JSON.stringify(invoices) !== JSON.stringify(updatedInvoices)) {
+      debouncedSetItem('loomlance-invoices', updatedInvoices)
+      localStorage.setItem('loomlance-auto-updated', 'true')
+    }
+    
+    return updatedInvoices
+  } catch (error) {
+    console.error('Error loading invoices:', error)
+    return []
   }
-  
-  return updatedInvoices
 }
 
 const getInitialContracts = () => {
-  const contracts = JSON.parse(localStorage.getItem('loomlance-contracts') || '[]')
-  const updatedContracts = updateContractStatuses(contracts)
-  
-  // Save updated statuses if any changes were made
-  if (JSON.stringify(contracts) !== JSON.stringify(updatedContracts)) {
-    localStorage.setItem('loomlance-contracts', JSON.stringify(updatedContracts))
-    // Mark that auto-updates occurred
-    localStorage.setItem('loomlance-auto-updated', 'true')
+  try {
+    const contracts = JSON.parse(localStorage.getItem('loomlance-contracts') ?? '[]')
+    const updatedContracts = updateContractStatuses(contracts)
+    
+    // Save updated statuses if any changes were made
+    if (JSON.stringify(contracts) !== JSON.stringify(updatedContracts)) {
+      debouncedSetItem('loomlance-contracts', updatedContracts)
+      localStorage.setItem('loomlance-auto-updated', 'true')
+    }
+    
+    return updatedContracts
+  } catch (error) {
+    console.error('Error loading contracts:', error)
+    return []
   }
-  
-  return updatedContracts
+}
+
+const getInitialClients = () => {
+  try {
+    return JSON.parse(localStorage.getItem('loomlance-clients') ?? '[]')
+  } catch (error) {
+    console.error('Error loading clients:', error)
+    return []
+  }
 }
 
 const initialState = {
   invoices: getInitialInvoices(),
   contracts: getInitialContracts(),
-  clients: JSON.parse(localStorage.getItem('loomlance-clients') || '[]'),
+  clients: getInitialClients(),
 }
 
 // Add sample data if no data exists
@@ -91,7 +121,7 @@ if (initialState.contracts.length === 0) {
   const sampleContracts = [
     {
       id: 1,
-      uid: generateUID(),
+      uid: 'contract-tech-corp-web-dev',
       title: 'Web Development Project',
       clientName: 'Tech Corp',
       startDate: '2024-01-01',
@@ -104,7 +134,7 @@ if (initialState.contracts.length === 0) {
     },
     {
       id: 2,
-      uid: generateUID(),
+      uid: 'contract-startupxyz-mobile',
       title: 'Mobile App Development',
       clientName: 'StartupXYZ',
       startDate: '2024-02-01',
@@ -117,7 +147,7 @@ if (initialState.contracts.length === 0) {
     },
     {
       id: 3,
-      uid: generateUID(),
+      uid: 'contract-design-studio-ui',
       title: 'UI/UX Design Project',
       clientName: 'Design Studio',
       startDate: '2024-01-15',
@@ -130,7 +160,7 @@ if (initialState.contracts.length === 0) {
     },
     {
       id: 4,
-      uid: generateUID(),
+      uid: 'contract-enterprise-db-migration',
       title: 'Database Migration',
       clientName: 'Enterprise Inc',
       startDate: '2024-03-01',
@@ -143,7 +173,7 @@ if (initialState.contracts.length === 0) {
     },
     {
       id: 5,
-      uid: generateUID(),
+      uid: 'contract-saas-company-api',
       title: 'API Integration',
       clientName: 'SaaS Company',
       startDate: '2024-02-15',
@@ -156,7 +186,7 @@ if (initialState.contracts.length === 0) {
     },
     {
       id: 6,
-      uid: generateUID(),
+      uid: 'contract-finance-corp-security',
       title: 'Security Audit',
       clientName: 'Finance Corp',
       startDate: '2024-01-01',
@@ -227,7 +257,7 @@ if (initialState.invoices.length === 0) {
       dueDate: '2024-02-15',
       status: 'paid',
       description: 'Web development project milestone 1',
-      contractId: 1,
+      contractUid: 'contract-tech-corp-web-dev',
       type: 'contract-based',
       lineItems: [
         { description: 'Frontend Development', quantity: 40, rate: 75, amount: 3000 },
@@ -248,7 +278,7 @@ if (initialState.invoices.length === 0) {
       dueDate: '2024-02-20',
       status: 'pending',
       description: 'Mobile app development - Phase 1',
-      contractId: 2,
+      contractUid: 'contract-startupxyz-mobile',
       type: 'contract-based',
       lineItems: [
         { description: 'React Native Setup', quantity: 20, rate: 80, amount: 1600 },
@@ -269,7 +299,7 @@ if (initialState.invoices.length === 0) {
       dueDate: '2024-02-10',
       status: 'overdue',
       description: 'UI/UX design project',
-      contractId: 3,
+      contractUid: 'contract-design-studio-ui',
       type: 'contract-based',
       lineItems: [
         { description: 'User Research', quantity: 20, rate: 65, amount: 1300 },
@@ -290,7 +320,7 @@ if (initialState.invoices.length === 0) {
       dueDate: '2024-03-01',
       status: 'pending',
       description: 'Database migration project',
-      contractId: 4,
+      contractUid: 'contract-enterprise-db-migration',
       type: 'contract-based',
       lineItems: [
         { description: 'Data Analysis', quantity: 30, rate: 100, amount: 3000 },
@@ -311,7 +341,7 @@ if (initialState.invoices.length === 0) {
       dueDate: '2024-01-25',
       status: 'overdue',
       description: 'API integration services',
-      contractId: 5,
+      contractUid: 'contract-saas-company-api',
       type: 'contract-based',
       lineItems: [
         { description: 'API Documentation Review', quantity: 10, rate: 70, amount: 700 },
@@ -332,7 +362,7 @@ if (initialState.invoices.length === 0) {
       dueDate: '2024-02-28',
       status: 'pending',
       description: 'Security audit consultation',
-      contractId: 6,
+      contractUid: 'contract-finance-corp-security',
       type: 'contract-based',
       lineItems: [
         { description: 'Security Assessment', quantity: 20, rate: 90, amount: 1800 },
@@ -359,7 +389,10 @@ if (initialState.clients.length === 0) {
       email: 'contact@techcorp.com',
       phone: '+1 (555) 123-4567',
       company: 'Tech Corp Inc.',
-      address: '123 Tech Street, Silicon Valley, CA 94000'
+      streetAddress: '123 Tech Street',
+      city: 'Silicon Valley',
+      state: 'CA',
+      zipCode: '94000'
     },
     {
       id: 2,
@@ -367,7 +400,10 @@ if (initialState.clients.length === 0) {
       email: 'hello@startupxyz.com',
       phone: '+1 (555) 234-5678',
       company: 'StartupXYZ LLC',
-      address: '456 Innovation Ave, Austin, TX 78701'
+      streetAddress: '456 Innovation Ave',
+      city: 'Austin',
+      state: 'TX',
+      zipCode: '78701'
     },
     {
       id: 3,
@@ -375,7 +411,10 @@ if (initialState.clients.length === 0) {
       email: 'info@designstudio.com',
       phone: '+1 (555) 345-6789',
       company: 'Creative Design Studio',
-      address: '789 Art District, New York, NY 10001'
+      streetAddress: '789 Art District',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001'
     },
     {
       id: 4,
@@ -383,7 +422,10 @@ if (initialState.clients.length === 0) {
       email: 'business@enterprise.com',
       phone: '+1 (555) 456-7890',
       company: 'Enterprise Solutions Inc.',
-      address: '321 Corporate Blvd, Chicago, IL 60601'
+      streetAddress: '321 Corporate Blvd',
+      city: 'Chicago',
+      state: 'IL',
+      zipCode: '60601'
     },
     {
       id: 5,
@@ -391,7 +433,10 @@ if (initialState.clients.length === 0) {
       email: 'support@saascompany.com',
       phone: '+1 (555) 567-8901',
       company: 'SaaS Solutions Ltd.',
-      address: '654 Cloud Street, Seattle, WA 98101'
+      streetAddress: '654 Cloud Street',
+      city: 'Seattle',
+      state: 'WA',
+      zipCode: '98101'
     },
     {
       id: 6,
@@ -399,7 +444,10 @@ if (initialState.clients.length === 0) {
       email: 'finance@financecorp.com',
       phone: '+1 (555) 678-9012',
       company: 'Finance Corporation',
-      address: '987 Wall Street, New York, NY 10005'
+      streetAddress: '987 Wall Street',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10005'
     }
   ]
   
@@ -407,61 +455,77 @@ if (initialState.clients.length === 0) {
   localStorage.setItem('loomlance-clients', JSON.stringify(sampleClients))
 }
 
+// Optimized reducer with batch updates and modern patterns
 function dataReducer(state, action) {
   switch (action.type) {
     case 'ADD_INVOICE':
       const newInvoices = [...state.invoices, action.payload]
-      localStorage.setItem('loomlance-invoices', JSON.stringify(newInvoices))
+      debouncedSetItem('loomlance-invoices', newInvoices)
       return { ...state, invoices: newInvoices }
     
     case 'UPDATE_INVOICE':
       const updatedInvoices = state.invoices.map(invoice => 
         invoice.id === action.payload.id ? action.payload : invoice
       )
-      localStorage.setItem('loomlance-invoices', JSON.stringify(updatedInvoices))
+      debouncedSetItem('loomlance-invoices', updatedInvoices)
       return { ...state, invoices: updatedInvoices }
     
     case 'DELETE_INVOICE':
       const filteredInvoices = state.invoices.filter(invoice => invoice.id !== action.payload)
-      localStorage.setItem('loomlance-invoices', JSON.stringify(filteredInvoices))
+      debouncedSetItem('loomlance-invoices', filteredInvoices)
       return { ...state, invoices: filteredInvoices }
     
     case 'ADD_CONTRACT':
       const newContracts = [...state.contracts, action.payload]
-      localStorage.setItem('loomlance-contracts', JSON.stringify(newContracts))
+      debouncedSetItem('loomlance-contracts', newContracts)
       return { ...state, contracts: newContracts }
     
     case 'UPDATE_CONTRACT':
       const updatedContracts = state.contracts.map(contract => 
         contract.id === action.payload.id ? action.payload : contract
       )
-      localStorage.setItem('loomlance-contracts', JSON.stringify(updatedContracts))
+      debouncedSetItem('loomlance-contracts', updatedContracts)
       return { ...state, contracts: updatedContracts }
     
     case 'DELETE_CONTRACT':
       const filteredContracts = state.contracts.filter(contract => contract.id !== action.payload)
-      localStorage.setItem('loomlance-contracts', JSON.stringify(filteredContracts))
+      debouncedSetItem('loomlance-contracts', filteredContracts)
       return { ...state, contracts: filteredContracts }
     
     case 'ADD_CLIENT':
       const newClients = [...state.clients, action.payload]
-      localStorage.setItem('loomlance-clients', JSON.stringify(newClients))
+      debouncedSetItem('loomlance-clients', newClients)
       return { ...state, clients: newClients }
     
     case 'UPDATE_CLIENT':
       const updatedClients = state.clients.map(client => 
         client.id === action.payload.id ? action.payload : client
       )
-      localStorage.setItem('loomlance-clients', JSON.stringify(updatedClients))
+      debouncedSetItem('loomlance-clients', updatedClients)
       return { ...state, clients: updatedClients }
     
     case 'DELETE_CLIENT':
       const filteredClients = state.clients.filter(client => client.id !== action.payload)
-      localStorage.setItem('loomlance-clients', JSON.stringify(filteredClients))
+      debouncedSetItem('loomlance-clients', filteredClients)
       return { ...state, clients: filteredClients }
     
     case 'BULK_UPDATE_INVOICES':
+      debouncedSetItem('loomlance-invoices', action.payload)
       return { ...state, invoices: action.payload }
+    
+    case 'BATCH_UPDATE':
+      // Handle multiple updates in a single action
+      const { invoices: batchInvoices, contracts: batchContracts, clients: batchClients } = action.payload
+      if (batchInvoices) debouncedSetItem('loomlance-invoices', batchInvoices)
+      if (batchContracts) debouncedSetItem('loomlance-contracts', batchContracts)
+      if (batchClients) debouncedSetItem('loomlance-clients', batchClients)
+      
+      return {
+        ...state,
+        ...(batchInvoices && { invoices: batchInvoices }),
+        ...(batchContracts && { contracts: batchContracts }),
+        ...(batchClients && { clients: batchClients })
+      }
     
     default:
       return state
@@ -470,83 +534,113 @@ function dataReducer(state, action) {
 
 export function DataProvider({ children }) {
   const [state, dispatch] = useReducer(dataReducer, initialState)
+  
+  // Archive state with lazy initialization
+  const [archivedContracts, setArchivedContracts] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('loomlance-archived-contracts') ?? '[]')
+    } catch {
+      return []
+    }
+  })
+  
+  const [archivedInvoices, setArchivedInvoices] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('loomlance-archived-invoices') ?? '[]')
+    } catch {
+      return []
+    }
+  })
+  
+  const [archivedClients, setArchivedClients] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('loomlance-archived-clients') ?? '[]')
+    } catch {
+      return []
+    }
+  })
 
-  const addInvoice = (invoice) => {
+  // Memoized action creators with useCallback
+  const addInvoice = useCallback((invoice) => {
     const newInvoice = {
       ...invoice,
-      uid: invoice.uid || generateUID(),
-      invoiceNumber: invoice.invoiceNumber || getNextInvoiceNumber(),
-      createdAt: invoice.createdAt || new Date().toISOString()
+      uid: invoice.uid ?? generateUID(),
+      invoiceNumber: invoice.invoiceNumber ?? getNextInvoiceNumber(),
+      createdAt: invoice.createdAt ?? new Date().toISOString()
     }
     dispatch({ type: 'ADD_INVOICE', payload: newInvoice })
-  }
+  }, [])
 
-  const updateInvoice = (invoice) => {
+  const updateInvoice = useCallback((invoice) => {
+    if (!invoice?.id) {
+      console.error('Invalid invoice data provided to updateInvoice')
+      return
+    }
     dispatch({ type: 'UPDATE_INVOICE', payload: invoice })
-  }
+  }, [])
 
-  const deleteInvoice = (id) => {
+  const deleteInvoice = useCallback((id) => {
     dispatch({ type: 'DELETE_INVOICE', payload: id })
-  }
+  }, [])
 
-  const addContract = (contract) => {
+  const addContract = useCallback((contract) => {
     const newContract = {
       ...contract,
-      uid: contract.uid || generateUID(),
-      createdAt: contract.createdAt || new Date().toISOString()
+      uid: contract.uid ?? generateUID(),
+      createdAt: contract.createdAt ?? new Date().toISOString()
     }
     dispatch({ type: 'ADD_CONTRACT', payload: newContract })
-  }
+  }, [])
 
-  const updateContract = (contract) => {
+  const updateContract = useCallback((contract) => {
     dispatch({ type: 'UPDATE_CONTRACT', payload: contract })
-  }
+  }, [])
 
-  const deleteContract = (id) => {
+  const deleteContract = useCallback((id) => {
     dispatch({ type: 'DELETE_CONTRACT', payload: id })
-  }
+  }, [])
 
-  const addClient = (client) => {
+  const addClient = useCallback((client) => {
     dispatch({ type: 'ADD_CLIENT', payload: client })
-  }
+  }, [])
 
-  const updateClient = (client) => {
+  const updateClient = useCallback((client) => {
     dispatch({ type: 'UPDATE_CLIENT', payload: client })
-  }
+  }, [])
 
-  const deleteClient = (id) => {
+  const deleteClient = useCallback((id) => {
     dispatch({ type: 'DELETE_CLIENT', payload: id })
-  }
+  }, [])
 
-  // Quick status update functions
-  const markInvoiceAsPaid = (id) => {
+  // Quick status update functions with memoization
+  const markInvoiceAsPaid = useCallback((id) => {
     const invoice = state.invoices.find(inv => inv.id === id)
     if (invoice) {
       updateInvoice({ ...invoice, status: 'paid' })
     }
-  }
+  }, [state.invoices, updateInvoice])
 
-  const markInvoiceAsPending = (id) => {
+  const markInvoiceAsPending = useCallback((id) => {
     const invoice = state.invoices.find(inv => inv.id === id)
     if (invoice) {
       updateInvoice({ ...invoice, status: 'pending' })
     }
-  }
+  }, [state.invoices, updateInvoice])
 
-  const markContractAsActive = (id) => {
+  const markContractAsActive = useCallback((id) => {
     const contract = state.contracts.find(cont => cont.id === id)
     if (contract) {
       updateContract({ ...contract, status: 'active' })
     }
-  }
+  }, [state.contracts, updateContract])
 
-  const markContractAsCompleted = (id) => {
+  const markContractAsCompleted = useCallback((id) => {
     const contract = state.contracts.find(cont => cont.id === id)
     if (contract) {
       updateContract({ ...contract, status: 'completed' })
       
       // Auto-generate invoice when contract is completed
-      const existingInvoice = state.invoices.find(inv => inv.contractId === id)
+      const existingInvoice = state.invoices.find(inv => inv.contractUid === contract.uid)
       if (!existingInvoice) {
         const autoInvoice = {
           id: Date.now(),
@@ -557,46 +651,121 @@ export function DataProvider({ children }) {
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
           status: 'pending',
           description: `Final invoice for ${contract.title}`,
-          contractId: id,
+          contractUid: contract.uid,
           type: 'contract-based',
-                lineItems: [
-                  { 
-                    description: contract.title, 
-                    quantity: contract.estimatedHours, 
-                    rate: contract.hourlyRate, 
-                    amount: contract.totalValue 
-                  }
-                ],
-                subtotal: contract.totalValue,
-                tax: 0,
-                taxPercentage: 0,
-                total: contract.totalValue,
+          lineItems: [
+            { 
+              description: contract.title, 
+              quantity: contract.estimatedHours, 
+              rate: contract.hourlyRate, 
+              amount: contract.totalValue 
+            }
+          ],
+          subtotal: contract.totalValue,
+          tax: 0,
+          taxPercentage: 0,
+          total: contract.totalValue,
           createdAt: new Date().toISOString()
         }
         addInvoice(autoInvoice)
       }
     }
-  }
+  }, [state.contracts, state.invoices, updateContract, addInvoice])
 
-  const markContractAsPending = (id) => {
+  const markContractAsPending = useCallback((id) => {
     const contract = state.contracts.find(cont => cont.id === id)
     if (contract) {
       updateContract({ ...contract, status: 'pending' })
     }
-  }
+  }, [state.contracts, updateContract])
 
-  // Bulk actions
-  const markAllInvoicesAsPaid = () => {
+  const markContractAsCancelled = useCallback((id) => {
+    const contract = state.contracts.find(cont => cont.id === id)
+    if (contract) {
+      updateContract({ ...contract, status: 'cancelled' })
+    }
+  }, [state.contracts, updateContract])
+
+  const nullifyContractValue = useCallback((id) => {
+    const contract = state.contracts.find(cont => cont.id === id)
+    if (contract) {
+      updateContract({ 
+        ...contract, 
+        status: 'cancelled',
+        totalValue: 0,
+        hourlyRate: 0,
+        estimatedHours: 0
+      })
+    }
+  }, [state.contracts, updateContract])
+
+  // Bulk actions with memoization
+  const markAllInvoicesAsPaid = useCallback(() => {
     const updatedInvoices = state.invoices.map(invoice => 
       invoice.status === 'pending' || invoice.status === 'overdue' 
         ? { ...invoice, status: 'paid' }
         : invoice
     )
-    localStorage.setItem('loomlance-invoices', JSON.stringify(updatedInvoices))
     dispatch({ type: 'BULK_UPDATE_INVOICES', payload: updatedInvoices })
-  }
+  }, [state.invoices])
 
-  const value = {
+  // Archive functions with memoization
+  const archiveContract = useCallback((id) => {
+    const contract = state.contracts.find(c => c.id === id)
+    if (contract) {
+      setArchivedContracts(prev => [...prev, contract])
+      deleteContract(id)
+      debouncedSetItem('loomlance-archived-contracts', [...archivedContracts, contract])
+    }
+  }, [state.contracts, archivedContracts, deleteContract])
+
+  const archiveInvoice = useCallback((id) => {
+    const invoice = state.invoices.find(i => i.id === id)
+    if (invoice) {
+      setArchivedInvoices(prev => [...prev, invoice])
+      deleteInvoice(id)
+      debouncedSetItem('loomlance-archived-invoices', [...archivedInvoices, invoice])
+    }
+  }, [state.invoices, archivedInvoices, deleteInvoice])
+
+  const archiveClient = useCallback((id) => {
+    const client = state.clients.find(c => c.id === id)
+    if (client) {
+      setArchivedClients(prev => [...prev, client])
+      deleteClient(id)
+      debouncedSetItem('loomlance-archived-clients', [...archivedClients, client])
+    }
+  }, [state.clients, archivedClients, deleteClient])
+
+  const restoreContract = useCallback((id) => {
+    const contract = archivedContracts.find(c => c.id === id)
+    if (contract) {
+      setArchivedContracts(prev => prev.filter(c => c.id !== id))
+      addContract(contract)
+      debouncedSetItem('loomlance-archived-contracts', archivedContracts.filter(c => c.id !== id))
+    }
+  }, [archivedContracts, addContract])
+
+  const restoreInvoice = useCallback((id) => {
+    const invoice = archivedInvoices.find(i => i.id === id)
+    if (invoice) {
+      setArchivedInvoices(prev => prev.filter(i => i.id !== id))
+      addInvoice(invoice)
+      debouncedSetItem('loomlance-archived-invoices', archivedInvoices.filter(i => i.id !== id))
+    }
+  }, [archivedInvoices, addInvoice])
+
+  const restoreClient = useCallback((id) => {
+    const client = archivedClients.find(c => c.id === id)
+    if (client) {
+      setArchivedClients(prev => prev.filter(c => c.id !== id))
+      addClient(client)
+      debouncedSetItem('loomlance-archived-clients', archivedClients.filter(c => c.id !== id))
+    }
+  }, [archivedClients, addClient])
+
+  // Memoized context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
     ...state,
     addInvoice,
     updateInvoice,
@@ -613,11 +782,52 @@ export function DataProvider({ children }) {
     markContractAsActive,
     markContractAsCompleted,
     markContractAsPending,
+    markContractAsCancelled,
+    nullifyContractValue,
     // Bulk actions
     markAllInvoicesAsPaid,
-  }
+    // Archive state
+    archivedContracts,
+    archivedInvoices,
+    archivedClients,
+    // Archive functions
+    archiveContract,
+    archiveInvoice,
+    archiveClient,
+    restoreContract,
+    restoreInvoice,
+    restoreClient,
+  }), [
+    state,
+    addInvoice,
+    updateInvoice,
+    deleteInvoice,
+    addContract,
+    updateContract,
+    deleteContract,
+    addClient,
+    updateClient,
+    deleteClient,
+    markInvoiceAsPaid,
+    markInvoiceAsPending,
+    markContractAsActive,
+    markContractAsCompleted,
+    markContractAsPending,
+    markContractAsCancelled,
+    nullifyContractValue,
+    markAllInvoicesAsPaid,
+    archivedContracts,
+    archivedInvoices,
+    archivedClients,
+    archiveContract,
+    archiveInvoice,
+    archiveClient,
+    restoreContract,
+    restoreInvoice,
+    restoreClient,
+  ])
 
-  return <DataContext.Provider value={value}>{children}</DataContext.Provider>
+  return <DataContext.Provider value={contextValue}>{children}</DataContext.Provider>
 }
 
 export function useData() {
@@ -626,4 +836,45 @@ export function useData() {
     throw new Error('useData must be used within a DataProvider')
   }
   return context
+}
+
+// Context selector hooks for specific data to prevent unnecessary re-renders
+export const useInvoices = () => {
+  const { invoices } = useData()
+  return invoices
+}
+
+export const useContracts = () => {
+  const { contracts } = useData()
+  return contracts
+}
+
+export const useClients = () => {
+  const { clients } = useData()
+  return clients
+}
+
+export const useInvoiceActions = () => {
+  const { addInvoice, updateInvoice, deleteInvoice, markInvoiceAsPaid, markInvoiceAsPending, markAllInvoicesAsPaid } = useData()
+  return { addInvoice, updateInvoice, deleteInvoice, markInvoiceAsPaid, markInvoiceAsPending, markAllInvoicesAsPaid }
+}
+
+export const useContractActions = () => {
+  const { addContract, updateContract, deleteContract, markContractAsActive, markContractAsCompleted, markContractAsPending, markContractAsCancelled, nullifyContractValue } = useData()
+  return { addContract, updateContract, deleteContract, markContractAsActive, markContractAsCompleted, markContractAsPending, markContractAsCancelled, nullifyContractValue }
+}
+
+export const useClientActions = () => {
+  const { addClient, updateClient, deleteClient } = useData()
+  return { addClient, updateClient, deleteClient }
+}
+
+export const useArchiveData = () => {
+  const { archivedContracts, archivedInvoices, archivedClients } = useData()
+  return { archivedContracts, archivedInvoices, archivedClients }
+}
+
+export const useArchiveActions = () => {
+  const { archiveContract, archiveInvoice, archiveClient, restoreContract, restoreInvoice, restoreClient } = useData()
+  return { archiveContract, archiveInvoice, archiveClient, restoreContract, restoreInvoice, restoreClient }
 }

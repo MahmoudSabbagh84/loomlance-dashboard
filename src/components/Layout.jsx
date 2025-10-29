@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
+
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -11,6 +12,7 @@ import {
   Menu, 
   X,
   Settings,
+  Archive,
   LogOut,
   User,
   ChevronDown,
@@ -18,7 +20,7 @@ import {
   Moon
 } from 'lucide-react'
 
-const Layout = ({ children }) => {
+const Layout = memo(({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false)
   const location = useLocation()
@@ -27,19 +29,20 @@ const Layout = ({ children }) => {
   const { theme, toggleTheme } = useTheme()
   const dropdownRef = useRef(null)
 
-  const navigation = [
+  const navigation = useMemo(() => [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Invoices', href: '/invoices', icon: FileText },
     { name: 'Contracts', href: '/contracts', icon: FileCheck },
     { name: 'Clients', href: '/clients', icon: Users },
-  ]
+    { name: 'Archive', href: '/archive', icon: Archive },
+  ], [])
 
-  const isActive = (path) => {
+  const isActive = useCallback((path) => {
     if (path === '/') {
       return location.pathname === '/'
     }
     return location.pathname.startsWith(path)
-  }
+  }, [location.pathname])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -55,30 +58,84 @@ const Layout = ({ children }) => {
     }
   }, [])
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     if (window.confirm('Are you sure you want to logout?')) {
       logout()
       setAccountDropdownOpen(false)
     }
-  }
+  }, [logout])
 
-  const handleProfileClick = () => {
+  const handleProfileClick = useCallback(() => {
     navigate('/profile')
     setAccountDropdownOpen(false)
-  }
+  }, [navigate])
 
-  const handleSettingsClick = () => {
-    // For now, just close the dropdown
-    // In the future, this could navigate to a settings page
+  const handleSettingsClick = useCallback(() => {
+    navigate('/settings')
     setAccountDropdownOpen(false)
-    alert('Settings page coming soon!')
-  }
+  }, [navigate])
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev)
+  }, [])
+
+  const toggleAccountDropdown = useCallback(() => {
+    setAccountDropdownOpen(prev => !prev)
+  }, [])
+
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false)
+  }, [])
+
+  // Memoized navigation items
+  const navigationItems = useMemo(() => 
+    navigation.map((item) => {
+      const Icon = item.icon
+      return (
+        <li key={item.name}>
+          <Link
+            to={item.href}
+            onClick={closeSidebar}
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+              isActive(item.href)
+                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+                : 'text-text-secondary dark:text-gray-300 hover:bg-bg-secondary dark:hover:bg-gray-700 hover:text-text-primary dark:hover:text-gray-100'
+            }`}
+          >
+            <Icon className="mr-3 h-5 w-5" />
+            {item.name}
+          </Link>
+        </li>
+      )
+    })
+  , [navigation, isActive, closeSidebar])
+
+  const desktopNavigationItems = useMemo(() => 
+    navigation.map((item) => {
+      const Icon = item.icon
+      return (
+        <li key={item.name}>
+          <Link
+            to={item.href}
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+              isActive(item.href)
+                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+                : 'text-text-secondary dark:text-gray-300 hover:bg-bg-secondary dark:hover:bg-gray-700 hover:text-text-primary dark:hover:text-gray-100'
+            }`}
+          >
+            <Icon className="mr-3 h-5 w-5" />
+            {item.name}
+          </Link>
+        </li>
+      )
+    })
+  , [navigation, isActive])
 
   return (
     <div className={combineThemeClasses(themeClasses.background.primary)}>
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={closeSidebar} />
         <div className={combineThemeClasses("fixed inset-y-0 left-0 flex w-64 flex-col shadow-xl", themeClasses.background.secondary)}>
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center">
@@ -95,7 +152,7 @@ const Layout = ({ children }) => {
               </span>
             </div>
             <button
-              onClick={() => setSidebarOpen(false)}
+              onClick={closeSidebar}
               className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <X className="h-6 w-6" />
@@ -103,40 +160,22 @@ const Layout = ({ children }) => {
           </div>
           <nav className="flex-1 px-4 py-4">
             <ul className="space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon
-                return (
-                  <li key={item.name}>
-                    <Link
-                      to={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                        isActive(item.href)
-                          ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
-                          : 'text-text-secondary dark:text-gray-300 hover:bg-bg-secondary dark:hover:bg-gray-700 hover:text-text-primary dark:hover:text-gray-100'
-                      }`}
-                    >
-                      <Icon className="mr-3 h-5 w-5" />
-                      {item.name}
-                    </Link>
-                  </li>
-                )
-              })}
+              {navigationItems}
             </ul>
           </nav>
           <div className="border-t border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center space-x-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100">
                 <span className="text-sm font-medium text-primary-700">
-                  {user?.name?.charAt(0) || 'U'}
+                  {user?.name?.charAt(0) ?? 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-text-primary dark:text-gray-100 truncate">
-                  {user?.name || 'User'}
+                  {user?.name ?? 'User'}
                 </p>
                 <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
-                  {user?.role || 'Freelancer'}
+                  {user?.role ?? 'Freelancer'}
                 </p>
               </div>
             </div>
@@ -164,39 +203,22 @@ const Layout = ({ children }) => {
           </div>
           <nav className="flex-1 px-4 py-4">
             <ul className="space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon
-                return (
-                  <li key={item.name}>
-                    <Link
-                      to={item.href}
-                      className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                        isActive(item.href)
-                          ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
-                          : 'text-text-secondary dark:text-gray-300 hover:bg-bg-secondary dark:hover:bg-gray-700 hover:text-text-primary dark:hover:text-gray-100'
-                      }`}
-                    >
-                      <Icon className="mr-3 h-5 w-5" />
-                      {item.name}
-                    </Link>
-                  </li>
-                )
-              })}
+              {desktopNavigationItems}
             </ul>
           </nav>
           <div className="border-t border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center space-x-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100">
                 <span className="text-sm font-medium text-primary-700">
-                  {user?.name?.charAt(0) || 'U'}
+                  {user?.name?.charAt(0) ?? 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-text-primary dark:text-gray-100 truncate">
-                  {user?.name || 'User'}
+                  {user?.name ?? 'User'}
                 </p>
                 <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
-                  {user?.role || 'Freelancer'}
+                  {user?.role ?? 'Freelancer'}
                 </p>
               </div>
             </div>
@@ -210,7 +232,7 @@ const Layout = ({ children }) => {
           <button
             type="button"
             className="-m-2.5 p-2.5 text-gray-700 dark:text-gray-300 lg:hidden"
-            onClick={() => setSidebarOpen(true)}
+            onClick={toggleSidebar}
           >
             <Menu className="h-6 w-6" />
           </button>
@@ -228,12 +250,12 @@ const Layout = ({ children }) => {
               {/* Account Dropdown */}
               <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                  onClick={toggleAccountDropdown}
                   className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md p-1 dark:text-gray-300 dark:hover:text-gray-100"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100">
                     <span className="text-sm font-medium text-primary-700">
-                      {user?.name?.charAt(0) || 'U'}
+                      {user?.name?.charAt(0) ?? 'U'}
                     </span>
                   </div>
                   <ChevronDown className="h-4 w-4" />
@@ -243,7 +265,7 @@ const Layout = ({ children }) => {
                 {accountDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-medium text-text-primary dark:text-gray-100">{user?.name || 'User'}</p>
+                      <p className="text-sm font-medium text-text-primary dark:text-gray-100">{user?.name ?? 'User'}</p>
                     </div>
                     <button
                       onClick={handleProfileClick}
@@ -282,6 +304,8 @@ const Layout = ({ children }) => {
       </div>
     </div>
   )
-}
+})
+
+Layout.displayName = 'Layout'
 
 export default Layout
