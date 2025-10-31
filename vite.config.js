@@ -7,14 +7,7 @@ export default defineConfig({
       // Enable React 18 concurrent features
       jsxRuntime: 'automatic',
       // Enable fast refresh for better development experience
-      fastRefresh: true,
-      // Enable React compiler optimizations
-      babel: {
-        plugins: [
-          // Enable automatic memoization for React components
-          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
-        ]
-      }
+      fastRefresh: true
     })
   ],
   server: {

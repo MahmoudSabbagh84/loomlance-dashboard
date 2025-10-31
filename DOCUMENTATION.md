@@ -106,7 +106,7 @@ loomlance-dashboard/
 │   │   └── awsService.js          # AWS SDK integration
 │   │
 │   ├── utils/                     # Utility functions and hooks
-│   │   └── performance.js         # Performance monitoring & optimization utilities
+│   │   └── performance.jsx       # Performance monitoring & optimization utilities
 │   │
 │   ├── styles/                    # Styling configuration
 │   │   └── theme.js               # Theme classes and helper functions
@@ -599,7 +599,7 @@ All page components follow similar patterns:
 
 ### Utility Files
 
-#### `src/utils/performance.js`
+#### `src/utils/performance.jsx`
 **Purpose**: Performance monitoring and optimization utilities
 
 **Exports**:
