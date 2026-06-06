@@ -2,13 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LoomLance - All-in-One Freelancer Hub</title>
-    <meta name="description" content="LoomLance is the all-in-one dashboard built for freelancers who are tired of juggling too many tools. Instead of switching between invoicing apps, contract platforms, task boards, and client emails, LoomLance weaves everything into a single, clean workspace." />
+    <title>LoomLance</title>
+    <meta name="description" content="LoomLance — all-in-one freelancer hub for clients, projects, contracts, and invoices." />
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem('loomlance-theme')
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const theme = saved || (prefersDark ? 'dark' : 'light')
+          document.documentElement.dataset.theme = theme
+        } catch {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/app/main.jsx"></script>
   </body>
 </html>
