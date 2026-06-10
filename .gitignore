@@ -125,5 +125,7 @@ Thumbs.db
 .env.*.local
 supabase/.branches
 supabase/.temp
+supabase/.db-password
+supabase/.access-token
 test-results/
 playwright-report/
