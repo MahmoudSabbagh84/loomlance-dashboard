@@ -12,14 +12,20 @@ import { SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useKanbanColumns } from '@/hooks/useKanbanColumns'
 import { useTasks, useUpdateTask } from '@/hooks/useTasks'
 import { positionBetween } from '@/api/tasks'
+import { daysUntil } from '@/lib/date'
 import { KanbanColumn } from './KanbanColumn'
 import { TaskCard } from './TaskCard'
+import { KanbanFilters } from './KanbanFilters'
+import { AddColumn } from './AddColumn'
+
+const EMPTY_FILTERS = { search: '', priority: '', dueSoon: false, hideDone: false }
 
 export function KanbanBoard({ projectId, onTaskClick }) {
   const { data: columns = [] } = useKanbanColumns(projectId)
   const { data: tasks = [] } = useTasks(projectId)
   const updateTask = useUpdateTask(projectId)
   const [activeTask, setActiveTask] = useState(null)
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -36,6 +42,21 @@ export function KanbanBoard({ projectId, onTaskClick }) {
     for (const arr of map.values()) arr.sort((a, b) => a.position - b.position)
     return map
   }, [columns, tasks])
+
+  const filteredTasksByColumn = useMemo(() => {
+    const out = new Map()
+    const doneColumnIds = new Set(columns.filter((c) => /done/i.test(c.name)).map((c) => c.id))
+    const term = filters.search.trim().toLowerCase()
+    for (const [col, list] of tasksByColumn) {
+      let next = list
+      if (term) next = next.filter((t) => t.title.toLowerCase().includes(term))
+      if (filters.priority) next = next.filter((t) => t.priority === filters.priority)
+      if (filters.dueSoon) next = next.filter((t) => t.due_date && daysUntil(t.due_date) <= 7)
+      if (filters.hideDone && doneColumnIds.has(col)) next = []
+      out.set(col, next)
+    }
+    return out
+  }, [tasksByColumn, filters, columns])
 
   const findTask = (id) => tasks.find((t) => t.id === id)
 
@@ -81,17 +102,21 @@ export function KanbanBoard({ projectId, onTaskClick }) {
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveTask(null)}>
-      <div className="overflow-x-auto pb-2">
-        <div className="flex gap-3 snap-x">
-          {columns.map((col) => (
-            <SortableContext key={col.id} id={col.id} items={(tasksByColumn.get(col.id) || []).map((t) => t.id)}>
-              <KanbanColumn column={col} tasks={tasksByColumn.get(col.id) || []} onTaskClick={onTaskClick} />
-            </SortableContext>
-          ))}
+    <div className="space-y-3">
+      <KanbanFilters value={filters} onChange={setFilters} />
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveTask(null)}>
+        <div className="overflow-x-auto pb-2">
+          <div className="flex items-start gap-3 snap-x">
+            {columns.map((col) => (
+              <SortableContext key={col.id} id={col.id} items={(filteredTasksByColumn.get(col.id) || []).map((t) => t.id)}>
+                <KanbanColumn column={col} tasks={filteredTasksByColumn.get(col.id) || []} onTaskClick={onTaskClick} />
+              </SortableContext>
+            ))}
+            <AddColumn projectId={projectId} position={columns.length} />
+          </div>
         </div>
-      </div>
-      <DragOverlay>{activeTask ? <TaskCard task={activeTask} asOverlay /> : null}</DragOverlay>
-    </DndContext>
+        <DragOverlay>{activeTask ? <TaskCard task={activeTask} asOverlay /> : null}</DragOverlay>
+      </DndContext>
+    </div>
   )
 }
