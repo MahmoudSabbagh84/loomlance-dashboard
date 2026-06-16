@@ -1,5 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import { TaskCard } from './TaskCard'
+import { InlineAddTask } from './InlineAddTask'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/components/ui/cn'
 
@@ -18,6 +19,7 @@ export function KanbanColumn({ column, tasks, onTaskClick }) {
       <div ref={setNodeRef} className="flex flex-col gap-2 min-h-[100px]">
         {tasks.map((t) => <TaskCard key={t.id} task={t} onClick={() => onTaskClick?.(t)} />)}
       </div>
+      <InlineAddTask projectId={column.project_id} columnId={column.id} lastPosition={tasks[tasks.length - 1]?.position} />
     </div>
   )
 }
