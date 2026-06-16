@@ -1,14 +1,22 @@
 import { Calendar } from 'lucide-react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Badge } from '@/components/ui/Badge'
 import { formatDate, isOverdue } from '@/lib/date'
 import { cn } from '@/components/ui/cn'
 
 const PRIORITY_VARIANT = { low: 'default', medium: 'info', high: 'danger' }
 
-export function TaskCard({ task, onClick }) {
+export function TaskCard({ task, onClick, asOverlay = false }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id })
+  const style = asOverlay ? undefined : { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
   const overdue = isOverdue(task.due_date, 'sent')
   return (
     <div
+      ref={asOverlay ? undefined : setNodeRef}
+      style={style}
+      {...(asOverlay ? {} : attributes)}
+      {...(asOverlay ? {} : listeners)}
       role="button"
       tabIndex={0}
       onClick={onClick}
