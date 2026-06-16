@@ -44,6 +44,14 @@ export function useArchiveClient() {
   })
 }
 
+export function useUnarchiveClient() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: api.unarchiveClient,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
+  })
+}
+
 export function useDeleteClient() {
   const qc = useQueryClient()
   return useMutation({
