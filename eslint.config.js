@@ -35,6 +35,8 @@ export default [
       // We don't use prop-types — types are tracked elsewhere.
       'react/prop-types': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // Empty catch is an intentional idiom around storage access (private mode).
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
 

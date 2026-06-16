@@ -1,5 +1,6 @@
 import { createBrowserRouter, Outlet } from 'react-router-dom'
 import { AuthGate } from '@/features/auth/AuthGate'
+import { AppShell } from '@/components/layout/AppShell'
 import LoginPage from '@/pages/LoginPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
@@ -26,7 +27,9 @@ export const router = createBrowserRouter([
     path: '/',
     element: (
       <AuthGate>
-        <Outlet />
+        <AppShell>
+          <Outlet />
+        </AppShell>
       </AuthGate>
     ),
     children: [
