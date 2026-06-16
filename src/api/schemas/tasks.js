@@ -7,7 +7,7 @@ export const taskCreateSchema = z.object({
   column_id: z.string().uuid(),
   title: z.string().min(1).max(200),
   description: z.string().max(5000).optional().or(z.literal('')),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal('')).nullable().optional(),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
   labels: z.array(labelSchema).default([]),
 })
