@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const contractCreateSchema = z.object({
   client_id: z.string().uuid(),
-  project_id: z.string().uuid().nullable().optional(),
+  project_id: z.string().uuid().or(z.literal('')).nullable().optional(),
   title: z.string().min(1).max(200),
   description: z.string().max(10000).optional().or(z.literal('')),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal('')).nullable().optional(),

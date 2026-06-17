@@ -3,7 +3,7 @@ import { lineItemSchema } from './invoice-line-items'
 
 export const invoiceCreateSchema = z.object({
   client_id: z.string().uuid(),
-  project_id: z.string().uuid().nullable().optional(),
+  project_id: z.string().uuid().or(z.literal('')).nullable().optional(),
   invoice_number: z.string().min(1).max(50),
   issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
