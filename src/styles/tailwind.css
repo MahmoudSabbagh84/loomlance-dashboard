@@ -10,10 +10,15 @@
   }
   :root[data-theme='dark'] {
     color-scheme: dark;
+    scrollbar-color: var(--color-border-strong) transparent;
   }
   body {
     @apply bg-bg text-fg antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
   }
   *:focus-visible {
     @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-bg;

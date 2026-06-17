@@ -6,14 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LoomLance</title>
     <meta name="description" content="LoomLance — all-in-one freelancer hub for clients, projects, contracts, and invoices." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <script>
       (() => {
         try {
           const saved = localStorage.getItem('loomlance-theme')
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-          const theme = saved || (prefersDark ? 'dark' : 'light')
-          document.documentElement.dataset.theme = theme
-        } catch {}
+          document.documentElement.dataset.theme = saved || 'dark'
+        } catch {
+          document.documentElement.dataset.theme = 'dark'
+        }
       })()
     </script>
   </head>
