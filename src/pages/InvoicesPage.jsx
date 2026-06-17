@@ -1,7 +1,9 @@
+import { PageHeader } from '@/components/ui/PageHeader'
+
 export default function InvoicesPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold">Invoices</h1>
+    <div className="space-y-5">
+      <PageHeader title="Invoices" />
     </div>
   )
 }

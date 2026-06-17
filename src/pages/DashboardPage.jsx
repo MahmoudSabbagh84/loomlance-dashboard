@@ -1,7 +1,9 @@
+import { PageHeader } from '@/components/ui/PageHeader'
+
 export default function DashboardPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+    <div className="space-y-5">
+      <PageHeader title="Dashboard" subtitle="Your freelance command center" />
     </div>
   )
 }
