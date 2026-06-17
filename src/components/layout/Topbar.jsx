@@ -25,27 +25,34 @@ export function Topbar() {
   const initial = (profile?.display_name || profile?.email || '?').charAt(0).toUpperCase()
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-end gap-3 border-b border-border bg-bg px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-end gap-1.5 border-b border-border bg-bg/80 px-6 backdrop-blur">
       <NotificationBell />
-      <button onClick={toggle} className="text-fg-muted hover:text-fg" aria-label="Toggle theme">
+      <button
+        onClick={toggle}
+        className="grid size-9 place-items-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg"
+        aria-label="Toggle theme"
+      >
         {theme === 'dark' ? <Sun className="size-5" /> : <Moon className="size-5" />}
       </button>
-      <div className="relative" ref={ref}>
-        <button onClick={() => setOpen((v) => !v)} className="flex items-center gap-2 rounded-md p-1 hover:bg-bg-muted">
-          <div className="size-8 rounded-full bg-primary text-primary-fg flex items-center justify-center text-sm font-semibold">
+      <div className="relative ml-1" ref={ref}>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex h-9 items-center gap-2 rounded-md pl-1 pr-2 transition-colors hover:bg-bg-muted"
+        >
+          <div className="grid size-7 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-fg">
             {initial}
           </div>
           <ChevronDown className="size-4 text-fg-muted" />
         </button>
         {open ? (
-          <div className="absolute right-0 mt-2 w-56 rounded-md border border-border bg-bg shadow-lg py-1">
-            <div className="px-3 py-2 border-b border-border">
-              <p className="text-sm font-medium truncate">{profile?.display_name || 'User'}</p>
-              <p className="text-xs text-fg-muted truncate">{profile?.email}</p>
+          <div className="animate-pop-in absolute right-0 mt-2 w-56 rounded-lg border border-border bg-bg-elevated py-1 shadow-lg">
+            <div className="border-b border-border px-3 py-2">
+              <p className="truncate text-sm font-medium">{profile?.display_name || 'User'}</p>
+              <p className="truncate text-xs text-fg-muted">{profile?.email}</p>
             </div>
             <button
               onClick={() => { setOpen(false); navigate('/profile') }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-bg-muted"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-fg transition-colors hover:bg-bg-muted"
             >
               <UserCircle className="size-4" />
               Profile
@@ -53,14 +60,14 @@ export function Topbar() {
             <Link
               to="/profile?tab=subscription"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-bg-muted"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-fg transition-colors hover:bg-bg-muted"
             >
               <CreditCard className="size-4" />
               Subscription
             </Link>
             <button
               onClick={signOut}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-bg-muted"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-fg transition-colors hover:bg-bg-muted"
             >
               <LogOut className="size-4" />
               Sign out

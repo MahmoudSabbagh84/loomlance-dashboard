@@ -33,15 +33,15 @@ export function Sidebar() {
   const [lockedFeature, setLockedFeature] = useState(null)
 
   return (
-    <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-border bg-bg-elevated">
-      <div className="flex h-16 items-center px-6 border-b border-border">
-        <img src="/logo.png" alt="" className="size-8" />
-        <span className="ml-2 font-bold">
+    <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-bg-elevated lg:flex">
+      <div className="flex h-16 items-center gap-2 border-b border-border px-5">
+        <img src="/logo.png" alt="" className="size-7" />
+        <span className="text-base font-semibold tracking-tight">
           <span className="text-primary">Loom</span>
           <span className="text-fg-muted">Lance</span>
         </span>
       </div>
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 space-y-0.5 p-3">
         {NAV.map((item) => {
           const Icon = item.icon
           const locked = item.feature && !hasFeature(tier, item.feature)
@@ -50,7 +50,7 @@ export function Sidebar() {
               <button
                 key={item.label}
                 onClick={() => setLockedFeature({ feature: item.feature, target: item.target })}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-fg-subtle hover:bg-bg-muted"
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-fg-subtle transition-colors hover:bg-bg-muted hover:text-fg-muted"
               >
                 <Icon className="size-4" />
                 <span className="flex-1 text-left">{item.label}</span>
@@ -65,8 +65,10 @@ export function Sidebar() {
               end={item.end}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
-                  isActive ? 'bg-primary/10 text-primary' : 'text-fg-muted hover:text-fg hover:bg-bg-muted'
+                  'relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
+                  isActive
+                    ? 'bg-primary/12 font-medium text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary'
+                    : 'text-fg-muted hover:bg-bg-muted hover:text-fg'
                 )
               }
             >
