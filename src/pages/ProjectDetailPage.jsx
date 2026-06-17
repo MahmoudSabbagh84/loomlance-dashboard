@@ -4,6 +4,7 @@ import { useProject } from '@/hooks/useProjects'
 import { KanbanBoard } from '@/features/kanban/KanbanBoard'
 import { TaskDrawer } from '@/features/kanban/TaskDrawer'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function ProjectDetailPage() {
   const { id } = useParams()
@@ -16,10 +17,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">{project.name}</h1>
-        <p className="text-sm text-fg-muted">{project.clients?.name}</p>
-      </div>
+      <PageHeader title={project.name} subtitle={project.clients?.name} />
       <KanbanBoard projectId={project.id} onTaskClick={setDrawerTask} />
       <TaskDrawer open={!!drawerTask} onClose={() => setDrawerTask(null)} projectId={project.id} task={drawerTask} />
     </div>

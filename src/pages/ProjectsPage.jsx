@@ -10,6 +10,8 @@ import { useProjects, useActiveProjectCount } from '@/hooks/useProjects'
 import { useProfile } from '@/hooks/useProfile'
 import { canCreateProject, TIER_LIMITS } from '@/lib/tier'
 import { UpgradeDialog } from '@/components/gates/UpgradeDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Toolbar } from '@/components/ui/Toolbar'
 import { ProjectFormModal } from '@/features/projects/ProjectFormModal'
 import { ProjectCard } from '@/features/projects/ProjectCard'
 
@@ -34,24 +36,23 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Projects</h1>
-          <p className="text-sm text-fg-muted">Active projects: <Badge variant="primary">{limitText}</Badge></p>
-        </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Projects"
+        subtitle={<>Active projects: <Badge variant="primary">{limitText}</Badge></>}
+      >
         <Button onClick={handleNewClick}><Plus className="size-4" /> New project</Button>
-      </div>
+      </PageHeader>
 
-      <div className="flex gap-3 max-w-xl">
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="max-w-[12rem]">
+      <Toolbar>
+        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-40">
           <option value="active">Active</option>
           <option value="paused">Paused</option>
           <option value="archived">Archived</option>
           <option value="all">All</option>
         </Select>
-        <Input placeholder="Search projects" value={search} onChange={(e) => setSearch(e.target.value)} />
-      </div>
+        <Input placeholder="Search projects" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+      </Toolbar>
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
