@@ -37,6 +37,8 @@ export default [
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       // Empty catch is an intentional idiom around storage access (private mode).
       'no-empty': ['error', { allowEmptyCatch: true }],
+      // Allow destructure-to-omit (e.g. `const { id, ...rest } = row`).
+      'no-unused-vars': ['error', { ignoreRestSiblings: true }],
     },
   },
 
