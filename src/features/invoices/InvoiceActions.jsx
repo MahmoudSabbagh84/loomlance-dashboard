@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useUpdateInvoice, useDuplicateInvoice, useDeleteInvoice } from '@/hooks/useInvoices'
 import { MarkPaidModal } from './MarkPaidModal'
+import { InvoiceDownloadButton } from './InvoiceDownloadButton'
 
 export function InvoiceActions({ invoice }) {
   const navigate = useNavigate()
@@ -23,6 +24,7 @@ export function InvoiceActions({ invoice }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <InvoiceDownloadButton invoice={invoice} />
       {canMarkSent ? (
         <Button
           size="sm"
