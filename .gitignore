@@ -129,3 +129,6 @@ supabase/.db-password
 supabase/.access-token
 test-results/
 playwright-report/
+
+# Brainstorming visual companion
+.superpowers/
