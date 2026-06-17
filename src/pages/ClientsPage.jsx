@@ -10,6 +10,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Pagination } from '@/components/ui/Pagination'
 import { Badge } from '@/components/ui/Badge'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Toolbar } from '@/components/ui/Toolbar'
 import { ClientFormModal } from '@/features/clients/ClientFormModal'
 
 export default function ClientsPage() {
@@ -22,27 +24,25 @@ export default function ClientsPage() {
   const { data, isLoading } = useClients({ search: debouncedSearch, page, pageSize })
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Clients</h1>
-          <p className="text-sm text-fg-muted">Manage your client relationships</p>
-        </div>
+    <div className="space-y-5">
+      <PageHeader title="Clients" subtitle="Manage your client relationships">
         <Button onClick={() => setFormOpen(true)}>
           <Plus className="size-4" />
           New client
         </Button>
-      </div>
+      </PageHeader>
 
-      <div className="relative max-w-sm">
-        <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
-        <Input
-          placeholder="Search by name, company, or email"
-          className="pl-9"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0) }}
-        />
-      </div>
+      <Toolbar>
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
+          <Input
+            placeholder="Search by name, company, or email"
+            className="pl-9"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0) }}
+          />
+        </div>
+      </Toolbar>
 
       {isLoading ? (
         <div className="space-y-2">

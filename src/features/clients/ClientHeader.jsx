@@ -41,24 +41,24 @@ export function ClientHeader({ client }) {
   }
 
   return (
-    <div className="flex items-start justify-between">
-      <div>
-        <h1 className="text-2xl font-semibold">{client.name}</h1>
-        {client.company ? <p className="text-fg-muted">{client.company}</p> : null}
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <h1 className="truncate text-xl font-semibold tracking-tight">{client.name}</h1>
+        {client.company ? <p className="text-sm text-fg-muted">{client.company}</p> : null}
         {(client.tags || []).length > 0 ? (
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {client.tags.map((t) => <Badge key={t}>{t}</Badge>)}
           </div>
         ) : null}
       </div>
-      <div className="flex gap-2">
-        <Button variant="secondary" onClick={() => setEditOpen(true)}>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
           <Edit className="size-4" /> Edit
         </Button>
-        <Button variant="secondary" onClick={onArchive}>
+        <Button size="sm" variant="secondary" onClick={onArchive}>
           {client.archived_at ? <><ArchiveRestore className="size-4" /> Unarchive</> : <><Archive className="size-4" /> Archive</>}
         </Button>
-        <Button variant="danger" onClick={() => setConfirmDelete(true)}>
+        <Button size="sm" variant="danger" onClick={() => setConfirmDelete(true)}>
           <Trash2 className="size-4" /> Delete
         </Button>
       </div>

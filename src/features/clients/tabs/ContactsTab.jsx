@@ -26,9 +26,9 @@ export function ContactsTab({ clientId }) {
       {contacts.length === 0 ? (
         <p className="text-sm text-fg-muted">No contacts yet.</p>
       ) : (
-        <ul className="divide-y divide-border rounded-lg border border-border bg-bg">
+        <ul className="divide-y divide-border rounded-lg border border-border bg-bg-elevated">
           {contacts.map((c) => (
-            <li key={c.id} className="flex items-center gap-4 p-4">
+            <li key={c.id} className="flex items-center gap-4 p-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{c.name}</p>
