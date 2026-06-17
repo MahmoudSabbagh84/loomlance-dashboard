@@ -57,4 +57,12 @@ export default [
       globals: { ...globals.node },
     },
   },
+
+  // Playwright E2E specs run under Node (process.env) with Playwright's own test runner.
+  {
+    files: ['tests/e2e/**/*.{js,jsx}'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
 ]
