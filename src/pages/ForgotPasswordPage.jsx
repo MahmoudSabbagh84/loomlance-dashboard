@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { FieldError } from '@/components/ui/FieldError'
+import { Card } from '@/components/ui/Card'
+import { AuthShell } from '@/features/auth/AuthShell'
 import * as auth from '@/api/auth'
 
 const schema = z.object({ email: z.string().email() })
@@ -30,14 +32,14 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-bg">
-      <div className="w-full max-w-md rounded-lg border border-border bg-bg-elevated p-6">
-        <h1 className="text-xl font-semibold mb-1">Reset your password</h1>
-        <p className="text-sm text-fg-muted mb-6">We’ll email you a link to set a new one.</p>
+    <AuthShell>
+      <Card padding="lg" className="shadow-xl shadow-black/20">
+        <h1 className="text-xl font-semibold tracking-tight">Reset your password</h1>
+        <p className="mb-5 mt-1 text-sm text-fg-muted">We’ll email you a link to set a new one.</p>
         {sent ? (
           <p className="text-sm">Check your email for the reset link.</p>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
             <div>
               <Label htmlFor="email" required>Email</Label>
               <Input id="email" type="email" autoComplete="email" {...register('email')} />
@@ -49,7 +51,7 @@ export default function ForgotPasswordPage() {
         <p className="mt-4 text-sm">
           <Link to="/login" className="text-primary hover:underline">Back to sign in</Link>
         </p>
-      </div>
-    </div>
+      </Card>
+    </AuthShell>
   )
 }

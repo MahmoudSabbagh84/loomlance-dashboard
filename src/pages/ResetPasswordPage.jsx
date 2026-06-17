@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { FieldError } from '@/components/ui/FieldError'
+import { Card } from '@/components/ui/Card'
+import { AuthShell } from '@/features/auth/AuthShell'
 import * as auth from '@/api/auth'
 
 const schema = z.object({
@@ -34,10 +36,10 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-bg">
-      <div className="w-full max-w-md rounded-lg border border-border bg-bg-elevated p-6">
-        <h1 className="text-xl font-semibold mb-6">Set a new password</h1>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <AuthShell>
+      <Card padding="lg" className="shadow-xl shadow-black/20">
+        <h1 className="mb-5 text-xl font-semibold tracking-tight">Set a new password</h1>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
           <div>
             <Label htmlFor="password" required>New password</Label>
             <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
@@ -50,7 +52,7 @@ export default function ResetPasswordPage() {
           </div>
           <Button type="submit" className="w-full" loading={submitting}>Update password</Button>
         </form>
-      </div>
-    </div>
+      </Card>
+    </AuthShell>
   )
 }

@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { FieldError } from '@/components/ui/FieldError'
+import { Card } from '@/components/ui/Card'
+import { AuthShell } from '@/features/auth/AuthShell'
 import * as auth from '@/api/auth'
 
 const schema = z.object({
@@ -37,18 +39,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-bg">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <img src="/logo.png" alt="" className="mx-auto size-16 mb-4" />
-          <h1 className="text-3xl font-bold">
+    <AuthShell>
+      <div className="mb-7 text-center">
+          <img src="/logo.png" alt="" className="mx-auto mb-4 size-14" />
+          <h1 className="text-3xl font-semibold tracking-tight">
             <span className="text-primary">Loom</span>
             <span className="text-fg-muted">Lance</span>
           </h1>
           <p className="mt-2 text-sm text-fg-muted">Weave it all together</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-border bg-bg-elevated p-6">
+        <Card padding="lg" as="form" onSubmit={handleSubmit(onSubmit)} className="space-y-3.5 shadow-xl shadow-black/20">
           <div>
             <Label htmlFor="email" required>Email</Label>
             <Input id="email" type="email" autoComplete="email" {...register('email')} />
@@ -65,7 +66,7 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label="Toggle password visibility"
               >
@@ -79,7 +80,7 @@ export default function LoginPage() {
             Sign in
           </Button>
 
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between pt-1 text-sm">
             <Link to="/forgot-password" className="text-primary hover:underline">
               Forgot password?
             </Link>
@@ -90,8 +91,7 @@ export default function LoginPage() {
               Don’t have an account?
             </a>
           </div>
-        </form>
-      </div>
-    </div>
+        </Card>
+    </AuthShell>
   )
 }
