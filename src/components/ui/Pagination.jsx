@@ -5,8 +5,8 @@ export function Pagination({ page, pageSize, total, onChange }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   if (totalPages <= 1) return null
   return (
-    <div className="flex items-center justify-between mt-4">
-      <p className="text-xs text-fg-muted">
+    <div className="flex items-center justify-between mt-3">
+      <p className="text-xs text-fg-muted tabular-nums">
         Page {page + 1} of {totalPages} — {total} total
       </p>
       <div className="flex gap-1">

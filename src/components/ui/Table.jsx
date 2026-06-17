@@ -12,14 +12,14 @@ export function THead({ children }) {
 }
 export function TR({ children, className, onClick }) {
   return (
-    <tr onClick={onClick} className={cn('border-t border-border', onClick && 'cursor-pointer hover:bg-bg-muted', className)}>
+    <tr onClick={onClick} className={cn('border-t border-border transition-colors', onClick && 'cursor-pointer hover:bg-bg-muted', className)}>
       {children}
     </tr>
   )
 }
 export function TH({ children, className }) {
-  return <th className={cn('text-left font-medium px-4 py-3', className)}>{children}</th>
+  return <th className={cn('text-left font-medium px-4 py-2.5', className)}>{children}</th>
 }
 export function TD({ children, className }) {
-  return <td className={cn('px-4 py-3', className)}>{children}</td>
+  return <td className={cn('px-4 py-2.5', className)}>{children}</td>
 }
