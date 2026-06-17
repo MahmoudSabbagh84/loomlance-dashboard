@@ -14,6 +14,7 @@ import { useProjects } from '@/hooks/useProjects'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { LineItemsTable } from './LineItemsTable'
 import { TotalsPanel } from './TotalsPanel'
+import { InvoicePreview } from './InvoicePreview'
 
 export function InvoiceEditor({ invoice }) {
   const update = useUpdateInvoice()
@@ -59,51 +60,51 @@ export function InvoiceEditor({ invoice }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="client_id" required>Client</Label>
-          <Select id="client_id" {...register('client_id')}>
-            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
-          <FieldError>{errors.client_id?.message}</FieldError>
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="client_id" required>Client</Label>
+            <Select id="client_id" {...register('client_id')}>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+            <FieldError>{errors.client_id?.message}</FieldError>
+          </div>
+          <div>
+            <Label htmlFor="project_id">Project (optional)</Label>
+            <Select id="project_id" {...register('project_id')}>
+              <option value="">—</option>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </Select>
+          </div>
         </div>
-        <div>
-          <Label htmlFor="project_id">Project (optional)</Label>
-          <Select id="project_id" {...register('project_id')}>
-            <option value="">—</option>
-            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </Select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="invoice_number" required>Number</Label>
+            <Input id="invoice_number" {...register('invoice_number')} />
+          </div>
+          <div>
+            <Label htmlFor="currency" required>Currency</Label>
+            <Select id="currency" {...register('currency')}>
+              {SUPPORTED_CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="issue_date" required>Issue date</Label>
+            <Input id="issue_date" type="date" {...register('issue_date')} />
+          </div>
+          <div>
+            <Label htmlFor="due_date" required>Due date</Label>
+            <Input id="due_date" type="date" {...register('due_date')} />
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-4 gap-4">
-        <div>
-          <Label htmlFor="invoice_number" required>Number</Label>
-          <Input id="invoice_number" {...register('invoice_number')} />
-        </div>
-        <div>
-          <Label htmlFor="issue_date" required>Issue date</Label>
-          <Input id="issue_date" type="date" {...register('issue_date')} />
-        </div>
-        <div>
-          <Label htmlFor="due_date" required>Due date</Label>
-          <Input id="due_date" type="date" {...register('due_date')} />
-        </div>
-        <div>
-          <Label htmlFor="currency" required>Currency</Label>
-          <Select id="currency" {...register('currency')}>
-            {SUPPORTED_CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
-          </Select>
-        </div>
-      </div>
 
-      <div>
-        <Label>Line items</Label>
-        <LineItemsTable control={control} register={register} />
-        <FieldError>{errors.line_items?.message}</FieldError>
-      </div>
+        <div>
+          <Label>Line items</Label>
+          <LineItemsTable control={control} register={register} />
+          <FieldError>{errors.line_items?.message}</FieldError>
+        </div>
 
-      <div className="grid grid-cols-2 gap-6">
         <div className="space-y-3">
           <div>
             <Label htmlFor="notes">Notes</Label>
@@ -118,11 +119,16 @@ export function InvoiceEditor({ invoice }) {
             <Textarea id="payment_instructions" rows={2} {...register('payment_instructions')} />
           </div>
         </div>
+
         <TotalsPanel control={control} />
+
+        <div className="flex justify-end">
+          <Button type="submit" loading={isSubmitting} disabled={!isDirty}>Save</Button>
+        </div>
       </div>
 
-      <div className="sticky bottom-0 -mx-6 -mb-5 flex justify-end gap-2 border-t border-border bg-bg/90 px-6 py-3 backdrop-blur">
-        <Button type="submit" loading={isSubmitting} disabled={!isDirty}>Save</Button>
+      <div className="h-fit lg:sticky lg:top-20">
+        <InvoicePreview control={control} client={clients.find((c) => c.id === selectedClient)} />
       </div>
     </form>
   )
