@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, FileText } from 'lucide-react'
+import { Plus, FileText, List, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Table, THead, TR, TH, TD } from '@/components/ui/Table'
@@ -13,21 +13,46 @@ import { useInvoices, useCreateInvoice, useNextInvoiceNumber } from '@/hooks/use
 import { useProfile } from '@/hooks/useProfile'
 import { useClients } from '@/hooks/useClients'
 import { InvoiceStatusBadge } from '@/features/invoices/InvoiceStatusBadge'
+import { InvoicesBoard } from '@/features/invoices/InvoicesBoard'
 import { formatDate } from '@/lib/date'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { toast } from 'sonner'
 
 const STATUSES = ['', 'draft', 'sent', 'viewed', 'paid', 'overdue', 'void']
 
+function readView() {
+  try {
+    return localStorage.getItem('invoices-view') || 'table'
+  } catch {
+    return 'table'
+  }
+}
+
 export default function InvoicesPage() {
   const navigate = useNavigate()
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
+  const [view, setView] = useState(readView)
+  const isBoard = view === 'board'
   const debounced = useDebouncedValue(search, 250)
-  const { data, isLoading } = useInvoices({ search: debounced, status: status || undefined, page, pageSize: 25 })
+  const { data, isLoading } = useInvoices({
+    search: debounced,
+    status: isBoard ? undefined : status || undefined,
+    page: isBoard ? 0 : page,
+    pageSize: isBoard ? 200 : 25,
+  })
   const { data: profile } = useProfile()
   const { data: clientsPage } = useClients({ pageSize: 1 })
+
+  const setViewPersist = (v) => {
+    setView(v)
+    try {
+      localStorage.setItem('invoices-view', v)
+    } catch {
+      /* private mode: in-memory only */
+    }
+  }
 
   const create = useCreateInvoice()
   const nextNum = useNextInvoiceNumber()
@@ -59,29 +84,55 @@ export default function InvoicesPage() {
         <Button onClick={handleNew} loading={create.isPending}><Plus className="size-4" /> New invoice</Button>
       </PageHeader>
 
-      <div className="flex flex-wrap gap-1.5">
-        {STATUSES.map((s) => (
-          <button
-            key={s || 'all'}
-            onClick={() => { setStatus(s); setPage(0) }}
-            className={cn(
-              'h-8 rounded-full border px-3 text-xs font-medium capitalize transition-colors',
-              status === s
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border text-fg-muted hover:bg-bg-muted hover:text-fg'
-            )}
-          >
-            {s || 'all'}
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-1.5">
+          {!isBoard &&
+            STATUSES.map((s) => (
+              <button
+                key={s || 'all'}
+                onClick={() => { setStatus(s); setPage(0) }}
+                className={cn(
+                  'h-8 rounded-full border px-3 text-xs font-medium capitalize transition-colors',
+                  status === s
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-fg-muted hover:bg-bg-muted hover:text-fg'
+                )}
+              >
+                {s || 'all'}
+              </button>
+            ))}
+        </div>
 
-      <Input placeholder="Search by invoice number" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0) }} className="max-w-sm" />
+        <div className="flex items-center gap-2">
+          <Input placeholder="Search by invoice number" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0) }} className="w-56" />
+          <div className="flex shrink-0 items-center rounded-md border border-border p-0.5">
+            {[
+              { key: 'table', icon: List, label: 'Table view' },
+              { key: 'board', icon: LayoutGrid, label: 'Board view' },
+            ].map(({ key, icon: Icon, label }) => (
+              <button
+                key={key}
+                type="button"
+                aria-label={label}
+                onClick={() => setViewPersist(key)}
+                className={cn(
+                  'grid size-8 place-items-center rounded transition-colors',
+                  view === key ? 'bg-bg-muted text-fg' : 'text-fg-muted hover:text-fg'
+                )}
+              >
+                <Icon className="size-4" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
       ) : data?.rows.length === 0 ? (
         <EmptyState icon={FileText} title="No invoices yet" description="Spin up your first draft." action={<Button onClick={handleNew}><Plus className="size-4" /> New invoice</Button>} />
+      ) : isBoard ? (
+        <InvoicesBoard invoices={data.rows} onOpen={(id) => navigate(`/invoices/${id}`)} />
       ) : (
         <>
           <Table>
