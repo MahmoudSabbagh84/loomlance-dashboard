@@ -108,10 +108,15 @@ export function BrandingTab() {
                 type="color"
                 aria-label="Accent color"
                 className="h-9 w-12 cursor-pointer rounded-md border border-border bg-bg-muted"
-                {...register('invoice_accent_color')}
+                value={accent}
+                onChange={(e) => setValue('invoice_accent_color', e.target.value, { shouldDirty: true })}
               />
-              <Input className="w-32" {...register('invoice_accent_color')} />
-              <Button type="button" variant="ghost" size="sm" onClick={() => setValue('invoice_accent_color', DEFAULT_ACCENT)}>
+              <Input
+                className="w-32"
+                value={accent}
+                onChange={(e) => setValue('invoice_accent_color', e.target.value, { shouldDirty: true })}
+              />
+              <Button type="button" variant="ghost" size="sm" onClick={() => setValue('invoice_accent_color', DEFAULT_ACCENT, { shouldDirty: true })}>
                 Reset
               </Button>
             </div>

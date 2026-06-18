@@ -29,7 +29,7 @@ export async function uploadLogo(file) {
   const userId = session?.session?.user?.id
   if (!userId) throw new AppError('UNAUTHORIZED', 'You must be signed in.')
   const path = `${userId}/logo-${Date.now()}.${EXT[file.type]}`
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type })
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type })
   if (error) throw mapPostgresError(error)
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
 }
