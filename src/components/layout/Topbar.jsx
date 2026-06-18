@@ -5,6 +5,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { useProfile } from '@/hooks/useProfile'
 import { useSignOut } from '@/features/auth/useSignOut'
 import { NotificationBell } from './NotificationBell'
+import { searchHotkeyLabel } from '@/lib/platform'
 
 export function Topbar() {
   const { theme, toggle } = useTheme()
@@ -28,12 +29,14 @@ export function Topbar() {
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-1.5 border-b border-border bg-bg/80 px-6 backdrop-blur">
       <button
         onClick={() => window.dispatchEvent(new CustomEvent('loomlance:open-search'))}
-        className="flex h-9 items-center gap-2 rounded-md border border-border bg-bg-muted px-3 text-sm text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
+        className="flex h-9 items-center justify-between gap-2 rounded-md border border-border bg-bg-muted px-3 text-sm text-fg-muted transition-colors hover:border-border-strong hover:text-fg sm:w-72"
         aria-label="Search"
       >
-        <Search className="size-4" />
-        <span className="hidden sm:inline">Search…</span>
-        <kbd className="hidden rounded border border-border px-1.5 text-[10px] sm:inline">⌘K</kbd>
+        <span className="flex items-center gap-2">
+          <Search className="size-4" />
+          <span className="hidden sm:inline">Search…</span>
+        </span>
+        <kbd className="hidden rounded border border-border px-1.5 text-[10px] sm:inline">{searchHotkeyLabel}</kbd>
       </button>
       <div className="flex items-center gap-1.5">
       <NotificationBell />
