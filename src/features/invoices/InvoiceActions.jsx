@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useUpdateInvoice, useDuplicateInvoice, useDeleteInvoice } from '@/hooks/useInvoices'
 import { MarkPaidModal } from './MarkPaidModal'
 import { InvoiceDownloadButton } from './InvoiceDownloadButton'
+import { SendInvoiceModal } from './SendInvoiceModal'
 
 export function InvoiceActions({ invoice }) {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export function InvoiceActions({ invoice }) {
   const dup = useDuplicateInvoice()
   const del = useDeleteInvoice()
   const [markPaidOpen, setMarkPaidOpen] = useState(false)
+  const [sendOpen, setSendOpen] = useState(false)
   const [confirmVoid, setConfirmVoid] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -26,14 +28,8 @@ export function InvoiceActions({ invoice }) {
     <div className="flex flex-wrap items-center gap-2">
       <InvoiceDownloadButton invoice={invoice} />
       {canMarkSent ? (
-        <Button
-          size="sm"
-          onClick={async () => {
-            try { await update.mutateAsync({ id: invoice.id, patch: { status: 'sent', sent_at: new Date().toISOString() } }); toast.success('Marked as sent') }
-            catch (e) { toast.error(e.userMessage) }
-          }}
-        >
-          <Send className="size-4" /> Mark sent
+        <Button size="sm" onClick={() => setSendOpen(true)}>
+          <Send className="size-4" /> Send
         </Button>
       ) : null}
       {canMarkPaid ? (
@@ -57,6 +53,7 @@ export function InvoiceActions({ invoice }) {
       ) : null}
 
       {markPaidOpen ? <MarkPaidModal open onClose={() => setMarkPaidOpen(false)} invoice={invoice} /> : null}
+      {sendOpen ? <SendInvoiceModal open onClose={() => setSendOpen(false)} invoice={invoice} /> : null}
 
       <ConfirmDialog
         open={confirmVoid}
