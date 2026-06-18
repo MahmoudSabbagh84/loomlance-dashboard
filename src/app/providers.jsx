@@ -7,8 +7,9 @@ export function Providers({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* offset clears the 64px sticky topbar so toasts don't cover the notification bell */}
-      <Toaster richColors position="top-right" offset="76px" />
+      {/* offset clears the 64px sticky topbar so toasts don't cover the notification bell;
+          closeButton adds an X so they can be dismissed manually */}
+      <Toaster richColors position="top-right" offset="76px" closeButton />
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   )
