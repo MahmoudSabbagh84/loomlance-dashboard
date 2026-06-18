@@ -5,6 +5,7 @@ import { StatsRow } from '@/features/dashboard/StatsRow'
 import { DueSoonPanel } from '@/features/dashboard/DueSoonPanel'
 import { RecentActivity } from '@/features/dashboard/RecentActivity'
 import { OnboardingChecklist } from '@/features/dashboard/OnboardingChecklist'
+import { DashboardInsights } from '@/features/dashboard/DashboardInsights'
 
 function greetingFor(hour) {
   if (hour < 12) return 'Good morning'
@@ -22,6 +23,7 @@ export default function DashboardPage() {
       <PageHeader title={`${greeting}, ${name}`} subtitle={formatDate(new Date(), 'EEEE, MMMM d, yyyy')} />
       <OnboardingChecklist />
       <StatsRow />
+      <DashboardInsights />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <DueSoonPanel />
