@@ -12,6 +12,8 @@ const CODE_MESSAGES = {
   INVOICE_NUMBER_TAKEN: 'That invoice number is already in use. Pick a different one.',
   INVOICE_LIMIT_EXCEEDED: 'You’ve hit your invoice limit for this period.',
   STRIPE_NOT_CONNECTED: 'Connect your Stripe account in Profile → Payments first.',
+  INVOICE_LINK_INVALID: 'This invoice link is no longer valid.',
+  MOCK_PAYMENTS_DISABLED: 'Online payments aren’t available right now.',
   TIER_FEATURE_LOCKED: 'This feature is on a higher tier. Upgrade to use it.',
   UNAUTHORIZED: 'You don’t have permission to do that.',
   NOT_FOUND: 'Couldn’t find what you were looking for.',
