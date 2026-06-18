@@ -32,9 +32,9 @@ const styles = StyleSheet.create({
   grandTotal: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#999999', paddingTop: 4, marginTop: 2 },
   notesBlock: { marginTop: 18 },
   footer: { marginTop: 32, textAlign: 'center', fontSize: 8, color: '#666666' },
-  brandFooter: { position: 'absolute', bottom: 22, left: 36, right: 36, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  brandLogo: { width: 11, height: 11, marginRight: 4 },
-  brandText: { fontSize: 7, color: '#999999' },
+  brandFooter: { position: 'absolute', bottom: 20, left: 36, right: 36, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  brandLogo: { width: 16, height: 16, marginRight: 5 },
+  brandText: { fontSize: 8, color: '#999999' },
 })
 
 function normalizeLines(invoice) {
