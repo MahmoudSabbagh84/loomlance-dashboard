@@ -14,6 +14,7 @@ import ContractDetailPage from '@/pages/ContractDetailPage'
 import InvoicesPage from '@/pages/InvoicesPage'
 import InvoiceDetailPage from '@/pages/InvoiceDetailPage'
 import ProfilePage from '@/pages/ProfilePage'
+import PublicInvoicePage from '@/pages/PublicInvoicePage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 export const router = createBrowserRouter([
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/i/:token', element: <PublicInvoicePage /> },
 
   // Protected
   {
