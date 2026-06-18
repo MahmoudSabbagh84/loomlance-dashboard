@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { cn } from './cn'
 import { X } from 'lucide-react'
 
-export function Drawer({ open, onClose, title, children, side = 'right', width = 'w-[480px]' }) {
+export function Drawer({ open, onClose, title, children, side = 'right', width = 'w-[calc(100vw-2.5rem)] sm:w-[480px]' }) {
   useEffect(() => {
     if (!open) return
     const onKey = (e) => {

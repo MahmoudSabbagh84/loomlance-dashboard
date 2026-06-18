@@ -23,16 +23,16 @@ export function Modal({ open, onClose, title, children, size = 'md', className }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className={cn('animate-pop-in relative w-full rounded-lg bg-bg-elevated shadow-2xl border border-border', sizes[size], className)}>
+      <div className={cn('animate-pop-in relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-lg bg-bg-elevated shadow-2xl border border-border', sizes[size], className)}>
         {title ? (
-          <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
             <h2 className="text-base font-semibold">{title}</h2>
             <button onClick={onClose} className="text-fg-subtle hover:text-fg" aria-label="Close">
               <X className="size-5" />
             </button>
           </div>
         ) : null}
-        <div className="p-4">{children}</div>
+        <div className="overflow-y-auto p-4">{children}</div>
       </div>
     </div>
   )
