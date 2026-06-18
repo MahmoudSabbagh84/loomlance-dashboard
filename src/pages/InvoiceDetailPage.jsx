@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { InvoiceEditor } from '@/features/invoices/InvoiceEditor'
 import { InvoiceActions } from '@/features/invoices/InvoiceActions'
 import { InvoiceStatusBadge } from '@/features/invoices/InvoiceStatusBadge'
+import { ShareLinkPanel } from '@/features/invoices/ShareLinkPanel'
 
 export default function InvoiceDetailPage() {
   const { id } = useParams()
@@ -24,6 +25,7 @@ export default function InvoiceDetailPage() {
           <InvoiceActions invoice={invoice} />
         </div>
       </div>
+      {invoice.status !== 'draft' ? <ShareLinkPanel invoice={invoice} /> : null}
       <InvoiceEditor invoice={invoice} />
     </div>
   )
