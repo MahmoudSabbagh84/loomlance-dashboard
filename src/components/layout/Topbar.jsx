@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Moon, Sun, ChevronDown, LogOut, UserCircle, CreditCard } from 'lucide-react'
+import { Moon, Sun, ChevronDown, LogOut, UserCircle, CreditCard, Search } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import { useProfile } from '@/hooks/useProfile'
 import { useSignOut } from '@/features/auth/useSignOut'
@@ -25,7 +25,17 @@ export function Topbar() {
   const initial = (profile?.display_name || profile?.email || '?').charAt(0).toUpperCase()
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-end gap-1.5 border-b border-border bg-bg/80 px-6 backdrop-blur">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-1.5 border-b border-border bg-bg/80 px-6 backdrop-blur">
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent('loomlance:open-search'))}
+        className="flex h-9 items-center gap-2 rounded-md border border-border bg-bg-muted px-3 text-sm text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
+        aria-label="Search"
+      >
+        <Search className="size-4" />
+        <span className="hidden sm:inline">Search…</span>
+        <kbd className="hidden rounded border border-border px-1.5 text-[10px] sm:inline">⌘K</kbd>
+      </button>
+      <div className="flex items-center gap-1.5">
       <NotificationBell />
       <button
         onClick={toggle}
@@ -74,6 +84,7 @@ export function Topbar() {
             </button>
           </div>
         ) : null}
+      </div>
       </div>
     </header>
   )
