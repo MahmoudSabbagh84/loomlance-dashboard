@@ -79,3 +79,31 @@ export async function duplicateInvoice(sourceId) {
     line_items: (src.invoice_line_items || []).map(({ id, invoice_id, user_id, created_at, updated_at, ...rest }) => rest),
   })
 }
+
+export async function sendInvoice(id) {
+  const { data, error } = await supabase
+    .from('invoices')
+    .update({ status: 'sent', sent_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id, public_token, status, sent_at')
+    .single()
+  if (error) throw mapPostgresError(error)
+  return data
+}
+
+export async function regenerateInvoiceLink(id) {
+  const { data, error } = await supabase.rpc('regenerate_invoice_link', { p_invoice_id: id })
+  if (error) throw mapPostgresError(error)
+  return data // new token string
+}
+
+export async function setLinkExpiry(id, expiresAt) {
+  const { data, error } = await supabase
+    .from('invoices')
+    .update({ link_expires_at: expiresAt }) // ISO string or null to clear
+    .eq('id', id)
+    .select('id, link_expires_at')
+    .single()
+  if (error) throw mapPostgresError(error)
+  return data
+}

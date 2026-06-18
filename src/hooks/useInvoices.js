@@ -48,3 +48,27 @@ export function useDuplicateInvoice() {
   const inv = useInvalidate()
   return useMutation({ mutationFn: api.duplicateInvoice, onSuccess: inv })
 }
+export function useSendInvoice() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => api.sendInvoice(id),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['invoices', 'list'] })
+      qc.invalidateQueries({ queryKey: ['invoices', 'detail', data.id] })
+    },
+  })
+}
+export function useRegenerateInvoiceLink() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => api.regenerateInvoiceLink(id),
+    onSuccess: (_token, id) => qc.invalidateQueries({ queryKey: ['invoices', 'detail', id] }),
+  })
+}
+export function useSetLinkExpiry() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, expiresAt }) => api.setLinkExpiry(id, expiresAt),
+    onSuccess: (data) => qc.invalidateQueries({ queryKey: ['invoices', 'detail', data.id] }),
+  })
+}
