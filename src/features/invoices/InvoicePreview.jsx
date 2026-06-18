@@ -80,6 +80,11 @@ export function InvoicePreview({ control, client }) {
       {values?.payment_instructions ? <div className="mt-3 text-xs"><p className="font-semibold">Payment</p><p className="whitespace-pre-line">{values.payment_instructions}</p></div> : null}
 
       {branded && profile?.invoice_footer ? <p className="mt-8 whitespace-pre-line text-center text-xs text-gray-600">{profile.invoice_footer}</p> : null}
+
+      <div className="mt-8 flex items-center justify-center gap-1.5 border-t border-gray-100 pt-4 text-[10px] text-gray-400">
+        <img src="/logo.png" alt="" className="size-3.5" />
+        <span>Created with LoomLance</span>
+      </div>
     </div>
   )
 }

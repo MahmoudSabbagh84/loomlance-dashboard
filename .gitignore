@@ -83,7 +83,8 @@ dist
 
 # Gatsby files
 .cache/
-public
+# NOTE: `public/` is intentionally NOT ignored — in Vite it is a committed
+# static-assets source directory (holds logo.png, favicon, etc.).
 
 # Storybook build outputs
 .out

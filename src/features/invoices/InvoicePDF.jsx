@@ -7,6 +7,7 @@ import { formatDate } from '@/lib/date'
 import { invoiceTotals } from '@/lib/money'
 
 const ACCENT_FALLBACK = '#2D3E50'
+const LOGO_URL = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '/logo.png'
 
 const styles = StyleSheet.create({
   page: { backgroundColor: '#FFFFFF', color: '#111111', padding: 36, fontSize: 9, lineHeight: 1.4 },
@@ -31,6 +32,9 @@ const styles = StyleSheet.create({
   grandTotal: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#999999', paddingTop: 4, marginTop: 2 },
   notesBlock: { marginTop: 18 },
   footer: { marginTop: 32, textAlign: 'center', fontSize: 8, color: '#666666' },
+  brandFooter: { position: 'absolute', bottom: 22, left: 36, right: 36, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  brandLogo: { width: 11, height: 11, marginRight: 4 },
+  brandText: { fontSize: 7, color: '#999999' },
 })
 
 function normalizeLines(invoice) {
@@ -152,6 +156,11 @@ function InvoiceDocument({ invoice, client, profile }) {
         ) : null}
 
         {branded && profile?.invoice_footer ? <Text style={styles.footer} fixed>{profile.invoice_footer}</Text> : null}
+
+        <View style={styles.brandFooter} fixed>
+          <Image src={LOGO_URL} style={styles.brandLogo} />
+          <Text style={styles.brandText}>Created with LoomLance</Text>
+        </View>
       </Page>
     </Document>
   )
