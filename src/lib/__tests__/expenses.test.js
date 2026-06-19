@@ -52,4 +52,12 @@ describe('expenseTotals', () => {
       { category: 'Software', total: 15 },
     ])
   })
+  it('rounds float sums to 2 decimals', () => {
+    const t = expenseTotals([
+      { category: 'X', amount: 0.1 },
+      { category: 'X', amount: 0.2 },
+    ])
+    expect(t.total).toBe(0.3)
+    expect(t.byCategory[0].total).toBe(0.3)
+  })
 })

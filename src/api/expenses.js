@@ -66,7 +66,7 @@ export async function removeReceipt(path) {
 
 export async function getReceiptUrl(path) {
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600)
-  if (error) throw mapPostgresError(error)
+  if (error || !data?.signedUrl) throw mapPostgresError(error || {})
   return data.signedUrl
 }
 

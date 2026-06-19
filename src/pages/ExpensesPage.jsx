@@ -134,7 +134,7 @@ export default function ExpensesPage() {
             toast.success('Deleted')
             setToDelete(null)
           } catch (e) {
-            toast.error(e.userMessage)
+            toast.error(e.userMessage || 'Could not delete')
           }
         }}
       />
