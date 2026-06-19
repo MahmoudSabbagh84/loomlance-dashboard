@@ -6,6 +6,7 @@ import { useProfile } from '@/hooks/useProfile'
 import { useSignOut } from '@/features/auth/useSignOut'
 import { NotificationBell } from './NotificationBell'
 import { MobileNav } from './MobileNav'
+import { TimerWidget } from '@/features/time/TimerWidget'
 import { searchHotkeyLabel } from '@/lib/platform'
 
 export function Topbar() {
@@ -43,6 +44,7 @@ export function Topbar() {
         </button>
       </div>
       <div className="flex items-center gap-1.5">
+      <TimerWidget />
       <NotificationBell />
       <button
         onClick={toggle}
