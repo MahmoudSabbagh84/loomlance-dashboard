@@ -7,7 +7,7 @@ import { formatDate } from '@/lib/date'
 import { formatCurrency } from '@/lib/currency'
 
 function statusBadge(t) {
-  const ended = t.end_date && new Date(t.end_date) < new Date(new Date().toISOString().slice(0, 10))
+  const ended = t.end_date && t.end_date <= new Date().toISOString().slice(0, 10)
   if (!t.active) return ended ? <Badge>ended</Badge> : <Badge variant="warning">paused</Badge>
   return <Badge variant="success">active</Badge>
 }
