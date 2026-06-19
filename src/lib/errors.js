@@ -14,6 +14,8 @@ const CODE_MESSAGES = {
   STRIPE_NOT_CONNECTED: 'Connect your Stripe account in Profile → Payments first.',
   INVOICE_LINK_INVALID: 'This invoice link is no longer valid.',
   MOCK_PAYMENTS_DISABLED: 'Online payments aren’t available right now.',
+  NO_UNBILLED_TIME: 'No unbilled time for this client.',
+  TIMER_ALREADY_RUNNING: 'A timer is already running. Stop it first.',
   TIER_FEATURE_LOCKED: 'This feature is on a higher tier. Upgrade to use it.',
   UNAUTHORIZED: 'You don’t have permission to do that.',
   NOT_FOUND: 'Couldn’t find what you were looking for.',
@@ -29,6 +31,7 @@ function detectCode(supabaseError) {
   if (supabaseError.code === '23505') {
     const m = supabaseError.message || ''
     if (m.includes('invoices_user_id_invoice_number_key')) return 'INVOICE_NUMBER_TAKEN'
+    if (m.includes('time_entries_one_running')) return 'TIMER_ALREADY_RUNNING'
   }
   if (supabaseError.code === '42501' || supabaseError.code === 'PGRST301') return 'UNAUTHORIZED'
   if (supabaseError.code === 'PGRST116') return 'NOT_FOUND'
