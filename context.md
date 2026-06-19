@@ -1,123 +1,107 @@
 # Continuation Context — LoomLance Dashboard
 
-> **Purpose:** Hand off this work session to a fresh Claude Code session (possibly on another computer) so it can pick up EXACTLY where we left off, with no re-explanation. Read top-to-bottom, then jump to **"Where we are right now"** and **"How to resume."**
+> **Purpose:** Hand off this work session to a fresh Claude Code session (possibly on another computer) so it can pick up with no re-explanation. Read top-to-bottom, then see **"Where we are right now."**
 >
-> **Last updated:** 2026-06-19, after **Phase 4 sub-project 4 (Recurring Invoices) shipped**. Next up: the final sub-project, **Reports**.
+> **Last updated:** 2026-06-19, after **Phase 4 fully shipped** (all 5 sub-projects: branding, time tracking, expenses, recurring invoices, reports). No sub-project is currently in progress.
 
 ---
 
-## 0. TL;DR — resume in one paragraph
+## 0. TL;DR
 
-We're building **Phase 4 "Tier features"** of the LoomLance Dashboard, decomposed into 5 sub-projects, each via its own **spec → plan → build** cycle using the **superpowers brainstorming → writing-plans → subagent-driven-development** skills. Sub-projects 1–4 are DONE (branding, time tracking, expenses, recurring invoices). **Only sub-project 5, Reports, remains** — it has NO spec/plan yet; start it with brainstorming. We work **directly on `main`** (user's established pattern) and the **user pushes manually** (never push unless asked). Everything since the last push is committed locally.
+The LoomLance Dashboard's **Phase 4 "Tier features" is complete** — all five sub-projects built via the superpowers **brainstorming → writing-plans → (subagent-driven or inline) executing** flow. Everything is committed on **`main`** (we work directly on main; **the user pushes manually** — never push unless asked). As of this writing ~30 commits are unpushed. There is **no queued next task**; await direction. Tests: **68/68** unit (Vitest) green, lint clean, prod build OK.
 
 ---
 
 ## 1. Project overview
 
-**LoomLance Dashboard** is a SaaS web app for tech freelancers — clients, projects (kanban), contracts, invoicing (PDF + email + online pay), time tracking, expenses, recurring invoices, reports. It's the **post-login** product. Signup, pricing, and Stripe subscription Checkout live in a **separate sibling repo, "Loomlance Splash."** Both point at the **same Supabase project** so auth + subscription state are shared. This repo owns **login only**, not signup.
+**LoomLance Dashboard** — a SaaS web app for tech freelancers: clients, projects (kanban), contracts, invoicing (PDF + email + online pay), time tracking, expenses, recurring invoices, reports. It's the **post-login** product. Signup, pricing, and Stripe subscription Checkout live in a **separate sibling repo, "Loomlance Splash."** Both point at the **same Supabase project** so auth + subscription state are shared. This repo owns **login only**.
 
-- **Stack:** React + Vite, React Router, TanStack Query, react-hook-form (incl. `useFieldArray`), Sonner (toasts), Tailwind design-system components in `src/components/ui/*`, Supabase JS client (`src/lib/supabase`), Vitest unit tests, Playwright E2E. pg_cron for scheduled DB jobs.
-- **Tiers:** Free / Tier 1 / Tier 2. Feature gating in `src/lib/tier.js` (`FEATURES`, `hasFeature(tier, feature)`, `TIER_LIMITS`, `UPGRADE_COPY`). Tier comes from `profiles.subscription_tier` (written by Splash's Stripe webhook). Feature→tier: branding/recurring/time = tier_1+; expenses/reports = tier_2.
-- **Data model is Projects-first.** RLS on every table, scoped by `auth.uid()`.
+- **Stack:** React + Vite, React Router, TanStack Query, react-hook-form (incl. `useFieldArray`), Sonner toasts, Tailwind design-system components in `src/components/ui/*`, Supabase JS (`src/lib/supabase`), Vitest + Playwright, Recharts (lazy), pg_cron.
+- **Tiers:** Free / Tier 1 / Tier 2. Gating in `src/lib/tier.js` (`FEATURES`, `hasFeature(tier, feature)`, `TIER_LIMITS`, `UPGRADE_COPY`). Tier from `profiles.subscription_tier` (written by Splash's Stripe webhook). branding/recurring/time = tier_1+; expenses/reports = tier_2.
+- **Projects-first** data model. RLS on every table, scoped by `auth.uid()`.
 
 ### Supabase (hosted — NO local Docker)
-- **Dev project id:** `zbipqfsqxnvrzhpdjvvy` — develop directly against this hosted project.
-- Apply migrations via the **Supabase MCP** tool `mcp__supabase__apply_migration` (load via ToolSearch: `select:mcp__supabase__apply_migration,mcp__supabase__execute_sql`). Always ALSO write the migration file to `supabase/migrations/<YYYYMMDDHHMMSS>_<name>.sql` (timestamp must sort after the latest existing one; latest is `20260619030000_recurring_invoices.sql`).
-- Separate hosted project for tests. pgTAP skipped (no infra).
-- **Test user is `tier_2`** (uid `cb6e852e-0709-4627-8601-4a6641b3fa4d`; default currency USD; a client "Mahmoud Sabbagh" `3881306f-4cec-4a0c-93f3-20fbaf0a4c17`). Re-query if unsure: `select id, default_currency from profiles where subscription_tier='tier_2'`.
-- **MCP `execute_sql` returns only the LAST statement's rows.** Run one read per call, or join into one query.
-- To call a `SECURITY DEFINER` `auth.uid()` RPC via MCP, prefix in the SAME call: `select set_config('request.jwt.claims','{"sub":"<uid>","role":"authenticated"}', true);` then the RPC. MCP runs as service role (bypasses RLS), so seed rows with explicit `user_id`; only the `auth.uid()`-dependent RPCs need the jwt prefix.
+- **Dev project id:** `zbipqfsqxnvrzhpdjvvy`. Apply migrations via Supabase MCP `apply_migration` (ToolSearch `select:mcp__supabase__apply_migration,mcp__supabase__execute_sql`) AND write the file to `supabase/migrations/<YYYYMMDDHHMMSS>_<name>.sql` (latest is `20260619030000_recurring_invoices.sql`).
+- **Test user is `tier_2`** (uid `cb6e852e-0709-4627-8601-4a6641b3fa4d`; default currency USD; client "Mahmoud Sabbagh" `3881306f-4cec-4a0c-93f3-20fbaf0a4c17`; a project `6779ac12-d1b2-4708-a3c0-bf48d47614b5`). Re-query if unsure.
+- **MCP `execute_sql` returns only the LAST statement's rows.** One read per call, or join.
+- To call an `auth.uid()` SECURITY DEFINER RPC via MCP: same call, prefix `select set_config('request.jwt.claims','{"sub":"<uid>","role":"authenticated"}', true);`. MCP runs as service role (bypasses RLS) — seed rows with explicit `user_id`.
 
 ### Working agreements (IMPORTANT — user preferences)
-- **User pushes manually** — do NOT `git push` unless asked. Commit freely.
-- **Work on `main`** — all of Phase 4 was committed straight to main; user confirmed this explicitly for each sub-project.
-- **User uses the app LIVE during sessions.** Scope test-data cleanup to your OWN markers (prefix seeded rows with `ZZ-`); never bulk-delete.
-- react-pdf only works in a prod build — verify PDF via `npm run preview`, NOT the dev server.
+- **User pushes manually** — never `git push` unless asked. Commit freely.
+- **Work on `main`** — all of Phase 1–4 went straight to main; user confirms per sub-project.
+- **User uses the app LIVE during sessions.** Scope test cleanup to OWN `ZZ-` markers; never bulk-delete.
+- react-pdf only works in a prod build — verify PDF via `npm run preview`, NOT dev.
 - Toasts: `<Toaster richColors position="top-right" offset="76px" closeButton />` in `src/app/providers.jsx`.
 
 ---
 
-## 2. Project history (what's already built & shipped)
+## 2. Project history (all shipped)
 
-- **Phase 1** — core rebuild: login auth, clients, projects, kanban, contracts, invoices CRUD, profiles, tier gating. Slate Pro UI. ✅
-- **Phase 2 "Polish & PDF"** — invoice PDF (react-pdf), dashboard insights (Recharts), Cmd+K search, logo/branding, invoices board view, pg_cron overdue/due-soon jobs, mobile nav. ✅
-- **Phase 3 "Send & Pay"** — hosted public invoice page `/i/:token`, link controls, MOCK send/connect/pay, viewed/paid notifications. ⚠️ `mock_pay_invoice` is a dev-gated public write — disable `app_config.mock_payments_enabled` before prod. Real Resend+Stripe deferred. ✅
-- **Phase 4 "Tier features"** — 5 sub-projects, each own spec→plan→build:
-  1. **Invoice branding (Tier 1)** ✅ (commit `707d344`)
-  2. **Time tracking (Tier 1)** ✅ (commit `c07a232`)
-  3. **Expenses (Tier 2)** ✅ (commits `0bb6ce8`→`3df03df`)
-  4. **Recurring invoices (Tier 1)** ✅ (commits `471c786`→`6eedac4`)
-  5. **Reports (Tier 2)** ⬅️ **NOT STARTED — the only remaining work. No spec/plan yet.**
+- **Phase 1** — core rebuild: login, clients, projects, kanban, contracts, invoices CRUD, profiles, tier gating, Slate Pro UI. ✅
+- **Phase 2 "Polish & PDF"** — invoice PDF (react-pdf), dashboard insights (Recharts), Cmd+K search, branding, invoices board, pg_cron overdue/due-soon jobs, mobile nav. ✅
+- **Phase 3 "Send & Pay"** — public invoice page `/i/:token`, link controls, MOCK send/connect/pay, viewed/paid notifications. ⚠️ `mock_pay_invoice` is a dev-gated public write — disable `app_config.mock_payments_enabled` before prod. Real Resend+Stripe deferred. ✅
+- **Phase 4 "Tier features"** — 5 sub-projects, each own spec→plan→build (specs/plans under `docs/superpowers/`):
+  1. Invoice branding (Tier 1) ✅ `707d344`
+  2. Time tracking (Tier 1) ✅ `c07a232`
+  3. Expenses (Tier 2) ✅ `0bb6ce8`→`3df03df`
+  4. Recurring invoices (Tier 1) ✅ `471c786`→`6eedac4`
+  5. Reports (Tier 2) ✅ `1f0396e`→`1d2c14d`
 
-Commits through `c07a232` are pushed to `origin/main`. **Everything after that (Expenses + Recurring + this context.md + specs/plans) is committed locally but NOT pushed** (user pushes manually).
+Pushed through `c07a232`; everything after (Expenses, Recurring, Reports, specs/plans, this file) is **local-only / unpushed**.
 
----
-
-## 3. ⚠️ Carry-forward gotchas (learned the hard way — DO NOT re-learn)
-
-1. **Storage upload + RLS:** never use `{ upsert: true }` on `.upload()` (it runs an existence-check SELECT that RLS denies → 400). Use plain `.upload(path, file, { contentType })` with a UNIQUE timestamped path.
-2. **Storage RLS form:** `for insert to authenticated with check ((storage.foldername(name))[1] = (select auth.uid()::text))`.
-3. **Deleting storage objects:** via the Storage API `.remove([paths])`, never `delete from storage.objects` (blocked by a `protect_delete` trigger). Private buckets → use `createSignedUrl`, not `getPublicUrl`.
-4. **Errors:** all API calls go through `mapPostgresError` (`src/lib/errors.js`); RPCs `raise exception 'CODE' using errcode = 'P0001'` and `detectCode` maps the bare keyword to a friendly message in `CODE_MESSAGES`. Add new codes there. `UNAUTHORIZED`/`NO_BILLABLE_EXPENSES`/`NO_UNBILLED_TIME` already exist.
-5. **`invoices` has NO `total` column** — totals are derived from line items via `invoiceTotals(lines)` in `src/lib/money.js`. Reuse it; don't recompute. Reuse `@/features/invoices/LineItemsTable` (field-array `line_items`, props `{control, register}`) and `@/features/invoices/TotalsPanel` (prop `{control}`) for any line-item editor.
-6. **This codebase's `Button` (`src/components/ui/Button.jsx`) has NO `asChild`/Slot support** — for link-buttons use `<Button onClick={() => navigate(...)}>`, not `<Button asChild><Link/>`.
-7. **SECURITY DEFINER + pg_cron pattern:** see `mark_overdue_invoices`, `generate_invoice_from_time`, `run_recurring_template`. `next_invoice_number(user_id)` generates gap-free per-user `INV-XXXX` numbers. Global cron fns are revoked from public/anon/authenticated; user RPCs check `auth.uid()` ownership and are granted to authenticated.
-8. **Cron robustness gap (known, deferred):** `generate_due_recurring_invoices` loops templates in one transaction — a poison template aborts the whole run. Same shape in the other cron jobs. Hardening (per-template `begin/exception`) is a future pass across all 3 jobs.
+### Feature reference (where each lives)
+- **Time:** `time_entries` table; `src/lib/time.js`; `src/api/time-entries.js`; `/time` + topbar timer; `generate_invoice_from_time` RPC.
+- **Expenses:** `expenses` table (private `receipts` bucket); `src/lib/expenses.js`; `/expenses`; `generate_invoice_from_expenses` RPC.
+- **Recurring:** `recurring_invoice_templates` table; `src/lib/recurring.js`; `/invoices/recurring`; `run_recurring_template`/`generate_due_recurring_invoices`(daily cron 06:30 UTC)/`generate_recurring_invoice_now` RPCs.
+- **Reports:** NO new DB; `src/lib/reports.js` (pure aggregators) + `src/lib/download.js`; `src/api/reports.js`; `src/hooks/useReports.js`; `src/features/reports/*`; `/reports` (Revenue/P&L/Aging/Time tabs, CSV, per-currency, date presets).
+- **Money/totals:** `src/lib/money.js` `invoiceTotals(lines)` / `lineTotal(line)` — the canonical invoice math (invoices have NO `total` column).
 
 ---
 
-## 4. Reuse map for the Reports sub-project (sources to aggregate)
+## 3. ⚠️ Carry-forward gotchas (DO NOT re-learn)
 
-Reports (Tier 2, `FEATURES.REPORTS`, already in `tier.js`) will READ existing data — likely no new tables. Original rebuild spec (`docs/superpowers/specs/2026-06-04-loomlance-rebuild-design.md` §4.x) describes: tabs **Revenue** (by month/client/project), **P&L** (revenue − expenses), **Aging** (invoices by days outstanding), **Time** (billable vs non-billable by project); all date-filterable; CSV export. Data sources already in place:
-- **Invoices/payments:** `invoices` (status enum draft/sent/viewed/paid/overdue/void; issue_date, due_date), `invoice_payments` (amount, paid_at, method), `invoice_line_items`. Totals via `invoiceTotals` (`src/lib/money.js`).
-- **Time:** `time_entries` (duration_minutes, billable, hourly_rate, project_id, invoiced_on_invoice_id). Helpers in `src/lib/time.js`.
-- **Expenses:** `expenses` (amount, currency, category, spent_on, billable). Helpers in `src/lib/expenses.js`.
-- **Recurring:** `recurring_invoice_templates`.
-- **Dashboard insights** already exist (`src/features/dashboard/*`, Recharts, `dashboardStats.js`) — a strong pattern to mirror for charts.
-- Sidebar already has a **Reports** nav item (`/reports`, tier-2-locked) in `src/components/layout/SidebarNav.jsx` — just add the route + page.
-- Tier-gate pattern: `UpgradeCard feature={FEATURES.REPORTS} target="tier_2"` (see `ExpensesPage.jsx`).
-
-Open design questions to resolve in brainstorming: which tabs to build (all 4 vs subset), DB aggregation RPCs vs client-side rollups from existing queries, CSV export approach, date-range UX, multi-currency handling in aggregates.
-
----
-
-## 5. Where we are RIGHT NOW
-
-- **Workflow:** subagent-driven-development on `main`. Sub-projects 1–4 of Phase 4 COMPLETE.
-- **Git HEAD = `6eedac4`** on `main` (Recurring Invoices, page+route+button). Working tree clean.
-- **Unit suite: 55/55 passing.** Lint clean, prod build succeeds.
-- **Recurring Invoices (sub-project 4) just finished & shipped** — final whole-branch review = ready-to-ship, no Critical/Important. Live-verified via MCP (cron generation, manual RPC, ownership guard, end_date flip). Two deferred minor hardening items (cron exception isolation; `check (due_days >= 0)`).
-- **Reports (sub-project 5): NOT STARTED.** No spec, no plan.
-- **Unpushed:** all commits after `c07a232` (Expenses, Recurring, specs/plans, this file). User pushes manually.
-
-### Local-only state that will NOT transfer to another computer
-- The subagent-driven ledger + task briefs/reports live under `.git/sdd/` (NOT pushed). On a fresh machine they won't exist — fine; this `context.md` + the committed specs/plans are the source of truth. The completed work is in `git log`.
-- The `~/.claude/.../memory/` files (project memories incl. `loomlance_phase4_progress.md`) are on the original machine only. Essentials are reproduced here.
+1. **Storage upload + RLS:** never `{ upsert: true }` (RLS-denied existence-check SELECT → 400). Plain `.upload(path,file,{contentType})` + unique timestamped path.
+2. **Storage RLS:** `for insert to authenticated with check ((storage.foldername(name))[1] = (select auth.uid()::text))`. Private buckets → `createSignedUrl`, not `getPublicUrl`. Delete via Storage API `.remove()` (a `protect_delete` trigger blocks raw deletes).
+3. **Errors:** all API calls → `mapPostgresError` (`src/lib/errors.js`); RPCs `raise exception 'CODE' using errcode='P0001'`; `detectCode` maps the bare keyword to a friendly `CODE_MESSAGES` entry.
+4. **invoices has NO `total` column** — use `invoiceTotals(lines)` from `src/lib/money.js`. Reuse `@/features/invoices/LineItemsTable` + `TotalsPanel` for any line-item editor.
+5. **`Button` (`src/components/ui/Button.jsx`) has NO `asChild`/Slot** — link-buttons use `<Button onClick={() => navigate(...)}>`. It DOES support `size="sm"`.
+6. **Recharts:** lazy-load and theme via CSS vars (`var(--color-primary|danger|success|fg-subtle|fg-muted|border|bg-elevated|bg-muted)`, all defined in `src/styles/tokens.css`). Pattern: `src/features/dashboard/RevenueChart.jsx`, `src/features/reports/ReportChart.jsx`.
+7. **Date helpers:** `formatDate` (`src/lib/date.js`), `formatCurrency`/`SUPPORTED_CURRENCIES` (`src/lib/currency.js`). For report date filtering, timestamptz columns use half-open `[from, (to+1day))`; date columns inclusive.
+8. **Determinism in helpers:** anything date-dependent takes an injected `today: Date` (never `Date.now()` internally) so Vitest is deterministic — see `rangeForPreset`/`agingReport`.
+9. **Cron robustness (known, deferred):** `generate_due_recurring_invoices` loops in one transaction — a poison template aborts the run; same shape in the other cron jobs. Hardening = per-template `begin/exception` across all 3 jobs.
 
 ---
 
-## 6. How to RESUME (do this next)
+## 4. Where we are RIGHT NOW
 
-1. Confirm git state: `git log --oneline -5` → HEAD `6eedac4` on `main`. `npx vitest run` → 55/55. Migrations present through `20260619030000_recurring_invoices.sql`.
-2. If continuing the build, the next step is **sub-project 5, Reports**:
-   - Invoke `superpowers:brainstorming` first (it's new feature work — HARD GATE: design + user approval before any code). Use §4 above as the starting context; ask the open design questions (which tabs, aggregation approach, CSV, date-range, currency).
-   - Then `superpowers:writing-plans` → save to `docs/superpowers/plans/YYYY-MM-DD-loomlance-phase-4-reports.md`.
-   - Then `superpowers:subagent-driven-development` to execute: fresh implementer subagent per task (cheap model when the plan has full code; standard for integration; opus for the final whole-branch review), task-review after each (spec + quality), fix Critical/Important via a fix subagent + re-review, then a final whole-branch review.
-3. Re-init the ledger for the new sub-project: write `<git-dir>/sdd/progress.md` (or just track via the plan's checkboxes / task list).
-4. Live-verify against the hosted DB as the tier-2 user with `ZZ-` markers, then clean up. NO destructive bulk deletes (user runs the app live).
-5. After Reports ships: update `~/.claude/.../memory/loomlance_phase4_progress.md` (mark Phase 4 fully complete), refresh THIS file, and remind the user to `git push` (their call).
+- **Phase 4 COMPLETE.** No sub-project in progress; nothing queued. Await user direction.
+- **Git HEAD ≈ `1d2c14d`** on `main`, working tree clean. **68/68** unit tests, lint clean, build OK.
+- **~30 commits unpushed** (Expenses → Reports + specs/plans + this file). User pushes manually.
+- **Deferred minor hardening** (non-blocking, from the Recurring review): cron-loop per-template exception isolation (apply across all 3 cron jobs together); a `check (due_days >= 0)` constraint on `recurring_invoice_templates`.
 
-### Per-task dispatch reminders (subagent-driven-development)
-- Fresh subagent per task; hand it ONLY its task brief (`scripts/task-brief PLAN N`) + interfaces + global constraints — never paste session history.
-- Always specify the subagent `model` explicitly. Plan-has-full-code → cheap (haiku); integration → standard (sonnet); final whole-branch review → opus.
-- Two verdicts required per task review: spec compliance AND code quality. Generate the diff with `scripts/review-package BASE HEAD` (BASE = commit before the task) and pass the printed path to the reviewer.
-- Don't pre-judge findings for reviewers. Don't push. Commit per task. Work on `main`.
+### Local-only state that will NOT transfer to another machine
+- `.git/sdd/` ledgers + task briefs/reports (not pushed) — fine; committed specs/plans + this file are the source of truth; completed work is in `git log`.
+- `~/.claude/.../memory/` project memories (incl. `loomlance_phase4_progress.md`) — essentials reproduced here.
 
 ---
 
-## 7. Quick command reference
+## 5. Possible next directions (none chosen yet)
 
-- Unit tests: `npm run test` (or `npx vitest run` for one-shot). Currently 55 tests, 11 files.
-- Lint: `npm run lint` ; Build: `npm run build` ; PDF preview: `npm run preview` ; Dev: `npm run dev`
+If the user wants more work, likely candidates (each would need its own brainstorm → spec → plan → build):
+- **Wire real integrations** (the big deferred item): replace the Phase 3 MOCK email/payments with real **Resend** + **Stripe Connect** via Supabase **Edge Functions** (none exist yet) — and gate/disable `app_config.mock_payments_enabled` for prod.
+- **Hardening pass:** the deferred cron exception isolation + `due_days` check (§4); revisit the contract-pdfs upload (never tested, may share the old upsert bug per earlier notes).
+- **Polish:** CSV/PDF export for invoices, report drill-downs, accrual-basis revenue toggle, FX handling — all explicitly deferred during Phase 4 brainstorming.
+- **Tests:** broaden Playwright E2E coverage for the new Tier-2 pages.
+
+Do NOT start any of these without brainstorming + user approval (superpowers HARD GATE).
+
+### How to resume building (when a task is chosen)
+1. Confirm state: `git log --oneline -5`, `npx vitest run` (68/68). 2. `superpowers:brainstorming` → spec in `docs/superpowers/specs/`. 3. `superpowers:writing-plans` → `docs/superpowers/plans/`. 4. Execute via `superpowers:subagent-driven-development` (fresh subagent/task, task-review each, final whole-branch review on the most capable model) or `superpowers:executing-plans` (inline). 5. Live-verify via MCP as the tier-2 user with `ZZ-` markers, then clean up. 6. Update `~/.claude/.../memory/loomlance_phase4_progress.md` + this file; remind user to push.
+
+---
+
+## 6. Quick command reference
+
+- Tests: `npm run test` / `npx vitest run` (68 tests, 12 files). Lint: `npm run lint`. Build: `npm run build`. PDF preview: `npm run preview`. Dev: `npm run dev`.
 - Git via Git Bash; Windows machine (PowerShell also available).
-- Superpowers skill scripts live under `C:/Users/mahmo/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.2/skills/subagent-driven-development/scripts/` (`task-brief`, `review-package`).
+- Superpowers scripts: `C:/Users/mahmo/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.2/skills/subagent-driven-development/scripts/` (`task-brief`, `review-package`).
