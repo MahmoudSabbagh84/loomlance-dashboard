@@ -16,6 +16,7 @@ import InvoiceDetailPage from '@/pages/InvoiceDetailPage'
 import RecurringInvoicesPage from '@/pages/RecurringInvoicesPage'
 import TimePage from '@/pages/TimePage'
 import ExpensesPage from '@/pages/ExpensesPage'
+import ReportsPage from '@/pages/ReportsPage'
 import ProfilePage from '@/pages/ProfilePage'
 import PublicInvoicePage from '@/pages/PublicInvoicePage'
 import NotFoundPage from '@/pages/NotFoundPage'
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
       { path: 'invoices/:id', element: <InvoiceDetailPage /> },
       { path: 'time', element: <TimePage /> },
       { path: 'expenses', element: <ExpensesPage /> },
+      { path: 'reports', element: <ReportsPage /> },
       { path: 'profile', element: <ProfilePage /> },
     ],
   },
