@@ -15,6 +15,7 @@ const CODE_MESSAGES = {
   INVOICE_LINK_INVALID: 'This invoice link is no longer valid.',
   MOCK_PAYMENTS_DISABLED: 'Online payments aren’t available right now.',
   NO_UNBILLED_TIME: 'No unbilled time for this client.',
+  NO_BILLABLE_EXPENSES: 'No billable expenses for this client.',
   TIMER_ALREADY_RUNNING: 'A timer is already running. Stop it first.',
   TIER_FEATURE_LOCKED: 'This feature is on a higher tier. Upgrade to use it.',
   UNAUTHORIZED: 'You don’t have permission to do that.',
