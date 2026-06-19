@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, FileText, List, LayoutGrid } from 'lucide-react'
+import { Plus, FileText, List, LayoutGrid, Repeat } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Table, THead, TR, TH, TD } from '@/components/ui/Table'
@@ -81,7 +81,10 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Invoices" subtitle="Drafts, sent, paid, and overdue">
-        <Button onClick={handleNew} loading={create.isPending}><Plus className="size-4" /> New invoice</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => navigate('/invoices/recurring')}><Repeat className="size-4" /> Recurring</Button>
+          <Button onClick={handleNew} loading={create.isPending}><Plus className="size-4" /> New invoice</Button>
+        </div>
       </PageHeader>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
