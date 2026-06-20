@@ -116,9 +116,12 @@ We are doing **live QA** of the app. The agreed workflow:
 - **When the user says "QA done":** switch to triage — group findings by area, rank P0→P3, write a **Triage summary** in `qa-findings.md`, then produce a fix plan (use `superpowers:writing-plans` for substantive work, `systematic-debugging` per bug; trivial ones batch-fix). Get approval before touching code.
 
 **Findings so far:** `docs/qa-findings.md` is the source of truth (survives summarization).
-- **F1 [P2]** — Downloaded invoice PDF: the big "INVOICE" title runs into the invoice number with no gap. On-site preview + public `/i/:token` link are fine (different render path). Cause is PDF-only: `src/features/invoices/InvoicePDF.jsx:75-76` (title `invoiceTitle` fontSize 20 inherits page `lineHeight 1.4`; number has only `marginTop: 3`). Fix = explicit tighter title `lineHeight` and/or bump number `marginTop`; verify via `npm run preview` (react-pdf only renders right in a prod build, NOT dev). Not yet fixed.
+- **F1 [P2]** — Downloaded invoice PDF: the big "INVOICE" title runs into the invoice number with no gap. On-site preview + public `/i/:token` link are fine (different render path). Cause is PDF-only: `src/features/invoices/InvoicePDF.jsx:75-76` (title `invoiceTitle` fontSize 20 inherits page `lineHeight 1.4`; number has only `marginTop: 3`). Fix = explicit tighter title `lineHeight` and/or bump number `marginTop`; verify via `npm run preview`. Not yet fixed.
+- **F2 [P1] + F3 [P1]** — Time page: entries don't show client/contract; generate-invoice lists ALL clients. Escalated by the user into a **Time page v2 redesign**.
 
-To resume on the new machine: keep taking QA notes from the user and appending to `qa-findings.md`; when they're done, run the triage + planning step above.
+**⏸ ACTIVE BUT PAUSED — Time page v2 brainstorming:** `docs/superpowers/specs/2026-06-20-time-page-v2-design.md` (DRAFT). Brainstorming was paused mid-session for a machine switch. **Locked decisions:** Ready-to-bill panel + ledger; add real `time_entries.contract_id`; bill **per contract**; untagged time = per-client "No contract" bucket; Section 1 (Goal/Scope) approved. **Remaining:** brainstorm Sections 2–5 (data model, RPCs, UI, testing), then write the final spec → `writing-plans` → build. **To resume:** re-enter `superpowers:brainstorming`, re-confirm the locked decisions from the draft, and continue from "OPEN sections."
+
+To resume on the new machine: either (a) continue the Time page v2 brainstorm above, or (b) keep taking new QA notes and append to `qa-findings.md`; when QA is done, run the triage + planning step.
 
 ## 8. Seeded QA data (hosted DB, tier-2 user `cb6e852e-…`)
 
