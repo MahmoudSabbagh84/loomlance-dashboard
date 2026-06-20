@@ -2,13 +2,13 @@
 
 > **Purpose:** Hand off this work session to a fresh Claude Code session (possibly on another computer) so it can pick up with no re-explanation. Read top-to-bottom, then see **"Where we are right now."**
 >
-> **Last updated:** 2026-06-19, after **Phase 4 fully shipped** (all 5 sub-projects: branding, time tracking, expenses, recurring invoices, reports). No sub-project is currently in progress.
+> **Last updated:** 2026-06-19. **Phase 4 fully shipped** (all 5 sub-projects). Now in a **live QA session** — capturing findings (see §7), DB seeded with example data (see §8). Switching machines: pull latest, the hosted DB already has the seed data.
 
 ---
 
 ## 0. TL;DR
 
-The LoomLance Dashboard's **Phase 4 "Tier features" is complete** — all five sub-projects built via the superpowers **brainstorming → writing-plans → (subagent-driven or inline) executing** flow. Everything is committed on **`main`** (we work directly on main; **the user pushes manually** — never push unless asked). As of this writing ~30 commits are unpushed. There is **no queued next task**; await direction. Tests: **68/68** unit (Vitest) green, lint clean, prod build OK.
+The LoomLance Dashboard's **Phase 4 "Tier features" is complete** — all five sub-projects built via the superpowers **brainstorming → writing-plans → (subagent-driven or inline) executing** flow. Everything is committed and **pushed** to `origin/main` through the Phase-4 work (we work directly on main; **the user pushes manually** — never push unless asked). Tests: **68/68** unit (Vitest) green, lint clean, prod build OK. **We are now mid-QA** (§7): the hosted dev DB has been seeded with rich example data on the tier-2 user (§8), and QA findings are being logged to `docs/qa-findings.md` to be triaged + fix-planned once QA is marked done. **No code fixes have started yet.**
 
 ---
 
@@ -74,9 +74,10 @@ Pushed through `c07a232`; everything after (Expenses, Recurring, Reports, specs/
 
 ## 4. Where we are RIGHT NOW
 
-- **Phase 4 COMPLETE.** No sub-project in progress; nothing queued. Await user direction.
-- **Git HEAD ≈ `1d2c14d`** on `main`, working tree clean. **68/68** unit tests, lint clean, build OK.
-- **~30 commits unpushed** (Expenses → Reports + specs/plans + this file). User pushes manually.
+- **Phase 4 COMPLETE; now mid-QA session** (§7). No code fixes started.
+- **Git HEAD ≈ `009a249`+** on `main`, all Phase-4 work pushed to `origin/main`. **68/68** unit tests, lint clean, build OK.
+- The hosted dev DB (`zbipqfsqxnvrzhpdjvvy`) is **seeded with example data** on the tier-2 user (§8) — shared DB, so it's already there when you switch machines (no re-seed needed).
+- QA findings log: `docs/qa-findings.md` (1 finding so far: F1, see §7).
 - **Deferred minor hardening** (non-blocking, from the Recurring review): cron-loop per-template exception isolation (apply across all 3 cron jobs together); a `check (due_days >= 0)` constraint on `recurring_invoice_templates`.
 
 ### Local-only state that will NOT transfer to another machine
@@ -105,3 +106,25 @@ Do NOT start any of these without brainstorming + user approval (superpowers HAR
 - Tests: `npm run test` / `npx vitest run` (68 tests, 12 files). Lint: `npm run lint`. Build: `npm run build`. PDF preview: `npm run preview`. Dev: `npm run dev`.
 - Git via Git Bash; Windows machine (PowerShell also available).
 - Superpowers scripts: `C:/Users/mahmo/.claude/plugins/cache/claude-plugins-official/superpowers/6.0.2/skills/subagent-driven-development/scripts/` (`task-brief`, `review-package`).
+
+---
+
+## 7. ACTIVE: QA session (resume here)
+
+We are doing **live QA** of the app. The agreed workflow:
+- **Capture mode (current):** as the user reports each issue, log it to **`docs/qa-findings.md`** (verbatim quote + page/feature + repro + a triage note with likely file:line + a severity P0–P3) and mirror it as a task. **Do NOT fix anything mid-QA** — just capture, so the user's click-through flow isn't interrupted.
+- **When the user says "QA done":** switch to triage — group findings by area, rank P0→P3, write a **Triage summary** in `qa-findings.md`, then produce a fix plan (use `superpowers:writing-plans` for substantive work, `systematic-debugging` per bug; trivial ones batch-fix). Get approval before touching code.
+
+**Findings so far:** `docs/qa-findings.md` is the source of truth (survives summarization).
+- **F1 [P2]** — Downloaded invoice PDF: the big "INVOICE" title runs into the invoice number with no gap. On-site preview + public `/i/:token` link are fine (different render path). Cause is PDF-only: `src/features/invoices/InvoicePDF.jsx:75-76` (title `invoiceTitle` fontSize 20 inherits page `lineHeight 1.4`; number has only `marginTop: 3`). Fix = explicit tighter title `lineHeight` and/or bump number `marginTop`; verify via `npm run preview` (react-pdf only renders right in a prod build, NOT dev). Not yet fixed.
+
+To resume on the new machine: keep taking QA notes from the user and appending to `qa-findings.md`; when they're done, run the triage + planning step above.
+
+## 8. Seeded QA data (hosted DB, tier-2 user `cb6e852e-…`)
+
+Rich **organic** example data (no markers, by user's choice) was inserted for QA. It lives in the shared hosted DB, so it's present from any machine. The user's pre-existing 16 clients were left untouched; this added:
+- **5 clients** — Northwind Traders, Globex Corporation, Stark Industries, Initech Software, **Lumière Studio (EUR)** — + 5 contacts.
+- **5 projects** (3 active / 1 paused / 1 archived) with kanban columns + 7 tasks; **4 contracts** (active/active/completed/draft).
+- **13 new invoices covering every status** (paid×5, overdue×4, sent×2, viewed×1, draft×1, void×1) + **5 payments** spread over ~4.5 months; Aging buckets all populated (Current/1-30/31-60/61-90/90+). Revenue ≈ **$15,588 + €2,880**.
+- **10 time entries** (8 unbilled + 2 billed; billable & non-billable), **10 expenses** (6 billable/4 non-billable, multiple categories, 1 EUR), **4 recurring templates** (one per cadence, 3 active + 1 paused, `next_run_at` all future so the daily cron won't auto-fire), **3 notifications**.
+- **No one-shot teardown exists** (organic, unmarked). To wipe just this QA set later, delete FK-ordered keyed on these 5 client names: payments + line_items → invoices → time_entries/expenses/recurring_invoice_templates/contracts/tasks → projects → client_contacts → clients.
