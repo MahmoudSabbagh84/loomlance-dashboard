@@ -21,7 +21,7 @@
 | Phase 6 | Hardening & reliability | 🔜 Slated |
 | Phase 7 | Reports & export polish | 🔜 Slated |
 | Phase 8 | Navigation & UX intuitiveness | 🧪 Brainstorming |
-| Phase 9 | Time tracking v2 (F2/F3 done; F7 + Expenses v2 open) | ✅ Done (Time) |
+| Phase 9 | Time tracking v2 (F2/F3/F7 done; Expenses v2 open) | ✅ Done (Time) |
 | Phase 10 | Client/contacts rework | 🧪 Brainstorming |
 | Phase 11 | Test coverage (E2E) | 🔜 Slated |
 
@@ -113,7 +113,7 @@ Redesigned the time experience. Sources: **F2, F3** (done), **F7** (deferred). S
 - **Model (revised during brainstorm):** bill **per PROJECT** (not per contract); contract is optional-on-top. Ready-to-bill panel (one row per project with unbilled time → one-click draft invoice); ledger Client + Contract columns/filters; real `time_entries.contract_id` tagging; contract `hourly_rate` pre-fills tagged entries.
 - ✅ **F2** — client/contract shown on each entry.
 - ✅ **F3** — replaced the pick-a-client modal with the per-project panel.
-- 🔜 **F7** — topbar timer visual rework (always-visible timer + play/pause + tracking animation; "pause" is a new data-model concept) — kept a **separate** effort, still open.
+- ✅ **F7** — topbar timer rework: true pause (one entry, paused time excluded) ⇄ resume, commit (✓) / discard (✕ with confirm), breathing red/amber dot. `time_entries.paused_at` + `paused_seconds`; verified live. Commit `df7cb3a`.
 - Built across commits `52bc781`→`3c1c7c4`; verified live via MCP (per-project invoice, contract→rate line grouping, `NO_UNBILLED_TIME`, RLS).
 - **Paired Expenses v2 (F12):** apply the same model to `/expenses` — show project **and** client in one column, scope generate-invoice to clients/projects with eligible expenses, and support **new-or-append** invoice per project. Share one "ready-to-bill → new-or-append, per project/contract" design across time + expenses rather than designing them separately.
 
