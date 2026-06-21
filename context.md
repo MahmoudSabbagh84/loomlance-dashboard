@@ -6,7 +6,7 @@
 >
 > ### ⏭️ RESUME HERE
 > 1. `git pull` if syncing machines. `npm install` if deps differ; recreate `.env.local` if missing (see §0 — note `VITE_EMAIL_PROVIDER=ses` now). `npx vitest run` (**87 green**).
-> 2. **Autosave Phase 2 (in progress)** — roll out autosave to the **client/project/contract/expense/recurring** modals (create/edit split), then profile sweep. Phase 1 (invoice editor + `useAutosave` + `<SaveStatus>`) is shipped. Plan: `docs/superpowers/plans/2026-06-21-autosave.md`.
+> 2. **Autosave everywhere = DONE** (Phase 12) — invoice editor + all 5 modals + profile tabs autosave; no manual Save. `useAutosave` (per-field) + `useAutosaveForm` (whole-form) in `src/hooks/useAutosave.js`; `<SaveStatus>`. Explicit-only: Send, Generate, Mark-paid, Delete, uploads, password, Stripe connect. Plan: `docs/superpowers/plans/2026-06-21-autosave.md`.
 > 3. **Phase 5a is LIVE** (SES email verified end-to-end). Remaining 5a chore (USER): delete the root AWS access key pasted during setup; swap the `loomlance` CLI profile (currently root in account `183631341841`) for a scoped non-root user.
 > 4. Then **5b (Stripe)** + **5c (PayPal link MVP)** — both code-buildable; see the Phase 5 spec.
 > 5. **superpowers** plugin not installed on this Mac — brainstorm/plan run manually (artifacts still in `docs/superpowers/`).

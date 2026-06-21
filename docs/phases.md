@@ -24,7 +24,7 @@
 | Phase 9 | Time tracking v2 + Expenses v2 (F2/F3/F7/F12c done) | ✅ Done |
 | Phase 10 | Client/contacts rework (F9/F8 done) | ✅ Done |
 | Phase 11 | Test coverage (E2E) | 🔜 Slated |
-| Phase 12 | Autosave everywhere (drop manual Save) | 🔶 In progress (Phase 1 pilot shipped) |
+| Phase 12 | Autosave everywhere (drop manual Save) | ✅ Done (invoice editor + all modals + profile) |
 
 ---
 
@@ -129,11 +129,12 @@ Source: **F8, F9**.
 - Broaden **Playwright E2E** for the new Tier-2 pages (Time, Expenses, Recurring, Reports).
 - Current: **87/87 Vitest unit tests green** (14 files).
 
-### Phase 12 — Autosave everywhere 🔶 *(brainstorm + plan: `docs/superpowers/specs|plans/2026-06-21-autosave*`)*
-Drop the manual **Save** button across the app; edits persist automatically. Decisions: pilot on invoice editor → read-only after send → modals autosave too (via a create/edit split) → creation stays an explicit step.
-- ✅ **Phase 1 (shipped 2026-06-21):** `useAutosave` hook (debounce + per-field validation gate + serialized latest-wins writes + retain/retry) and `<SaveStatus>` indicator; **invoice editor** converted (drafts autosave, sent/paid/void read-only). 6 unit tests. Commit `dc35bf4`.
-- 🔶 **Phase 2 (in progress):** roll out to the **client / project / contract / expense / recurring** modal forms via the create/edit split (explicit Create step → autosaving edit form).
-- 🔜 **Phase 3:** profile/payments sweep; remove any remaining Save buttons.
+### Phase 12 — Autosave everywhere ✅ *(brainstorm + plan: `docs/superpowers/specs|plans/2026-06-21-autosave*`)*
+Manual **Save** removed across the app; edits persist automatically. Decisions: pilot on invoice editor → read-only after send → modals autosave too (via a create/edit split) → creation stays an explicit step.
+- ✅ **Phase 1:** `useAutosave` hook (debounce + per-field validation gate + serialized latest-wins writes + retain/retry) and `<SaveStatus>` indicator; **invoice editor** converted (drafts autosave, sent/paid/void read-only). Commit `dc35bf4`.
+- ✅ **Phase 2:** `useAutosaveForm` (whole-form, commit-based); **client / project / contract / expense / recurring** modals — edit autosaves (no Save button, SaveStatus + Done), create stays explicit; receipt upload + line add/remove handled. Commit `c32311c`.
+- ✅ **Phase 3:** profile sweep — **Business / Account (display name) / Branding / Payments default-instructions** autosave (RHF tabs use `values` + `resetOptions.keepDirtyValues`); password change, logo upload, Stripe connect stay explicit. Commit `145207e`.
+- **11 autosave hook unit tests** (92 suite total). Explicit-only actions everywhere: Send, Generate-from-time/expenses, Mark-paid, Void, Delete, uploads, password, Stripe connect.
 - Also fixed the **invoice client-default bug** (new invoices silently bound to client #1 → explicit `NewInvoiceModal` picker; commit `2f30f64`).
 
 ---
