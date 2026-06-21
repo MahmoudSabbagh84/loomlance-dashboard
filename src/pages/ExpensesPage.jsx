@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, FileText, Receipt } from 'lucide-react'
+import { Plus, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
@@ -18,7 +18,7 @@ import { expenseTotals, EXPENSE_CATEGORIES } from '@/lib/expenses'
 import { formatCurrency } from '@/lib/currency'
 import { ExpensesTable } from '@/features/expenses/ExpensesTable'
 import { ExpenseFormModal } from '@/features/expenses/ExpenseFormModal'
-import { GenerateExpenseInvoiceModal } from '@/features/expenses/GenerateExpenseInvoiceModal'
+import { ExpensesReadyToBillPanel } from '@/features/expenses/ExpensesReadyToBillPanel'
 
 export default function ExpensesPage() {
   const { data: profile } = useProfile()
@@ -29,7 +29,6 @@ export default function ExpensesPage() {
   const [status, setStatus] = useState('all')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [genOpen, setGenOpen] = useState(false)
   const [toDelete, setToDelete] = useState(null)
   const del = useDeleteExpense()
   const { data: expenses = [], isLoading } = useExpenses({
@@ -62,15 +61,12 @@ export default function ExpensesPage() {
   return (
     <div className="space-y-5">
       <PageHeader title="Expenses" subtitle="Track costs and bill them back">
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setGenOpen(true)}>
-            <FileText className="size-4" /> Generate invoice
-          </Button>
-          <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
-            <Plus className="size-4" /> Add expense
-          </Button>
-        </div>
+        <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
+          <Plus className="size-4" /> Add expense
+        </Button>
       </PageHeader>
+
+      <ExpensesReadyToBillPanel />
 
       <Toolbar>
         <Select value={projectId} onChange={(e) => setProjectId(e.target.value)} className="w-44">
@@ -119,7 +115,6 @@ export default function ExpensesPage() {
       )}
 
       {formOpen ? <ExpenseFormModal open onClose={() => setFormOpen(false)} expense={editing} /> : null}
-      {genOpen ? <GenerateExpenseInvoiceModal open onClose={() => setGenOpen(false)} /> : null}
       <ConfirmDialog
         open={!!toDelete}
         title="Delete expense?"

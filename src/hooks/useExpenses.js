@@ -22,10 +22,20 @@ export function useDeleteExpense() {
   const inv = useInvalidateExpenses()
   return useMutation({ mutationFn: api.deleteExpense, onSuccess: inv })
 }
-export function useGenerateInvoiceFromExpenses() {
+export function useGenerateInvoiceFromExpensesForProject() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: api.generateInvoiceFromExpenses,
+    mutationFn: ({ projectId, currency }) => api.generateInvoiceFromExpensesForProject(projectId, currency),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] })
+      qc.invalidateQueries({ queryKey: ['invoices'] })
+    },
+  })
+}
+export function useGenerateInvoiceFromExpensesForClient() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ clientId, currency }) => api.generateInvoiceFromExpensesForClient(clientId, currency),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expenses'] })
       qc.invalidateQueries({ queryKey: ['invoices'] })

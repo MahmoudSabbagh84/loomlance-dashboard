@@ -70,8 +70,14 @@ export async function getReceiptUrl(path) {
   return data.signedUrl
 }
 
-export async function generateInvoiceFromExpenses(clientId) {
-  const { data, error } = await supabase.rpc('generate_invoice_from_expenses', { p_client_id: clientId })
+export async function generateInvoiceFromExpensesForProject(projectId, currency) {
+  const { data, error } = await supabase.rpc('generate_invoice_from_expenses_for_project', { p_project_id: projectId, p_currency: currency })
   if (error) throw mapPostgresError(error)
-  return data // new invoice id
+  return data // invoice id (new or appended)
+}
+
+export async function generateInvoiceFromExpensesForClient(clientId, currency) {
+  const { data, error } = await supabase.rpc('generate_invoice_from_expenses_for_client', { p_client_id: clientId, p_currency: currency })
+  if (error) throw mapPostgresError(error)
+  return data // invoice id (new or appended)
 }

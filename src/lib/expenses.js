@@ -28,6 +28,36 @@ function round2(n) {
   return Math.round((Number(n) || 0) * 100) / 100
 }
 
+// Group billable, unbilled expenses for the Ready-to-bill panel: one row per
+// (project, currency) and per (client, currency) for project-less expenses.
+export function readyToBillExpenses(expenses) {
+  const map = new Map()
+  for (const e of expenses || []) {
+    if (!e.billable || e.invoiced_on_invoice_id) continue
+    const currency = e.currency || 'USD'
+    const hasProject = !!e.project_id
+    const kind = hasProject ? 'project' : 'client'
+    const id = hasProject ? e.project_id : e.client_id
+    if (!id) continue
+    const key = `${kind}|${id}|${currency}`
+    const row = map.get(key) || {
+      kind,
+      id,
+      currency,
+      name: hasProject ? e.projects?.name || 'Project' : e.clients?.name || 'Client',
+      clientName: hasProject ? e.projects?.clients?.name || '—' : e.clients?.name || '—',
+      count: 0,
+      amount: 0,
+    }
+    row.count += 1
+    row.amount += Number(e.amount) || 0
+    map.set(key, row)
+  }
+  return [...map.values()]
+    .map((r) => ({ ...r, amount: round2(r.amount) }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
 export function buildExpenseInvoiceLines(expenses) {
   return (expenses || []).map((e) => ({
     id: e.id,
