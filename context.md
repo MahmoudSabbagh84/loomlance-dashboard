@@ -7,8 +7,8 @@
 > ### ⏭️ RESUME HERE
 > 1. `git pull` if syncing machines. `npm install` if deps differ; recreate `.env.local` if missing (see §0 — note `VITE_EMAIL_PROVIDER=ses` now). `npx vitest run` (**87 green**).
 > 2. **Autosave everywhere = DONE** (Phase 12) — invoice editor + all 5 modals + profile tabs autosave; no manual Save. `useAutosave` (per-field) + `useAutosaveForm` (whole-form) in `src/hooks/useAutosave.js`; `<SaveStatus>`. Explicit-only: Send, Generate, Mark-paid, Delete, uploads, password, Stripe connect. Plan: `docs/superpowers/plans/2026-06-21-autosave.md`.
-> 3. **Phase 5a is LIVE** (SES email verified end-to-end). Remaining 5a chore (USER): delete the root AWS access key pasted during setup; swap the `loomlance` CLI profile (currently root in account `183631341841`) for a scoped non-root user.
-> 4. Then **5b (Stripe)** + **5c (PayPal link MVP)** — both code-buildable; see the Phase 5 spec.
+> 3. **Phase 5a (SES email) + 5b (Stripe pay) are LIVE & verified** (Stripe in test mode). Remaining chores (USER): delete the root AWS access key pasted during setup; swap the `loomlance` CLI profile (currently root in `183631341841`) for a scoped non-root user; for Stripe go-live switch to `sk_live_` + live webhook + activate live mode + point `PUBLIC_SITE_URL`/`VITE_PUBLIC_SITE_URL` at the deployed dashboard.
+> 4. Then **5c (PayPal link MVP)** — code-buildable now; see the Phase 5 spec. (`.env.local` now: `VITE_EMAIL_PROVIDER=ses`, `VITE_PAYMENTS_PROVIDER=stripe`, `VITE_PUBLIC_SITE_URL=http://localhost:4173`; `app_config.mock_payments_enabled=false`.)
 > 5. **superpowers** plugin not installed on this Mac — brainstorm/plan run manually (artifacts still in `docs/superpowers/`).
 
 ---

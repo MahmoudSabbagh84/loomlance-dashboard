@@ -17,7 +17,7 @@
 | Phase 3 | Send & Pay (mock) | ✅ Done (real integrations deferred → Phase 5) |
 | Phase 4 | Tier features | ✅ Done |
 | **— QA pass —** | Live QA findings (F1–F10) | 🐞 In progress (capturing) |
-| Phase 5 | Real integrations (SES + Stripe + PayPal, per-user) | 🔶 **5a LIVE** (SES email verified end-to-end); 5b/5c pending |
+| Phase 5 | Real integrations (SES + Stripe + PayPal, per-user) | 🔶 **5a + 5b LIVE** (SES email + Stripe pay verified end-to-end, test mode); 5c pending |
 | Phase 6 | Hardening & reliability | 🔜 Slated |
 | Phase 7 | Reports & export polish | 🔜 Slated |
 | Phase 8 | Navigation & UX (F6/F4b/F10 done) | ✅ Done |
@@ -88,7 +88,8 @@ Replace the Phase 3 MOCKs with real services via **Supabase Edge Functions** (al
 - ✅ **5a — LIVE & verified (2026-06-21):** migration `profiles.online_payments_enabled` + `default_payment_instructions` + `paypal_link`; `send-invoice` Edge Function rewritten Resend→**SES** (SigV4 via aws4fetch, platform-from + reply-to user); `providers.js` accepts `ses`; `PaymentsTab` master toggle + default-instructions card; new invoices prefill instructions from the profile; public `can_pay` now also requires `online_payments_enabled`. **Cash already works** (`MarkPaidModal` method `cash`).
   - **Go-live done:** SES domain `send.loomlance.com` verified in AWS account `183631341841` (Easy DKIM + custom MAIL FROM `bounce.send.loomlance.com` + DMARC `p=none`, all in Route 53); SES **production access granted**; least-privilege IAM user `loomlance-ses-sender` (scoped to `ses:SendEmail` on the identity); Supabase secrets set (`AWS_*`, `SES_FROM_EMAIL=invoices@send.loomlance.com`, `PUBLIC_SITE_URL=https://app.loomlance.com`); `send-invoice` deployed (**v2** — fixed silent Gmail quarantine by adding `Date`/`Message-ID` headers + RFC-2045 76-col base64 wrapping). **Real platform send confirmed delivered to inbox.**
   - **Outstanding (USER):** delete the root access key pasted during setup; replace the `loomlance` AWS CLI profile (currently root) with a scoped non-root user.
-- 🔜 **5b — Stripe:** finish/verify `stripe-connect`/`stripe-checkout`/`stripe-webhook` (test mode + Stripe CLI), deploy, gate on toggle+connected.
+- ✅ **5b — Stripe: LIVE & verified (test mode, 2026-06-21).** Deployed `stripe-connect` (JWT), `stripe-checkout` (no-JWT), `stripe-webhook` (no-JWT) via MCP. DB ready (`stripe_events`, `invoice_payments.stripe_payment_intent_id`). User: enabled Connect platform + Express onboarding, set `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` secrets, registered webhook for `checkout.session.completed`. Flipped `VITE_PAYMENTS_PROVIDER=stripe`; **disabled `app_config.mock_payments_enabled`**. Verified: 2 test-card payments → webhook → invoices auto-marked `paid` with `invoice_payments` rows (method `stripe`, real PI ids).
+  - **Go-live TODO (USER):** switch to `sk_live_` + live webhook secret + activate Stripe live mode; set Edge `PUBLIC_SITE_URL` + `VITE_PUBLIC_SITE_URL` to the deployed dashboard URL (currently `app.loomlance.com` for email/redirect, `localhost:4173` locally).
 - 🔜 **5c — PayPal (link MVP):** save `paypal_link` in `PaymentsTab`; public "Pay with PayPal" link; manual mark-paid (`method: 'paypal'`). Full Orders API + webhook later.
 - **Live prerequisites (USER):** AWS SES (verify domain DKIM/SPF/DMARC + request prod access + IAM keys), Stripe (keys + webhook), PayPal; `supabase functions deploy …`; set secrets (`AWS_*`, `SES_FROM_EMAIL`, `STRIPE_*`); flip `VITE_EMAIL_PROVIDER=ses` / `VITE_PAYMENTS_PROVIDER=stripe`; **disable `app_config.mock_payments_enabled`**.
 
