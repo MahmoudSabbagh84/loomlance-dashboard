@@ -1,74 +1,108 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/Button'
+import { Lock } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Select } from '@/components/ui/Select'
 import { Label } from '@/components/ui/Label'
 import { FieldError } from '@/components/ui/FieldError'
+import { SaveStatus } from '@/components/ui/SaveStatus'
 import { invoiceCreateSchema } from '@/api/schemas/invoices'
-import { useUpdateInvoice, useReplaceLineItems } from '@/hooks/useInvoices'
 import { useClients } from '@/hooks/useClients'
 import { useProjects } from '@/hooks/useProjects'
+import { useAutosave } from '@/hooks/useAutosave'
+import { updateInvoice } from '@/api/invoices'
+import { replaceLineItems } from '@/api/invoice-line-items'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { LineItemsTable } from './LineItemsTable'
 import { TotalsPanel } from './TotalsPanel'
 import { InvoicePreview } from './InvoicePreview'
 
+// Fields the autosave engine tracks (top-level form keys).
+const AUTOSAVE_FIELDS = [
+  'client_id', 'project_id', 'invoice_number', 'issue_date', 'due_date',
+  'currency', 'notes', 'terms', 'payment_instructions', 'line_items',
+]
+
 export function InvoiceEditor({ invoice }) {
-  const update = useUpdateInvoice()
-  const replaceLines = useReplaceLineItems()
+  const qc = useQueryClient()
   const { data: clientsPage } = useClients({ pageSize: 200 })
   const clients = clientsPage?.rows ?? []
+  // Only drafts autosave; sent/paid/void invoices are read-only (a client may already have it).
+  const editable = invoice.status === 'draft'
 
-  const { register, handleSubmit, control, watch, setValue, getValues, formState: { errors, isSubmitting, isDirty } } = useForm({
+  const defaults = {
+    client_id: invoice.client_id,
+    project_id: invoice.project_id,
+    invoice_number: invoice.invoice_number,
+    issue_date: invoice.issue_date,
+    due_date: invoice.due_date,
+    currency: invoice.currency,
+    notes: invoice.notes ?? '',
+    terms: invoice.terms ?? '',
+    payment_instructions: invoice.payment_instructions ?? '',
+    line_items: (invoice.invoice_line_items || []).sort((a, b) => a.position - b.position).map((li) => ({
+      description: li.description,
+      quantity: Number(li.quantity),
+      unit_price: Number(li.unit_price),
+      tax_rate: Number(li.tax_rate),
+      discount_rate: Number(li.discount_rate),
+      position: li.position,
+    })),
+  }
+
+  const { register, control, watch, setValue, getValues, trigger, formState: { errors } } = useForm({
     resolver: zodResolver(invoiceCreateSchema),
-    defaultValues: {
-      client_id: invoice.client_id,
-      project_id: invoice.project_id,
-      invoice_number: invoice.invoice_number,
-      issue_date: invoice.issue_date,
-      due_date: invoice.due_date,
-      currency: invoice.currency,
-      notes: invoice.notes ?? '',
-      terms: invoice.terms ?? '',
-      payment_instructions: invoice.payment_instructions ?? '',
-      line_items: (invoice.invoice_line_items || []).sort((a, b) => a.position - b.position).map((li) => ({
-        description: li.description,
-        quantity: Number(li.quantity),
-        unit_price: Number(li.unit_price),
-        tax_rate: Number(li.tax_rate),
-        discount_rate: Number(li.discount_rate),
-        position: li.position,
-      })),
-    },
+    defaultValues: defaults,
   })
   const selectedClient = watch('client_id')
   const selectedProject = watch('project_id')
   const { data: projects = [] } = useProjects({ clientId: selectedClient, status: 'all' })
 
-  const onSubmit = async (values) => {
-    try {
-      const { line_items, ...rest } = values
-      rest.project_id = rest.project_id || null
-      await update.mutateAsync({ id: invoice.id, patch: rest })
-      await replaceLines.mutateAsync({ invoiceId: invoice.id, items: line_items.map((li, i) => ({ ...li, position: i })) })
-      toast.success('Invoice saved')
-    } catch (e) {
-      toast.error(e.userMessage || 'Save failed')
+  // Persist a validated patch: scalars → updateInvoice; line_items → replaceLineItems.
+  const save = async (patch) => {
+    const { line_items, ...rest } = patch
+    if (Object.keys(rest).length) {
+      await updateInvoice(invoice.id, rest)
+      qc.setQueryData(['invoices', 'detail', invoice.id], (prev) => (prev ? { ...prev, ...rest } : prev))
     }
+    if (line_items) {
+      await replaceLineItems(invoice.id, line_items.map((li, i) => ({ ...li, position: i })))
+    }
+    // Keep the list view fresh without thrashing on every keystroke.
+    qc.invalidateQueries({ queryKey: ['invoices', 'list'] })
   }
 
+  const { status, retry } = useAutosave({
+    watch,
+    trigger,
+    save,
+    fields: AUTOSAVE_FIELDS,
+    enabled: editable,
+    initial: defaults,
+  })
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-2">
+    <form className="grid gap-6 lg:grid-cols-2" onSubmit={(e) => e.preventDefault()}>
       <div className="space-y-4">
+        <div className="flex h-5 items-center justify-end">
+          {editable ? (
+            <SaveStatus status={status} onRetry={retry} />
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs text-fg-muted">
+              <Lock className="size-3.5" /> {invoice.status} — read-only
+            </span>
+          )}
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="client_id" required>Client</Label>
             <Select
               id="client_id"
               value={selectedClient ?? ''}
+              disabled={!editable}
               onChange={(e) => setValue('client_id', e.target.value, { shouldDirty: true, shouldValidate: true })}
             >
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -80,6 +114,7 @@ export function InvoiceEditor({ invoice }) {
             <Select
               id="project_id"
               value={selectedProject ?? ''}
+              disabled={!editable}
               onChange={(e) => setValue('project_id', e.target.value, { shouldDirty: true })}
             >
               <option value="">—</option>
@@ -90,50 +125,53 @@ export function InvoiceEditor({ invoice }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="invoice_number" required>Number</Label>
-            <Input id="invoice_number" {...register('invoice_number')} />
+            <Input id="invoice_number" disabled={!editable} {...register('invoice_number')} />
           </div>
           <div>
             <Label htmlFor="currency" required>Currency</Label>
-            <Select id="currency" {...register('currency')}>
+            <Select id="currency" disabled={!editable} {...register('currency')}>
               {SUPPORTED_CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
             </Select>
           </div>
           <div>
             <Label htmlFor="issue_date" required>Issue date</Label>
-            <Input id="issue_date" type="date" {...register('issue_date')} />
+            <Input id="issue_date" type="date" disabled={!editable} {...register('issue_date')} />
           </div>
           <div>
             <Label htmlFor="due_date" required>Due date</Label>
-            <Input id="due_date" type="date" {...register('due_date')} />
+            <Input id="due_date" type="date" disabled={!editable} {...register('due_date')} />
           </div>
         </div>
 
         <div>
           <Label>Line items</Label>
-          <LineItemsTable control={control} register={register} setValue={setValue} getValues={getValues} />
+          <LineItemsTable
+            control={control}
+            register={register}
+            setValue={setValue}
+            getValues={getValues}
+            disabled={!editable}
+            onItemsChanged={() => setValue('line_items', getValues('line_items'), { shouldDirty: true })}
+          />
           <FieldError>{errors.line_items?.message}</FieldError>
         </div>
 
         <div className="space-y-3">
           <div>
             <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" rows={2} {...register('notes')} />
+            <Textarea id="notes" rows={2} disabled={!editable} {...register('notes')} />
           </div>
           <div>
             <Label htmlFor="terms">Terms</Label>
-            <Textarea id="terms" rows={2} {...register('terms')} />
+            <Textarea id="terms" rows={2} disabled={!editable} {...register('terms')} />
           </div>
           <div>
             <Label htmlFor="payment_instructions">Payment instructions</Label>
-            <Textarea id="payment_instructions" rows={2} {...register('payment_instructions')} />
+            <Textarea id="payment_instructions" rows={2} disabled={!editable} {...register('payment_instructions')} />
           </div>
         </div>
 
         <TotalsPanel control={control} />
-
-        <div className="flex justify-end">
-          <Button type="submit" loading={isSubmitting} disabled={!isDirty}>Save</Button>
-        </div>
       </div>
 
       <div className="h-fit lg:sticky lg:top-20">

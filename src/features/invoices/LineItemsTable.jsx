@@ -25,8 +25,16 @@ function ColumnToggle({ active, onClick, children }) {
   )
 }
 
-export function LineItemsTable({ control, register, setValue, getValues }) {
+export function LineItemsTable({ control, register, setValue, getValues, disabled = false, onItemsChanged }) {
   const { fields, append, remove } = useFieldArray({ control, name: 'line_items' })
+  const addLine = () => {
+    append({ description: '', quantity: 1, unit_price: 0, tax_rate: 0, discount_rate: 0, position: fields.length })
+    onItemsChanged?.()
+  }
+  const removeLine = (i) => {
+    remove(i)
+    onItemsChanged?.()
+  }
 
   // Tax/Discount columns are optional — default on only if existing data uses them.
   const initialLines = getValues?.('line_items') ?? []
@@ -51,11 +59,13 @@ export function LineItemsTable({ control, register, setValue, getValues }) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-fg-muted">Columns:</span>
-        <ColumnToggle active={showTax} onClick={toggleTax}>Tax %</ColumnToggle>
-        <ColumnToggle active={showDiscount} onClick={toggleDiscount}>Discount %</ColumnToggle>
-      </div>
+      {!disabled ? (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-fg-muted">Columns:</span>
+          <ColumnToggle active={showTax} onClick={toggleTax}>Tax %</ColumnToggle>
+          <ColumnToggle active={showDiscount} onClick={toggleDiscount}>Discount %</ColumnToggle>
+        </div>
+      ) : null}
       <div className="overflow-hidden rounded-lg border border-border">
         <table className="w-full text-sm">
           <thead className="bg-bg-elevated text-xs uppercase text-fg-muted">
@@ -72,43 +82,42 @@ export function LineItemsTable({ control, register, setValue, getValues }) {
             {fields.map((field, i) => (
               <tr key={field.id} className="border-t border-border">
                 <td className="px-2 py-2">
-                  <Textarea rows={1} {...register(`line_items.${i}.description`)} />
+                  <Textarea rows={1} disabled={disabled} {...register(`line_items.${i}.description`)} />
                 </td>
                 <td className="px-2 py-2">
-                  <Input type="number" step="0.01" className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.quantity`, { valueAsNumber: true })} />
+                  <Input type="number" step="0.01" disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.quantity`, { valueAsNumber: true })} />
                 </td>
                 <td className="px-2 py-2">
-                  <Input type="number" step="0.01" className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.unit_price`, { valueAsNumber: true })} />
+                  <Input type="number" step="0.01" disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.unit_price`, { valueAsNumber: true })} />
                 </td>
                 {showTax ? (
                   <td className="px-2 py-2">
-                    <Input type="number" step="0.1" className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.tax_rate`, { valueAsNumber: true })} />
+                    <Input type="number" step="0.1" disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.tax_rate`, { valueAsNumber: true })} />
                   </td>
                 ) : null}
                 {showDiscount ? (
                   <td className="px-2 py-2">
-                    <Input type="number" step="0.1" className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.discount_rate`, { valueAsNumber: true })} />
+                    <Input type="number" step="0.1" disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.discount_rate`, { valueAsNumber: true })} />
                   </td>
                 ) : null}
                 <td className="px-2 py-2 text-right">
-                  <Button variant="ghost" size="sm" type="button" onClick={() => remove(i)} aria-label="Remove">
-                    <Trash2 className="size-4 text-danger" />
-                  </Button>
+                  {!disabled ? (
+                    <Button variant="ghost" size="sm" type="button" onClick={() => removeLine(i)} aria-label="Remove">
+                      <Trash2 className="size-4 text-danger" />
+                    </Button>
+                  ) : null}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="bg-bg-elevated p-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => append({ description: '', quantity: 1, unit_price: 0, tax_rate: 0, discount_rate: 0, position: fields.length })}
-          >
-            <Plus className="size-4" /> Add line
-          </Button>
-        </div>
+        {!disabled ? (
+          <div className="bg-bg-elevated p-2">
+            <Button type="button" variant="ghost" size="sm" onClick={addLine}>
+              <Plus className="size-4" /> Add line
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   )
