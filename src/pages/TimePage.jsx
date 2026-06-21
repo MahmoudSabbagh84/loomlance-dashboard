@@ -17,7 +17,7 @@ import { formatDuration } from '@/lib/time'
 import { useTimeEntries, useDeleteEntry } from '@/hooks/useTimeEntries'
 import { TimeEntriesTable } from '@/features/time/TimeEntriesTable'
 import { TimeEntryFormModal } from '@/features/time/TimeEntryFormModal'
-import { GenerateInvoiceModal } from '@/features/time/GenerateInvoiceModal'
+import { ReadyToBillPanel } from '@/features/time/ReadyToBillPanel'
 
 export default function TimePage() {
   const { data: profile } = useProfile()
@@ -26,12 +26,13 @@ export default function TimePage() {
   const { data: projects = [] } = useProjects({ status: 'all' })
   const [projectId, setProjectId] = useState('')
   const [status, setStatus] = useState('all')
+  const [clientFilter, setClientFilter] = useState('')
+  const [contractFilter, setContractFilter] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [genOpen, setGenOpen] = useState(false)
   const [toDelete, setToDelete] = useState(null)
   const del = useDeleteEntry()
-  const { data: entries = [], isLoading } = useTimeEntries({ projectId: projectId || undefined, status })
+  const { data: allEntries = [], isLoading } = useTimeEntries({ projectId: projectId || undefined, status })
 
   if (!hasFeature(tier, FEATURES.TIME_TRACKING)) {
     return (
@@ -42,20 +43,23 @@ export default function TimePage() {
     )
   }
 
+  // Client + Contract filter options derived from the loaded (project/status-filtered) set.
+  const clientOptions = [...new Map(allEntries.filter((e) => e.projects?.client_id).map((e) => [e.projects.client_id, e.projects?.clients?.name || '—'])).entries()]
+  const contractOptions = [...new Map(allEntries.filter((e) => e.contract_id).map((e) => [e.contract_id, e.contracts?.title || '—'])).entries()]
+  const entries = allEntries.filter(
+    (e) => (!clientFilter || e.projects?.client_id === clientFilter) && (!contractFilter || e.contract_id === contractFilter),
+  )
   const totalMinutes = entries.reduce((s, e) => s + (e.duration_minutes || 0), 0)
 
   return (
     <div className="space-y-5">
       <PageHeader title="Time" subtitle="Track hours and bill them">
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setGenOpen(true)}>
-            <FileText className="size-4" /> Generate invoice
-          </Button>
-          <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
-            <Plus className="size-4" /> Log time
-          </Button>
-        </div>
+        <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
+          <Plus className="size-4" /> Log time
+        </Button>
       </PageHeader>
+
+      <ReadyToBillPanel currency={profile?.default_currency || 'USD'} />
 
       <Toolbar>
         <Select value={projectId} onChange={(e) => setProjectId(e.target.value)} className="w-44">
@@ -64,6 +68,18 @@ export default function TimePage() {
             <option key={p.id} value={p.id}>
               {p.name}
             </option>
+          ))}
+        </Select>
+        <Select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="w-44">
+          <option value="">All clients</option>
+          {clientOptions.map(([id, name]) => (
+            <option key={id} value={id}>{name}</option>
+          ))}
+        </Select>
+        <Select value={contractFilter} onChange={(e) => setContractFilter(e.target.value)} className="w-44">
+          <option value="">All contracts</option>
+          {contractOptions.map(([id, title]) => (
+            <option key={id} value={id}>{title}</option>
           ))}
         </Select>
         <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-36">
@@ -110,7 +126,6 @@ export default function TimePage() {
       )}
 
       {formOpen ? <TimeEntryFormModal open onClose={() => setFormOpen(false)} entry={editing} /> : null}
-      {genOpen ? <GenerateInvoiceModal open onClose={() => setGenOpen(false)} /> : null}
       <ConfirmDialog
         open={!!toDelete}
         title="Delete time entry?"

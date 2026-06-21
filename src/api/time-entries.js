@@ -3,7 +3,7 @@ import { mapPostgresError } from '@/lib/errors'
 import { computeDurationMinutes } from '@/lib/time'
 
 const SELECT =
-  'id, project_id, task_id, started_at, ended_at, duration_minutes, description, billable, hourly_rate, invoiced_on_invoice_id, projects(name, client_id, clients(name))'
+  'id, project_id, contract_id, task_id, started_at, ended_at, duration_minutes, description, billable, hourly_rate, invoiced_on_invoice_id, projects(name, client_id, clients(name)), contracts(title, hourly_rate)'
 
 async function uid() {
   const { data } = await supabase.auth.getSession()
@@ -28,12 +28,13 @@ export async function getRunningTimer() {
   return data
 }
 
-export async function startTimer({ projectId, description = '', hourlyRate = null }) {
+export async function startTimer({ projectId, contractId = null, description = '', hourlyRate = null }) {
   const { data, error } = await supabase
     .from('time_entries')
     .insert({
       user_id: await uid(),
       project_id: projectId,
+      contract_id: contractId || null,
       description,
       hourly_rate: hourlyRate,
       started_at: new Date().toISOString(),
@@ -59,7 +60,7 @@ export async function stopTimer(id) {
   return data
 }
 
-export async function createManualEntry({ projectId, date, durationMinutes, description = '', billable = true, hourlyRate = null }) {
+export async function createManualEntry({ projectId, contractId = null, date, durationMinutes, description = '', billable = true, hourlyRate = null }) {
   const startedAt = new Date(`${date}T09:00:00`).toISOString()
   const endedAt = new Date(new Date(startedAt).getTime() + durationMinutes * 60000).toISOString()
   const { data, error } = await supabase
@@ -67,6 +68,7 @@ export async function createManualEntry({ projectId, date, durationMinutes, desc
     .insert({
       user_id: await uid(),
       project_id: projectId,
+      contract_id: contractId || null,
       started_at: startedAt,
       ended_at: endedAt,
       duration_minutes: durationMinutes,
@@ -91,8 +93,8 @@ export async function deleteEntry(id) {
   if (error) throw mapPostgresError(error)
 }
 
-export async function generateInvoiceFromTime(clientId) {
-  const { data, error } = await supabase.rpc('generate_invoice_from_time', { p_client_id: clientId })
+export async function generateInvoiceFromTimeForProject(projectId) {
+  const { data, error } = await supabase.rpc('generate_invoice_from_time_for_project', { p_project_id: projectId })
   if (error) throw mapPostgresError(error)
   return data // new invoice id
 }

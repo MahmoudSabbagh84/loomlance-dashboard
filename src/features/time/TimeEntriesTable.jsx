@@ -12,6 +12,8 @@ export function TimeEntriesTable({ entries, currency = 'USD', onEdit, onDelete }
         <TR>
           <TH>Date</TH>
           <TH>Project</TH>
+          <TH>Client</TH>
+          <TH>Contract</TH>
           <TH>Description</TH>
           <TH>Duration</TH>
           <TH>Rate</TH>
@@ -24,6 +26,8 @@ export function TimeEntriesTable({ entries, currency = 'USD', onEdit, onDelete }
           <TR key={e.id}>
             <TD className="text-xs tabular-nums text-fg-muted">{formatDate(e.started_at)}</TD>
             <TD>{e.projects?.name}</TD>
+            <TD className="text-fg-muted">{e.projects?.clients?.name || '—'}</TD>
+            <TD className="text-fg-muted">{e.contracts?.title || '—'}</TD>
             <TD className="text-fg-muted">{e.description || '—'}</TD>
             <TD className="tabular-nums">
               {e.ended_at ? formatDuration(e.duration_minutes) : <span className="text-primary">running…</span>}

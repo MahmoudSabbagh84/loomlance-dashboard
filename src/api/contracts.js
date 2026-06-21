@@ -13,6 +13,21 @@ export async function listContracts({ clientId, status, search = '', sort = { fi
   return { rows: data || [], total: count || 0 }
 }
 
+// Contracts a time entry can be tagged to: same client, the entry's project or
+// no project, and active/draft only. Used by the timer + entry form pickers.
+export async function listTaggableContracts({ projectId, clientId } = {}) {
+  if (!projectId || !clientId) return []
+  const { data, error } = await supabase
+    .from('contracts')
+    .select('id, title, hourly_rate')
+    .eq('client_id', clientId)
+    .in('status', ['active', 'draft'])
+    .or(`project_id.eq.${projectId},project_id.is.null`)
+    .order('title')
+  if (error) throw mapPostgresError(error)
+  return data || []
+}
+
 export async function getContract(id) {
   const { data, error } = await supabase.from('contracts').select('*, clients(name), projects(name)').eq('id', id).single()
   if (error) throw mapPostgresError(error)

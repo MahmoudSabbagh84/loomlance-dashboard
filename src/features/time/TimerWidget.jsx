@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { cn } from '@/components/ui/cn'
 import { useProfile } from '@/hooks/useProfile'
 import { useProjects } from '@/hooks/useProjects'
+import { useTaggableContracts } from '@/hooks/useContracts'
 import { hasFeature, FEATURES } from '@/lib/tier'
 import { formatElapsed } from '@/lib/time'
 import { useRunningTimer, useStartTimer, useStopTimer } from '@/hooks/useTimeEntries'
@@ -17,6 +18,9 @@ export function TimerWidget() {
   const { data: projects = [] } = useProjects({ status: 'active' })
   const [open, setOpen] = useState(false)
   const [projectId, setProjectId] = useState('')
+  const [contractId, setContractId] = useState('')
+  const clientId = projects.find((p) => p.id === projectId)?.client_id
+  const { data: contracts = [] } = useTaggableContracts(projectId, clientId)
   const [elapsed, setElapsed] = useState(0)
   const ref = useRef(null)
 
@@ -40,10 +44,13 @@ export function TimerWidget() {
 
   const onStart = async () => {
     if (!projectId) return
+    const contract = contracts.find((c) => c.id === contractId)
+    const hourlyRate = contract?.hourly_rate ?? profile?.default_hourly_rate ?? null
     try {
-      await start.mutateAsync({ projectId, hourlyRate: profile?.default_hourly_rate ?? null })
+      await start.mutateAsync({ projectId, contractId: contractId || null, hourlyRate })
       setOpen(false)
       setProjectId('')
+      setContractId('')
     } catch (e) {
       toast.error(e.userMessage || 'Could not start timer')
     }
@@ -85,7 +92,7 @@ export function TimerWidget() {
           <p className="mb-2 text-xs font-medium text-fg-muted">Start a timer</p>
           <select
             value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
+            onChange={(e) => { setProjectId(e.target.value); setContractId('') }}
             className="mb-2 h-9 w-full rounded-md border border-border bg-bg-muted px-2 text-sm"
           >
             <option value="">Select a project…</option>
@@ -95,6 +102,20 @@ export function TimerWidget() {
               </option>
             ))}
           </select>
+          {projectId && contracts.length > 0 ? (
+            <select
+              value={contractId}
+              onChange={(e) => setContractId(e.target.value)}
+              className="mb-2 h-9 w-full rounded-md border border-border bg-bg-muted px-2 text-sm"
+            >
+              <option value="">No contract</option>
+              {contracts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <button
             onClick={onStart}
             disabled={!projectId || start.isPending}

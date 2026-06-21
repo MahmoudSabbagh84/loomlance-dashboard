@@ -11,6 +11,13 @@ export function useContracts(params) {
 export function useContract(id) {
   return useQuery({ queryKey: ['contracts', 'detail', id], queryFn: () => api.getContract(id), enabled: !!id })
 }
+export function useTaggableContracts(projectId, clientId) {
+  return useQuery({
+    queryKey: ['contracts', 'taggable', projectId, clientId],
+    queryFn: () => api.listTaggableContracts({ projectId, clientId }),
+    enabled: !!projectId && !!clientId,
+  })
+}
 function useInvalidate() {
   const qc = useQueryClient()
   return () => qc.invalidateQueries({ queryKey: ['contracts'] })

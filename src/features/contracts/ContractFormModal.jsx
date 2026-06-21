@@ -30,6 +30,7 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
       start_date: contract?.start_date ?? '',
       end_date: contract?.end_date ?? '',
       value: contract?.value ?? null,
+      hourly_rate: contract?.hourly_rate ?? null,
       currency: contract?.currency ?? 'USD',
       status: contract?.status ?? 'active',
     },
@@ -44,6 +45,7 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
         ...values,
         project_id: values.project_id || null,
         value: values.value === '' || values.value == null ? null : Number(values.value),
+        hourly_rate: values.hourly_rate === '' || values.hourly_rate == null ? null : Number(values.hourly_rate),
         start_date: values.start_date || null,
         end_date: values.end_date || null,
       }
@@ -104,10 +106,15 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
             <FieldError>{errors.end_date?.message}</FieldError>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="value">Value</Label>
-            <Input id="value" type="number" step="0.01" {...register('value', { valueAsNumber: true })} />
+            <Input id="value" type="number" step="0.01" className="no-spinner" {...register('value', { valueAsNumber: true })} />
+          </div>
+          <div>
+            <Label htmlFor="hourly_rate">Hourly rate</Label>
+            <Input id="hourly_rate" type="number" step="0.01" className="no-spinner" {...register('hourly_rate', { valueAsNumber: true })} />
+            <p className="mt-1 text-xs text-fg-subtle">Pre-fills the rate when time is tagged to this contract.</p>
           </div>
           <div>
             <Label htmlFor="currency">Currency</Label>

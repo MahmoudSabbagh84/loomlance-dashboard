@@ -8,6 +8,7 @@ export const contractCreateSchema = z.object({
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal('')).nullable().optional(),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal('')).nullable().optional(),
   value: z.number().nonnegative().nullable().optional(),
+  hourly_rate: z.number().nonnegative().nullable().optional(),
   currency: z.string().length(3).default('USD'),
   status: z.enum(['draft', 'active', 'completed', 'expired', 'canceled']).default('active'),
 }).refine(

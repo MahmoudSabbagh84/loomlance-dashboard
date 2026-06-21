@@ -34,10 +34,10 @@ export function useDeleteEntry() {
   const inv = useInvalidateTime()
   return useMutation({ mutationFn: api.deleteEntry, onSuccess: inv })
 }
-export function useGenerateInvoiceFromTime() {
+export function useGenerateInvoiceFromTimeForProject() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: api.generateInvoiceFromTime,
+    mutationFn: api.generateInvoiceFromTimeForProject,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['time-entries'] })
       qc.invalidateQueries({ queryKey: ['invoices'] })
