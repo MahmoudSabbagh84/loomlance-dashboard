@@ -2,7 +2,13 @@
 
 > **Purpose:** Hand off this work session to a fresh Claude Code session (possibly on another computer) so it can pick up with no re-explanation. Read top-to-bottom, then see **"Where we are right now."**
 >
-> **Last updated:** 2026-06-21. **Machine switch is DONE** (now on macOS; see §0). **The live-QA session is COMPLETE — all findings F1–F17 are fixed, committed, and pushed.** Phases 8, 9, 10 shipped this session. Source of truth for status: `docs/phases.md` + `docs/qa-findings.md`.
+> **Last updated:** 2026-06-21 (evening, end of session — paused to switch back to the **main PC** tomorrow). **Everything is committed & pushed to `origin/main`** (sync via `git pull`). Live-QA is COMPLETE (F1–F17 ✅); Phases 8/9/10 shipped; **Phase 5a (real integrations — code) is done, deploy pending.** Source of truth: `docs/phases.md` + `docs/qa-findings.md` + `docs/superpowers/specs/2026-06-21-phase-5-real-integrations.md`.
+>
+> ### ⏭️ RESUME HERE tomorrow (main PC)
+> 1. `git pull` (HEAD should be `0aeb10c` or later). `npm install` if deps differ; recreate `.env.local` if missing (see §0). `npx vitest run` (81 green).
+> 2. **Phase 5 is mid-flight.** **5a code is built** (SES email + per-user online-payments toggle + cash-first); it is **NOT live** — needs YOUR AWS account: verify an SES sending domain (DKIM/SPF/DMARC), request SES production access, create IAM keys, set Edge-Function secrets, `supabase functions deploy send-invoice`, set `VITE_EMAIL_PROVIDER=ses`. See the spec's "Live prerequisites".
+> 3. Then continue **5b (Stripe: verify/deploy the existing functions)** and **5c (PayPal link MVP)** — both code-buildable now; see the spec.
+> 4. If the main PC has the **superpowers** plugin installed, you can use `superpowers:*`; this Mac did not (we ran brainstorm/plan manually).
 
 ---
 
@@ -25,7 +31,7 @@
 - **Projects-first** data model. RLS on every table, scoped by `auth.uid()`.
 
 ### Supabase (hosted — NO local Docker)
-- **Dev project id:** `zbipqfsqxnvrzhpdjvvy`. Apply migrations via Supabase MCP `apply_migration` (ToolSearch `select:mcp__supabase__apply_migration,mcp__supabase__execute_sql`) AND write the file to `supabase/migrations/<YYYYMMDDHHMMSS>_<name>.sql`. Latest migrations: `20260621041345_time_v2.sql`, `20260621044846_timer_pause.sql`, `20260621051311_expenses_v2_find_or_append.sql`.
+- **Dev project id:** `zbipqfsqxnvrzhpdjvvy`. Apply migrations via Supabase MCP `apply_migration` (ToolSearch `select:mcp__supabase__apply_migration,mcp__supabase__execute_sql`) AND write the file to `supabase/migrations/<YYYYMMDDHHMMSS>_<name>.sql`. Latest migrations: `20260621041345_time_v2.sql`, `20260621044846_timer_pause.sql`, `20260621051311_expenses_v2_find_or_append.sql`, `20260621064612_phase5a_payment_prefs.sql`, `20260621071103_phase5a_can_pay_toggle.sql`.
 - **Test user is `tier_2`** (uid `cb6e852e-0709-4627-8601-4a6641b3fa4d`; default currency USD; client "Mahmoud Sabbagh" `3881306f-4cec-4a0c-93f3-20fbaf0a4c17`; project `6779ac12-d1b2-4708-a3c0-bf48d47614b5`). Re-query if unsure.
 - **MCP `execute_sql` returns only the LAST statement's rows.** One read per call, or join.
 - To call an `auth.uid()` SECURITY DEFINER RPC via MCP: prefix `select set_config('request.jwt.claims','{"sub":"<uid>","role":"authenticated"}', true);`. MCP runs as service role (bypasses RLS) — seed rows with explicit `user_id`.
@@ -81,16 +87,17 @@
 
 ## 4. Where we are RIGHT NOW
 
-- **QA COMPLETE.** F1–F17 all ✅ in `docs/qa-findings.md`. **Phases 8, 9, 10 shipped.** HEAD `4c13ffe`, pushed to `origin/main`. 81 tests green, lint clean, build OK.
+- **QA COMPLETE** (F1–F17 ✅). **Phases 8, 9, 10 shipped.** **Phase 5a built (code), deploy pending** (see RESUME HERE up top + §5). All pushed to `origin/main` (HEAD `0aeb10c`). 81 tests green, lint clean, build OK.
+- **Phase 5a recap (built this session):** `send-invoice` Edge Function now uses **AWS SES** (raw MIME + PDF, SigV4 via `aws4fetch`, from platform domain + reply-to freelancer); `src/lib/providers.js` accepts `EMAIL_PROVIDER=ses`; new `profiles` columns `online_payments_enabled` / `default_payment_instructions` / `paypal_link`; `PaymentsTab` has a master online-payments toggle + a default payment-instructions card; new invoices prefill `payment_instructions` from the profile; `get_public_invoice.can_pay` now also requires `online_payments_enabled`; cash is already a `MarkPaidModal` method. **Not yet live** — needs AWS deploy.
+- **Phase 5 remaining:** 5b (Stripe — finish/verify/deploy the existing `stripe-*` Edge Functions), 5c (PayPal link MVP). Spec: `docs/superpowers/specs/2026-06-21-phase-5-real-integrations.md`.
 - The hosted dev DB (`zbipqfsqxnvrzhpdjvvy`) still has the **seeded QA example data** (§6) on the tier-2 user.
-- No work in progress. Pick the next item from §5.
 
 ---
 
 ## 5. Possible next directions (none chosen yet — all FUTURE, none from QA)
 
 See `docs/phases.md` for the full roadmap. Remaining:
-- **Phase 5 — Real integrations** (the big one): replace MOCK email/payments with real **Resend** + **Stripe Connect** via Supabase **Edge Functions** (none exist yet); gate/disable `app_config.mock_payments_enabled` for prod. Flip `VITE_EMAIL_PROVIDER` / `VITE_PAYMENTS_PROVIDER` off `mock`.
+- **Phase 5 — Real integrations** 🔶 IN PROGRESS (see RESUME HERE + §4): **5a done** (SES email + per-user toggle + cash, code-complete, deploy pending). **Remaining: 5b Stripe, 5c PayPal.** Edge Functions already scaffolded under `supabase/functions/`. Spec: `docs/superpowers/specs/2026-06-21-phase-5-real-integrations.md`. Go-live needs AWS/Stripe/PayPal accounts + `supabase functions deploy` + secrets + flip `VITE_*_PROVIDER` flags + **disable `app_config.mock_payments_enabled`**.
 - **Phase 6 — Hardening:** per-template `begin/exception` isolation across all 3 cron jobs; `check (due_days >= 0)` on `recurring_invoice_templates`; revisit `contract-pdfs` upload (never tested; may share the old upsert bug).
 - **Phase 7 — Reports/export polish:** CSV/PDF export for invoices, report drill-downs, accrual-basis toggle, FX handling.
 - **Phase 11 — Test coverage:** broaden Playwright E2E for the Tier-2 pages.
