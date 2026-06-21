@@ -24,6 +24,37 @@ export function formatElapsed(seconds) {
   return `${h}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`
 }
 
+// Aggregate billable, completed, unbilled entries into one row per project for
+// the "Ready to bill" panel. amount is an estimate (sum of hours x rate).
+export function readyToBillByProject(entries) {
+  const groups = new Map()
+  for (const e of entries || []) {
+    if (!e.billable || !e.ended_at || e.invoiced_on_invoice_id) continue
+    const g = groups.get(e.project_id) || {
+      projectId: e.project_id,
+      projectName: e.projects?.name || 'Project',
+      clientId: e.projects?.client_id ?? null,
+      clientName: e.projects?.clients?.name || '—',
+      minutes: 0,
+      amount: 0,
+    }
+    const mins = Number(e.duration_minutes) || 0
+    g.minutes += mins
+    g.amount += (mins / 60) * (Number(e.hourly_rate) || 0)
+    groups.set(e.project_id, g)
+  }
+  return [...groups.values()]
+    .map((g) => ({
+      projectId: g.projectId,
+      projectName: g.projectName,
+      clientId: g.clientId,
+      clientName: g.clientName,
+      hours: hoursFromMinutes(g.minutes),
+      amount: Math.round(g.amount * 100) / 100,
+    }))
+    .sort((a, b) => a.projectName.localeCompare(b.projectName))
+}
+
 export function groupTimeForInvoice(entries) {
   const groups = new Map()
   for (const e of entries || []) {

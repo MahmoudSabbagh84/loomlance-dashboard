@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeDurationMinutes, hoursFromMinutes, formatDuration, formatElapsed, groupTimeForInvoice } from '@/lib/time'
+import { computeDurationMinutes, hoursFromMinutes, formatDuration, formatElapsed, groupTimeForInvoice, readyToBillByProject } from '@/lib/time'
 
 describe('computeDurationMinutes', () => {
   it('rounds ms to minutes', () => {
@@ -22,6 +22,56 @@ describe('formatDuration', () => {
 
 describe('formatElapsed', () => {
   it('H:MM:SS', () => expect(formatElapsed(3661)).toBe('1:01:01'))
+})
+
+describe('readyToBillByProject', () => {
+  const base = (over) => ({
+    project_id: 'a',
+    billable: true,
+    ended_at: '2026-01-01T10:00:00Z',
+    invoiced_on_invoice_id: null,
+    duration_minutes: 60,
+    hourly_rate: 100,
+    projects: { name: 'Web', client_id: 'c1', clients: { name: 'Acme' } },
+    ...over,
+  })
+
+  it('groups by project, summing hours and amount across rates', () => {
+    const rows = [
+      base({ duration_minutes: 90, hourly_rate: 100 }),
+      base({ duration_minutes: 30, hourly_rate: 100 }),
+      base({ duration_minutes: 60, hourly_rate: 140 }),
+    ]
+    const r = readyToBillByProject(rows)
+    expect(r).toHaveLength(1)
+    expect(r[0]).toMatchObject({ projectId: 'a', projectName: 'Web', clientName: 'Acme', hours: 3, amount: 340 })
+  })
+
+  it('excludes non-billable, running, and already-billed entries', () => {
+    const rows = [
+      base({ billable: false }),
+      base({ ended_at: null }),
+      base({ invoiced_on_invoice_id: 'inv1' }),
+      base({ duration_minutes: 120, hourly_rate: 50 }),
+    ]
+    const r = readyToBillByProject(rows)
+    expect(r).toHaveLength(1)
+    expect(r[0]).toMatchObject({ hours: 2, amount: 100 })
+  })
+
+  it('returns one row per project, sorted by project name', () => {
+    const rows = [
+      base({ project_id: 'b', projects: { name: 'Zebra', client_id: 'c2', clients: { name: 'Z Co' } } }),
+      base({ project_id: 'a', projects: { name: 'Alpha', client_id: 'c1', clients: { name: 'A Co' } } }),
+    ]
+    const r = readyToBillByProject(rows)
+    expect(r.map((x) => x.projectName)).toEqual(['Alpha', 'Zebra'])
+  })
+
+  it('empty input -> []', () => {
+    expect(readyToBillByProject([])).toEqual([])
+    expect(readyToBillByProject(undefined)).toEqual([])
+  })
 })
 
 describe('groupTimeForInvoice', () => {
