@@ -6,7 +6,7 @@ function compactTick(value) {
   return String(value)
 }
 
-export default function RevenueChart({ data, currency }) {
+export default function RevenueChart({ data, currency, onBarClick }) {
   return (
     <div className="select-none">
     <ResponsiveContainer width="100%" height={256}>
@@ -21,7 +21,14 @@ export default function RevenueChart({ data, currency }) {
           itemStyle={{ color: 'var(--color-fg)' }}
           formatter={(value) => [formatCurrency(Number(value), currency), 'Revenue']}
         />
-        <Bar dataKey="revenue" fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={48} />
+        <Bar
+          dataKey="revenue"
+          fill="var(--color-primary)"
+          radius={[4, 4, 0, 0]}
+          maxBarSize={48}
+          cursor={onBarClick ? 'pointer' : undefined}
+          onClick={onBarClick ? (d) => { const k = d?.key ?? d?.payload?.key; if (k) onBarClick(k) } : undefined}
+        />
       </BarChart>
     </ResponsiveContainer>
     </div>

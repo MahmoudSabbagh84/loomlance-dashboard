@@ -47,6 +47,7 @@
 - **Triage:** Two parts.
   - **(a) Eliminate the highlight [P2, trivial]:** `src/features/dashboard/RevenueChart.jsx` / `src/features/dashboard/DashboardInsights.jsx` — the Recharts SVG has no `user-select: none`, so click-drag triggers native selection. Fix = add `user-select-none` (Tailwind `select-none`) to the chart wrapper, and/or `[&_svg]:select-none` on the card. No Recharts API needed. Verify in browser at `http://localhost:5173/`.
   - **(b) Brainstorm click interactions [P3, deferred]:** the user wants a separate brainstorm on what *should* happen when you click the revenue chart (e.g. drill into that month's invoices/payments, filter, set date range). Do via `superpowers:brainstorming` when we reach it — out of scope for the quick (a) fix.
+  - **✅ (b) RESOLVED (2026-06-21, Phase 8):** clicking a month bar drills into **Reports → Revenue scoped to that month**. `RevenueChart` bars are now clickable (`onBarClick(monthKey)`, pointer cursor); `DashboardInsights` navigates to `/reports?tab=revenue&from=YYYY-MM-01&to=<lastday>`; `ReportsPage` now reads `tab`/`from`/`to` from the URL (`useSearchParams`) to initialize its tab + custom date range. Commit pending.
 
 ### F5 — Mobile sidebar drawer mispositioned: panel/backdrop trapped behind page, nav links float on top  [P1]
 - **Where:** Smaller screens (below `lg`) → Topbar hamburger → open mobile nav drawer (`MobileNav`).

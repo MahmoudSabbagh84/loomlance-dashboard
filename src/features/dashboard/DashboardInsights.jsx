@@ -1,4 +1,5 @@
 import { Suspense, lazy, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/components/ui/cn'
@@ -11,7 +12,15 @@ const RevenueChart = lazy(() => import('./RevenueChart'))
 export function DashboardInsights() {
   const { data, isLoading } = useInsights()
   const { data: profile } = useProfile()
+  const navigate = useNavigate()
   const [picked, setPicked] = useState(null)
+
+  // Drill into a month's revenue: open Reports → Revenue scoped to that month.
+  const onBarClick = (key) => {
+    const [y, m] = key.split('-').map(Number)
+    const last = String(new Date(y, m, 0).getDate()).padStart(2, '0')
+    navigate(`/reports?tab=revenue&from=${key}-01&to=${key}-${last}`)
+  }
 
   if (isLoading) {
     return (
@@ -35,7 +44,7 @@ export function DashboardInsights() {
   const fallback = currencies.includes(profile?.default_currency) ? profile.default_currency : currencies[0]
   const currency = picked && currencies.includes(picked) ? picked : fallback
   const bucket = data.byCurrency[currency]
-  const chartData = data.months.map((m) => ({ label: m.label, revenue: bucket?.monthTotals[m.key] || 0 }))
+  const chartData = data.months.map((m) => ({ key: m.key, label: m.label, revenue: bucket?.monthTotals[m.key] || 0 }))
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -61,7 +70,7 @@ export function DashboardInsights() {
           ) : null}
         </div>
         <Suspense fallback={<Skeleton className="h-64" />}>
-          <RevenueChart data={chartData} currency={currency} />
+          <RevenueChart data={chartData} currency={currency} onBarClick={onBarClick} />
         </Suspense>
       </Card>
 

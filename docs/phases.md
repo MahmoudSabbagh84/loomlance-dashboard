@@ -20,7 +20,7 @@
 | Phase 5 | Real integrations (Resend + Stripe Connect) | 🔜 Slated |
 | Phase 6 | Hardening & reliability | 🔜 Slated |
 | Phase 7 | Reports & export polish | 🔜 Slated |
-| Phase 8 | Navigation & UX (F6 done; F4b/F10 open) | 🔶 In progress |
+| Phase 8 | Navigation & UX (F6/F4b done; F10 open) | 🔶 In progress |
 | Phase 9 | Time tracking v2 + Expenses v2 (F2/F3/F7/F12c done) | ✅ Done |
 | Phase 10 | Client/contacts rework | 🧪 Brainstorming |
 | Phase 11 | Test coverage (E2E) | 🔜 Slated |
@@ -105,7 +105,7 @@ Explicitly deferred during Phase 4 brainstorming:
 ### Phase 8 — Navigation & UX intuitiveness 🔶 *(in progress)*
 Make the platform more intuitive to move around. Sources: **F4b, F6, F10**.
 - ✅ **F6** — consistent **breadcrumb** navigation: reusable `Breadcrumbs` (parent-route based) on all detail pages (Clients/Projects/Contracts/Invoices + Invoices/Recurring). Commit pending. Done 2026-06-21.
-- **F4b** — click interactions on the dashboard revenue chart (drill into a month's invoices/payments, filter, set range).
+- ✅ **F4b** — dashboard revenue chart bars are clickable → drill into **Reports → Revenue** scoped to that month (`/reports?tab=&from=&to=` deep-link via `useSearchParams`). Done 2026-06-21.
 - **F10** — client **Activity timeline** (aggregate per-client events) — replaces the stale "Phase 2" stub.
 
 ### Phase 9 — Time tracking v2 ✅ *(shipped 2026-06-21; F7 still open)*

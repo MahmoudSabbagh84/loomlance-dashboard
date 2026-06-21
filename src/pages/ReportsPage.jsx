@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { cn } from '@/components/ui/cn'
 import { UpgradeCard } from '@/components/gates/UpgradeCard'
@@ -21,8 +22,18 @@ const TABS = [
 export default function ReportsPage() {
   const { data: profile } = useProfile()
   const tier = profile?.subscription_tier ?? 'free'
-  const [tab, setTab] = useState('revenue')
-  const [range, setRange] = useState(() => ({ preset: 'this_month', ...rangeForPreset('this_month', new Date()) }))
+  const [searchParams] = useSearchParams()
+  // Allow deep-linking (e.g. the dashboard revenue chart drills into a month).
+  const [tab, setTab] = useState(() => {
+    const t = searchParams.get('tab')
+    return TABS.some((x) => x.key === t) ? t : 'revenue'
+  })
+  const [range, setRange] = useState(() => {
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
+    if (from && to) return { preset: 'custom', from, to }
+    return { preset: 'this_month', ...rangeForPreset('this_month', new Date()) }
+  })
 
   if (!hasFeature(tier, FEATURES.REPORTS)) {
     return (
