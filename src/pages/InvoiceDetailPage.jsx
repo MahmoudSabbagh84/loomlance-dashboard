@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useInvoice } from '@/hooks/useInvoices'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { InvoiceEditor } from '@/features/invoices/InvoiceEditor'
 import { InvoiceActions } from '@/features/invoices/InvoiceActions'
 import { InvoiceStatusBadge } from '@/features/invoices/InvoiceStatusBadge'
@@ -16,6 +17,7 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs items={[{ label: 'Invoices', to: '/invoices' }, { label: invoice.invoice_number }]} />
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <h1 className="text-xl font-semibold tracking-tight tabular-nums">{invoice.invoice_number}</h1>

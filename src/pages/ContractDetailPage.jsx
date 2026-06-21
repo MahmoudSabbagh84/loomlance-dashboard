@@ -4,6 +4,7 @@ import { Edit, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useContract, useDeleteContract } from '@/hooks/useContracts'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -26,6 +27,7 @@ export default function ContractDetailPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs items={[{ label: 'Contracts', to: '/contracts' }, { label: contract.title }]} />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2.5">

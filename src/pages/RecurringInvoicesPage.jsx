@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Repeat, ArrowLeft } from 'lucide-react'
+import { Plus, Repeat } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -61,15 +62,11 @@ export default function RecurringInvoicesPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs items={[{ label: 'Invoices', to: '/invoices' }, { label: 'Recurring' }]} />
       <PageHeader title="Recurring invoices" subtitle="Templates that bill on a schedule">
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => navigate('/invoices')}>
-            <ArrowLeft className="size-4" /> Invoices
-          </Button>
-          <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
-            <Plus className="size-4" /> New template
-          </Button>
-        </div>
+        <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
+          <Plus className="size-4" /> New template
+        </Button>
       </PageHeader>
 
       {isLoading ? (

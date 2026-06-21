@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useClient } from '@/hooks/useClients'
 import { Tabs } from '@/components/ui/Tabs'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ClientHeader } from '@/features/clients/ClientHeader'
 import { OverviewTab } from '@/features/clients/tabs/OverviewTab'
@@ -33,6 +34,7 @@ export default function ClientDetailPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[{ label: 'Clients', to: '/clients' }, { label: client.name }]} />
       <ClientHeader client={client} />
       <Tabs value={tab} onChange={setTab} items={TABS} />
       <div className="pt-2">
