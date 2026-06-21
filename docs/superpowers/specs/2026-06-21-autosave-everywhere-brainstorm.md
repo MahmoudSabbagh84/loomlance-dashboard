@@ -93,16 +93,29 @@ These **never** autosave and remain deliberate button actions:
 
 ---
 
-## 5. Open questions for you
+## 5. Decisions (resolved 2026-06-21)
 
-1. **Pilot first?** OK to build autosave on the **invoice editor only**, get your sign-off on the feel, then roll out — rather than converting all forms at once?
-2. **Save indicator placement/wording** — "Saved ✓" in the header is my default. Want a timestamp ("Saved 2s ago")?
-3. **Sent/paid invoices** — should they be **read-only** after sending (recommended), or editable with a warning? Today the editor lets you edit anything.
-4. **Modals** (client/project/contract forms open in modals) — autosave-on-type inside a modal, or keep modals explicit-save and only autosave full-page editors? (Modals have a natural "Done/Close" affordance; autosave there is less obviously a win.)
-5. **Creation** — confirm we keep "New X" as an explicit step (the `NewInvoiceModal` pattern) rather than auto-creating empty drafts.
+1. **Pilot first** ✅ — build autosave on the **invoice editor only**, get sign-off on the feel, then roll out.
+2. **Sent/paid invoices = read-only** ✅ — autosave only while `status === 'draft'`; an explicit "Edit anyway" if ever needed.
+3. **Modals autosave too** ✅ — autosave is THE feature; **no manual Save anywhere.** This requires the create/edit split (below) for every create-on-save modal (client/project/contract/expense/recurring).
+4. **Creation stays explicit** ✅ — keep "New X" as a minimal required-fields step (the `NewInvoiceModal` pattern); never auto-create empty rows.
+5. **Save indicator:** `<SaveStatus>` showing "Saving… / Saved ✓ / Couldn't save – Retry" (timestamp optional, defer).
+
+### 5.1 The core structural change — split "create" from "edit"
+The Save button currently does double duty: **create a new record** AND **commit edits**. Autosave can only commit edits (can't autosave a nonexistent row). So every create-on-save modal becomes:
+- **Create step** — collect only required fields → create the row immediately.
+- **Edit surface** — the existing record's form autosaves on change; closing = already saved.
+
+### 5.2 Safety net to replace what Save gave us for free
+- **Per-field validation gating** — persist a field only when valid; invalid → inline error + hold.
+- **Debounce** ≈700ms on text; immediate on selects/toggles/dates.
+- **Serialized writes** per record (no out-of-order saves).
+- **Error retention + retry** — keep input, mark dirty, auto-retry / Retry; never silently drop.
+- **Explicit gates kept** for irreversible/outward actions: Send, Generate-from-time/expenses, Mark-paid, Void, Delete, file uploads.
+- **Read-only** for non-draft invoices.
 
 ---
 
-## 6. Recommendation
+## 6. Plan
 
-Build a reusable `useAutosave` + `<SaveStatus>`, **pilot on the invoice editor**, keep all destructive/outward actions and record creation explicit, gate invoice autosave on `draft` status, and roll out to the simpler forms after your review. Modals (Q4) I'd lean toward **keeping explicit-save** initially — they already have a clear Done button — and focus autosave on the full-page editors where the Save button is the friction.
+See `docs/superpowers/plans/2026-06-21-autosave.md`. Phase 1 = shared infra (`useAutosave` + `<SaveStatus>`) + invoice-editor pilot; later phases fan out to the modal forms via the create/edit split.
