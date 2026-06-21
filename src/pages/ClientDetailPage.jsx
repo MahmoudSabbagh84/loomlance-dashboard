@@ -6,7 +6,6 @@ import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ClientHeader } from '@/features/clients/ClientHeader'
 import { OverviewTab } from '@/features/clients/tabs/OverviewTab'
-import { ContactsTab } from '@/features/clients/tabs/ContactsTab'
 import { ProjectsTab } from '@/features/clients/tabs/ProjectsTab'
 import { ContractsTab } from '@/features/clients/tabs/ContractsTab'
 import { InvoicesTab } from '@/features/clients/tabs/InvoicesTab'
@@ -14,7 +13,6 @@ import { ActivityTab } from '@/features/clients/tabs/ActivityTab'
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
-  { key: 'contacts', label: 'Contacts' },
   { key: 'projects', label: 'Projects' },
   { key: 'contracts', label: 'Contracts' },
   { key: 'invoices', label: 'Invoices' },
@@ -39,7 +37,6 @@ export default function ClientDetailPage() {
       <Tabs value={tab} onChange={setTab} items={TABS} />
       <div className="pt-2">
         {tab === 'overview' && <OverviewTab client={client} />}
-        {tab === 'contacts' && <ContactsTab clientId={client.id} />}
         {tab === 'projects' && <ProjectsTab clientId={client.id} />}
         {tab === 'contracts' && <ContractsTab clientId={client.id} />}
         {tab === 'invoices' && <InvoicesTab clientId={client.id} />}

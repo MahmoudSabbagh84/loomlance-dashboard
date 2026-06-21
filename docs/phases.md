@@ -22,7 +22,7 @@
 | Phase 7 | Reports & export polish | 🔜 Slated |
 | Phase 8 | Navigation & UX (F6/F4b/F10 done) | ✅ Done |
 | Phase 9 | Time tracking v2 + Expenses v2 (F2/F3/F7/F12c done) | ✅ Done |
-| Phase 10 | Client/contacts rework | 🧪 Brainstorming |
+| Phase 10 | Client/contacts rework (F9/F8 done) | ✅ Done |
 | Phase 11 | Test coverage (E2E) | 🔜 Slated |
 
 ---
@@ -117,10 +117,10 @@ Redesigned the time experience. Sources: **F2, F3** (done), **F7** (deferred). S
 - Built across commits `52bc781`→`3c1c7c4`; verified live via MCP (per-project invoice, contract→rate line grouping, `NO_UNBILLED_TIME`, RLS).
 - ✅ **Paired Expenses v2 (F12) — shipped 2026-06-21:** `/expenses` now has a per-project + per-client **Ready-to-bill panel** with **find-or-append** billing — generating for a project (time OR expenses) appends to one unified per-project draft via shared `_find_or_create_draft`. Client-only expenses bill per-client. Plan `docs/superpowers/plans/2026-06-21-expenses-v2.md`; commit `40874c0`; verified live. (F12a/b shipped earlier in Track A.)
 
-### Phase 10 — Client / contacts rework 🧪 *(brainstorming)*
+### Phase 10 — Client / contacts rework ✅ *(F9 shipped 2026-06-21; F8 done in Track A)*
 Source: **F8, F9**.
-- **F9** — resolve the confusing overlap between the Overview "Contact" section (client's own fields) and the empty "Contacts" tab (`client_contacts` multi-person model): remove/fold-in, rename to "People"/"Team", or clarify. Check `useSetPrimaryContact` + all `client_contacts` consumers before removing.
-- **F8** — per-row quick actions on the Clients list (and possibly the per-client contacts table).
+- ✅ **F9** — folded the multi-contact management into the client **Overview** as a `PeopleCard` and removed the confusing "Contacts" tab; renamed Overview's "Contact" card → "Details". `client_contacts` capability preserved.
+- ✅ **F8** — per-row quick actions (Edit/Email/Delete) on the Clients list (shipped in Track A).
 
 ### Phase 11 — Test coverage 🔜
 - Broaden **Playwright E2E** for the new Tier-2 pages (Time, Expenses, Recurring, Reports).
