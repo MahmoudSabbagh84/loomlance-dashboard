@@ -5,7 +5,6 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Label } from '@/components/ui/Label'
-import { useClients } from '@/hooks/useClients'
 import { useProfile } from '@/hooks/useProfile'
 import { useExpenses, useGenerateInvoiceFromExpenses } from '@/hooks/useExpenses'
 import { buildExpenseInvoiceLines } from '@/lib/expenses'
@@ -14,22 +13,34 @@ import { formatCurrency } from '@/lib/currency'
 export function GenerateExpenseInvoiceModal({ open, onClose }) {
   const navigate = useNavigate()
   const { data: profile } = useProfile()
-  const { data: clientsPage } = useClients({ pageSize: 200 })
-  const clients = clientsPage?.rows ?? []
   const [clientId, setClientId] = useState('')
   const gen = useGenerateInvoiceFromExpenses()
   const currency = profile?.default_currency || 'USD'
   const { data: expenses = [] } = useExpenses({ status: 'unbilled' })
 
+  // Only expenses that can actually be billed in this currency.
+  const eligible = useMemo(
+    () => expenses.filter((e) => e.billable && e.currency === currency),
+    [expenses, currency],
+  )
+
+  // Offer only clients that have eligible expenses (via direct client or via project).
+  const clients = useMemo(() => {
+    const byId = new Map()
+    for (const e of eligible) {
+      const id = e.client_id ?? e.projects?.client_id
+      const name = e.clients?.name ?? e.projects?.clients?.name
+      if (id && !byId.has(id)) byId.set(id, { id, name: name ?? 'Unknown client' })
+    }
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name))
+  }, [eligible])
+
   const lines = useMemo(() => {
-    const eligible = expenses.filter(
-      (e) =>
-        e.billable &&
-        e.currency === currency &&
-        (e.client_id === clientId || e.projects?.client_id === clientId),
+    const forClient = eligible.filter(
+      (e) => e.client_id === clientId || e.projects?.client_id === clientId,
     )
-    return buildExpenseInvoiceLines(eligible)
-  }, [expenses, clientId, currency])
+    return buildExpenseInvoiceLines(forClient)
+  }, [eligible, clientId])
 
   const onGenerate = async () => {
     try {
@@ -45,15 +56,21 @@ export function GenerateExpenseInvoiceModal({ open, onClose }) {
   return (
     <Modal open={open} onClose={onClose} title="Generate invoice from expenses" size="md">
       <div className="space-y-4">
-        <div>
-          <Label htmlFor="client">Client</Label>
-          <Select id="client" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-            <option value="">Select a client…</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </Select>
-        </div>
+        {clients.length === 0 ? (
+          <p className="text-sm text-fg-muted">
+            No billable, unbilled expenses in {currency} to invoice yet.
+          </p>
+        ) : (
+          <div>
+            <Label htmlFor="client">Client</Label>
+            <Select id="client" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              <option value="">Select a client…</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </Select>
+          </div>
+        )}
         {clientId ? (
           lines.length ? (
             <div className="rounded-md border border-border">

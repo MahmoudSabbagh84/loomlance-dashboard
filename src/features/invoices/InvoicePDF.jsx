@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
   muted: { color: '#666666' },
   xs: { fontSize: 8 },
   right: { textAlign: 'right' },
-  invoiceTitle: { fontSize: 20, fontWeight: 600, letterSpacing: 0.5 },
+  invoiceTitle: { fontSize: 20, fontWeight: 600, letterSpacing: 0.5, lineHeight: 1 },
   section: { marginBottom: 18 },
   labelCaps: { fontSize: 7, color: '#888888', textTransform: 'uppercase', marginBottom: 3, letterSpacing: 0.5 },
   bold: { fontWeight: 600 },
@@ -73,7 +73,7 @@ function InvoiceDocument({ invoice, client, profile }) {
           </View>
           <View style={styles.right}>
             <Text style={[styles.invoiceTitle, { color: accent }]}>INVOICE</Text>
-            <Text style={{ marginTop: 3 }}>{invoice.invoice_number}</Text>
+            <Text style={{ marginTop: 6 }}>{invoice.invoice_number}</Text>
             <Text style={styles.xs}>Issued: {invoice.issue_date ? formatDate(invoice.issue_date) : '—'}</Text>
             <Text style={styles.xs}>Due: {invoice.due_date ? formatDate(invoice.due_date) : '—'}</Text>
           </View>

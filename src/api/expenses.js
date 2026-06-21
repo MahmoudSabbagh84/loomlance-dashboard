@@ -4,7 +4,7 @@ import { validateReceiptFile } from '@/lib/expenses'
 
 const BUCKET = 'receipts'
 const SELECT =
-  'id, project_id, client_id, spent_on, amount, currency, category, description, receipt_path, billable, invoiced_on_invoice_id, projects(name, client_id), clients(name)'
+  'id, project_id, client_id, spent_on, amount, currency, category, description, receipt_path, billable, invoiced_on_invoice_id, projects(name, client_id, clients(name)), clients(name)'
 
 async function uid() {
   const { data } = await supabase.auth.getSession()

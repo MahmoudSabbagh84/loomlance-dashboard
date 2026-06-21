@@ -24,7 +24,18 @@ export function ExpensesTable({ expenses, onEdit, onDelete, onOpenReceipt }) {
             <TD className="text-xs tabular-nums text-fg-muted">{formatDate(e.spent_on)}</TD>
             <TD>{e.category}</TD>
             <TD className="text-fg-muted">{e.description || '—'}</TD>
-            <TD className="text-fg-muted">{e.projects?.name || e.clients?.name || '—'}</TD>
+            <TD className="text-fg-muted">
+              {e.projects?.name ? (
+                <>
+                  {e.projects.name}
+                  {e.projects.clients?.name ? (
+                    <span className="text-fg-subtle"> / {e.projects.clients.name}</span>
+                  ) : null}
+                </>
+              ) : (
+                e.clients?.name || '—'
+              )}
+            </TD>
             <TD className="tabular-nums">{formatCurrency(Number(e.amount), e.currency)}</TD>
             <TD>
               {!e.billable ? (

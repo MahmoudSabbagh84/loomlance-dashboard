@@ -8,6 +8,7 @@ function compactTick(value) {
 
 export default function RevenueChart({ data, currency }) {
   return (
+    <div className="select-none">
     <ResponsiveContainer width="100%" height={256}>
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
@@ -23,5 +24,6 @@ export default function RevenueChart({ data, currency }) {
         <Bar dataKey="revenue" fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={48} />
       </BarChart>
     </ResponsiveContainer>
+    </div>
   )
 }

@@ -7,6 +7,7 @@ function compactTick(value) {
 
 export default function ReportChart({ data, bars, height = 256, formatValue }) {
   return (
+    <div className="select-none">
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
@@ -25,5 +26,6 @@ export default function ReportChart({ data, bars, height = 256, formatValue }) {
         ))}
       </BarChart>
     </ResponsiveContainer>
+    </div>
   )
 }

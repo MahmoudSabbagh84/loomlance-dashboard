@@ -22,7 +22,7 @@ export function InvoiceEditor({ invoice }) {
   const { data: clientsPage } = useClients({ pageSize: 200 })
   const clients = clientsPage?.rows ?? []
 
-  const { register, handleSubmit, control, watch, formState: { errors, isSubmitting, isDirty } } = useForm({
+  const { register, handleSubmit, control, watch, setValue, getValues, formState: { errors, isSubmitting, isDirty } } = useForm({
     resolver: zodResolver(invoiceCreateSchema),
     defaultValues: {
       client_id: invoice.client_id,
@@ -45,6 +45,7 @@ export function InvoiceEditor({ invoice }) {
     },
   })
   const selectedClient = watch('client_id')
+  const selectedProject = watch('project_id')
   const { data: projects = [] } = useProjects({ clientId: selectedClient, status: 'all' })
 
   const onSubmit = async (values) => {
@@ -65,14 +66,22 @@ export function InvoiceEditor({ invoice }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="client_id" required>Client</Label>
-            <Select id="client_id" {...register('client_id')}>
+            <Select
+              id="client_id"
+              value={selectedClient ?? ''}
+              onChange={(e) => setValue('client_id', e.target.value, { shouldDirty: true, shouldValidate: true })}
+            >
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </Select>
             <FieldError>{errors.client_id?.message}</FieldError>
           </div>
           <div>
             <Label htmlFor="project_id">Project (optional)</Label>
-            <Select id="project_id" {...register('project_id')}>
+            <Select
+              id="project_id"
+              value={selectedProject ?? ''}
+              onChange={(e) => setValue('project_id', e.target.value, { shouldDirty: true })}
+            >
               <option value="">—</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </Select>
@@ -101,7 +110,7 @@ export function InvoiceEditor({ invoice }) {
 
         <div>
           <Label>Line items</Label>
-          <LineItemsTable control={control} register={register} />
+          <LineItemsTable control={control} register={register} setValue={setValue} getValues={getValues} />
           <FieldError>{errors.line_items?.message}</FieldError>
         </div>
 

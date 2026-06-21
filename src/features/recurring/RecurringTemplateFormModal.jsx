@@ -30,6 +30,8 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
     register,
     control,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { isSubmitting },
   } = useForm({
     defaultValues: {
@@ -159,7 +161,7 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
         </div>
         <div>
           <Label>Line items</Label>
-          <LineItemsTable control={control} register={register} />
+          <LineItemsTable control={control} register={register} setValue={setValue} getValues={getValues} />
         </div>
         <TotalsPanel control={control} />
         <div>
