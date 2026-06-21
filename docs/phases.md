@@ -21,7 +21,7 @@
 | Phase 6 | Hardening & reliability | 🔜 Slated |
 | Phase 7 | Reports & export polish | 🔜 Slated |
 | Phase 8 | Navigation & UX intuitiveness | 🧪 Brainstorming |
-| Phase 9 | Time tracking v2 (F2/F3/F7 done; Expenses v2 open) | ✅ Done (Time) |
+| Phase 9 | Time tracking v2 + Expenses v2 (F2/F3/F7/F12c done) | ✅ Done |
 | Phase 10 | Client/contacts rework | 🧪 Brainstorming |
 | Phase 11 | Test coverage (E2E) | 🔜 Slated |
 
@@ -115,7 +115,7 @@ Redesigned the time experience. Sources: **F2, F3** (done), **F7** (deferred). S
 - ✅ **F3** — replaced the pick-a-client modal with the per-project panel.
 - ✅ **F7** — topbar timer rework: true pause (one entry, paused time excluded) ⇄ resume, commit (✓) / discard (✕ with confirm), breathing red/amber dot. `time_entries.paused_at` + `paused_seconds`; verified live. Commit `df7cb3a`.
 - Built across commits `52bc781`→`3c1c7c4`; verified live via MCP (per-project invoice, contract→rate line grouping, `NO_UNBILLED_TIME`, RLS).
-- **Paired Expenses v2 (F12):** apply the same model to `/expenses` — show project **and** client in one column, scope generate-invoice to clients/projects with eligible expenses, and support **new-or-append** invoice per project. Share one "ready-to-bill → new-or-append, per project/contract" design across time + expenses rather than designing them separately.
+- ✅ **Paired Expenses v2 (F12) — shipped 2026-06-21:** `/expenses` now has a per-project + per-client **Ready-to-bill panel** with **find-or-append** billing — generating for a project (time OR expenses) appends to one unified per-project draft via shared `_find_or_create_draft`. Client-only expenses bill per-client. Plan `docs/superpowers/plans/2026-06-21-expenses-v2.md`; commit `40874c0`; verified live. (F12a/b shipped earlier in Track A.)
 
 ### Phase 10 — Client / contacts rework 🧪 *(brainstorming)*
 Source: **F8, F9**.
