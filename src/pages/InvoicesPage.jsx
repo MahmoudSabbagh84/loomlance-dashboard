@@ -9,11 +9,12 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { Pagination } from '@/components/ui/Pagination'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { cn } from '@/components/ui/cn'
-import { useInvoices, useCreateInvoice, useNextInvoiceNumber } from '@/hooks/useInvoices'
+import { useInvoices } from '@/hooks/useInvoices'
 import { useProfile } from '@/hooks/useProfile'
 import { useClients } from '@/hooks/useClients'
 import { InvoiceStatusBadge } from '@/features/invoices/InvoiceStatusBadge'
 import { InvoicesBoard } from '@/features/invoices/InvoicesBoard'
+import { NewInvoiceModal } from '@/features/invoices/NewInvoiceModal'
 import { formatDate } from '@/lib/date'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { toast } from 'sonner'
@@ -43,7 +44,9 @@ export default function InvoicesPage() {
     pageSize: isBoard ? 200 : 25,
   })
   const { data: profile } = useProfile()
-  const { data: clientsPage } = useClients({ pageSize: 1 })
+  const { data: clientsPage } = useClients({ pageSize: 200 })
+  const clients = clientsPage?.rows ?? []
+  const [newOpen, setNewOpen] = useState(false)
 
   const setViewPersist = (v) => {
     setView(v)
@@ -54,29 +57,12 @@ export default function InvoicesPage() {
     }
   }
 
-  const create = useCreateInvoice()
-  const nextNum = useNextInvoiceNumber()
-
-  const handleNew = async () => {
-    if (!clientsPage?.rows?.length) {
+  const handleNew = () => {
+    if (!clients.length) {
       toast.error('Add a client first')
       return
     }
-    try {
-      const number = await nextNum.refetch().then((r) => r.data)
-      const inv = await create.mutateAsync({
-        client_id: clientsPage.rows[0].id,
-        invoice_number: number,
-        issue_date: new Date().toISOString().slice(0, 10),
-        due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
-        currency: profile?.default_currency || 'USD',
-        payment_instructions: profile?.default_payment_instructions || '',
-        line_items: [{ description: '', quantity: 1, unit_price: 0, tax_rate: 0, discount_rate: 0, position: 0 }],
-      })
-      navigate(`/invoices/${inv.id}`)
-    } catch (e) {
-      toast.error(e.userMessage || 'Could not create draft invoice')
-    }
+    setNewOpen(true)
   }
 
   return (
@@ -84,7 +70,7 @@ export default function InvoicesPage() {
       <PageHeader title="Invoices" subtitle="Drafts, sent, paid, and overdue">
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => navigate('/invoices/recurring')}><Repeat className="size-4" /> Recurring</Button>
-          <Button onClick={handleNew} loading={create.isPending}><Plus className="size-4" /> New invoice</Button>
+          <Button onClick={handleNew}><Plus className="size-4" /> New invoice</Button>
         </div>
       </PageHeader>
 
@@ -156,6 +142,17 @@ export default function InvoicesPage() {
           <Pagination page={page} pageSize={25} total={data.total} onChange={setPage} />
         </>
       )}
+
+      <NewInvoiceModal
+        open={newOpen}
+        onClose={() => setNewOpen(false)}
+        clients={clients}
+        profile={profile}
+        onCreated={(id) => {
+          setNewOpen(false)
+          navigate(`/invoices/${id}`)
+        }}
+      />
     </div>
   )
 }
