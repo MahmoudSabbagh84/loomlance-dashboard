@@ -14,8 +14,32 @@ import { useProfile } from '@/hooks/useProfile'
 import { useCreateTemplate, useUpdateTemplate } from '@/hooks/useRecurringTemplates'
 import { CADENCES, validateTemplateLineItems } from '@/lib/recurring'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
+import { SaveStatus } from '@/components/ui/SaveStatus'
+import { useAutosaveForm } from '@/hooks/useAutosave'
 
 const EMPTY_LINE = { description: '', quantity: 1, unit_price: 0, tax_rate: 0, discount_rate: 0 }
+
+const mapLines = (v) => (v.line_items || []).map((li) => ({
+  description: li.description,
+  quantity: Number(li.quantity) || 0,
+  unit_price: Number(li.unit_price) || 0,
+  tax_rate: Number(li.tax_rate) || 0,
+  discount_rate: Number(li.discount_rate) || 0,
+}))
+
+const buildPayload = (v, line_items, active) => ({
+  title: v.title,
+  client_id: v.client_id,
+  project_id: v.project_id || null,
+  currency: v.currency,
+  cadence: v.cadence,
+  next_run_at: v.next_run_at,
+  end_date: v.end_date || null,
+  due_days: Number(v.due_days) || 30,
+  notes: v.notes,
+  line_items,
+  active,
+})
 
 export function RecurringTemplateFormModal({ open, onClose, template }) {
   const { data: clientsPage } = useClients({ pageSize: 200 })
@@ -57,14 +81,24 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
     },
   })
 
-  const onSubmit = async (v) => {
-    const line_items = (v.line_items || []).map((li) => ({
-      description: li.description,
-      quantity: Number(li.quantity) || 0,
-      unit_price: Number(li.unit_price) || 0,
-      tax_rate: Number(li.tax_rate) || 0,
-      discount_rate: Number(li.discount_rate) || 0,
-    }))
+  const { status, retry } = useAutosaveForm({
+    watch,
+    enabled: isEdit,
+    commit: async () => {
+      const v = getValues()
+      if (!v.client_id) return false
+      const line_items = mapLines(v)
+      try {
+        validateTemplateLineItems(line_items)
+      } catch {
+        return false // invalid line items → hold
+      }
+      await update.mutateAsync({ id: template.id, patch: buildPayload(v, line_items, template?.active ?? true) })
+    },
+  })
+
+  const onCreate = async (v) => {
+    const line_items = mapLines(v)
     try {
       validateTemplateLineItems(line_items)
     } catch (e) {
@@ -75,26 +109,9 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
       toast.error('Pick a client')
       return
     }
-    const payload = {
-      title: v.title,
-      client_id: v.client_id,
-      project_id: v.project_id || null,
-      currency: v.currency,
-      cadence: v.cadence,
-      next_run_at: v.next_run_at,
-      end_date: v.end_date || null,
-      due_days: Number(v.due_days) || 30,
-      notes: v.notes,
-      line_items,
-      active: template?.active ?? true,
-    }
     try {
-      if (isEdit) {
-        await update.mutateAsync({ id: template.id, patch: payload })
-      } else {
-        await create.mutateAsync(payload)
-      }
-      toast.success(isEdit ? 'Template updated' : 'Template created')
+      await create.mutateAsync(buildPayload(v, line_items, true))
+      toast.success('Template created')
       onClose()
     } catch (e) {
       toast.error(e.userMessage || 'Could not save')
@@ -103,7 +120,7 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Edit recurring template' : 'New recurring template'} size="lg">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={isEdit ? (e) => e.preventDefault() : handleSubmit(onCreate)} className="space-y-4">
         <div>
           <Label htmlFor="title">Title</Label>
           <Input id="title" placeholder="e.g. Acme monthly retainer" {...register('title')} />
@@ -170,16 +187,29 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
         </div>
         <div>
           <Label>Line items</Label>
-          <LineItemsTable control={control} register={register} setValue={setValue} getValues={getValues} />
+          <LineItemsTable
+            control={control}
+            register={register}
+            setValue={setValue}
+            getValues={getValues}
+            onItemsChanged={() => setValue('line_items', getValues('line_items'), { shouldDirty: true })}
+          />
         </div>
         <TotalsPanel control={control} />
         <div>
           <Label htmlFor="notes">Notes</Label>
           <Textarea id="notes" rows={2} {...register('notes')} />
         </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={isSubmitting}>{isEdit ? 'Save' : 'Create template'}</Button>
+        <div className="flex items-center justify-between gap-2">
+          <div>{isEdit ? <SaveStatus status={status} onRetry={retry} /> : null}</div>
+          {isEdit ? (
+            <Button type="button" onClick={onClose}>Done</Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
+              <Button type="submit" loading={isSubmitting}>Create template</Button>
+            </div>
+          )}
         </div>
       </form>
     </Modal>

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useAutosave } from '../useAutosave'
+import { useAutosave, useAutosaveForm } from '../useAutosave'
 
 // Fake RHF `watch`: capture the subscriber and let tests emit changes.
 function makeWatch() {
@@ -121,5 +121,82 @@ describe('useAutosave', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(100) })
 
     expect(save).not.toHaveBeenCalled()
+  })
+})
+
+describe('useAutosaveForm', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('debounces changes into a single commit', async () => {
+    const { watch, emit } = makeWatch()
+    const commit = vi.fn().mockResolvedValue()
+    const { result } = renderHook(() => useAutosaveForm({ watch, commit, debounceMs: 200 }))
+
+    act(() => { emit({}, 'a') })
+    act(() => { emit({}, 'b') })
+    await act(async () => { await vi.advanceTimersByTimeAsync(200) })
+
+    expect(commit).toHaveBeenCalledTimes(1)
+    expect(result.current.status).toBe('saved')
+  })
+
+  it('ignores programmatic changes with no field name', async () => {
+    const { watch, emit } = makeWatch()
+    const commit = vi.fn().mockResolvedValue()
+    renderHook(() => useAutosaveForm({ watch, commit, debounceMs: 100 }))
+
+    act(() => { emit({}, undefined) })
+    await act(async () => { await vi.advanceTimersByTimeAsync(100) })
+
+    expect(commit).not.toHaveBeenCalled()
+  })
+
+  it('treats commit()===false as held (no error, status idle)', async () => {
+    const { watch, emit } = makeWatch()
+    const commit = vi.fn().mockResolvedValue(false)
+    const { result } = renderHook(() => useAutosaveForm({ watch, commit, debounceMs: 100 }))
+
+    act(() => { emit({}, 'a') })
+    await act(async () => { await vi.advanceTimersByTimeAsync(100) })
+
+    expect(commit).toHaveBeenCalledTimes(1)
+    expect(result.current.status).toBe('idle')
+  })
+
+  it('serializes: a change during an in-flight commit re-runs after it', async () => {
+    const { watch, emit } = makeWatch()
+    const first = deferred()
+    const commit = vi.fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => Promise.resolve())
+    renderHook(() => useAutosaveForm({ watch, commit, debounceMs: 100 }))
+
+    act(() => { emit({}, 'a') })
+    await act(async () => { await vi.advanceTimersByTimeAsync(100) })
+    expect(commit).toHaveBeenCalledTimes(1)
+
+    act(() => { emit({}, 'b') })
+    await act(async () => { await vi.advanceTimersByTimeAsync(100) })
+    expect(commit).toHaveBeenCalledTimes(1) // blocked by in-flight
+
+    await act(async () => { first.resolve(); await vi.advanceTimersByTimeAsync(0) })
+    expect(commit).toHaveBeenCalledTimes(2)
+  })
+
+  it('surfaces an error and retry() re-commits', async () => {
+    const { watch, emit } = makeWatch()
+    const commit = vi.fn()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce()
+    const { result } = renderHook(() => useAutosaveForm({ watch, commit, debounceMs: 100 }))
+
+    act(() => { emit({}, 'a') })
+    await act(async () => { await vi.advanceTimersByTimeAsync(100) })
+    expect(result.current.status).toBe('error')
+
+    await act(async () => { result.current.retry(); await vi.advanceTimersByTimeAsync(0) })
+    expect(commit).toHaveBeenCalledTimes(2)
+    expect(result.current.status).toBe('saved')
   })
 })

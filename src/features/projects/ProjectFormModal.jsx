@@ -9,10 +9,12 @@ import { Select } from '@/components/ui/Select'
 import { Label } from '@/components/ui/Label'
 import { FieldError } from '@/components/ui/FieldError'
 import { ColorPicker } from '@/components/ui/ColorPicker'
+import { SaveStatus } from '@/components/ui/SaveStatus'
 import { PROJECT_COLORS } from '@/lib/colors'
 import { projectCreateSchema } from '@/api/schemas/projects'
 import { useCreateProject, useUpdateProject } from '@/hooks/useProjects'
 import { useClients } from '@/hooks/useClients'
+import { useAutosaveForm } from '@/hooks/useAutosave'
 
 export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
   const isEdit = !!project
@@ -21,7 +23,7 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
   const { data: clientsPage } = useClients({ pageSize: 200 })
   const clients = clientsPage?.rows ?? []
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, setValue, trigger, getValues, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(projectCreateSchema),
     defaultValues: {
       client_id: project?.client_id ?? defaultClientId ?? '',
@@ -31,28 +33,28 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
     },
   })
 
-  const onSubmit = async (values) => {
+  const { status, retry } = useAutosaveForm({
+    watch,
+    enabled: isEdit,
+    commit: async () => {
+      if (!(await trigger())) return false
+      await update.mutateAsync({ id: project.id, patch: getValues() })
+    },
+  })
+
+  const onCreate = async (values) => {
     try {
-      if (isEdit) {
-        await update.mutateAsync({ id: project.id, patch: values })
-        toast.success('Project updated')
-      } else {
-        await create.mutateAsync(values)
-        toast.success('Project created')
-      }
+      await create.mutateAsync(values)
+      toast.success('Project created')
       onClose()
     } catch (e) {
-      if (e.code === 'PROJECT_LIMIT_EXCEEDED') {
-        toast.error(e.userMessage)
-      } else {
-        toast.error(e.userMessage || 'Save failed')
-      }
+      toast.error(e.userMessage || 'Could not create project')
     }
   }
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Edit project' : 'New project'} size="md">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={isEdit ? (e) => e.preventDefault() : handleSubmit(onCreate)} className="space-y-4">
         <div>
           <Label htmlFor="client_id" required>Client</Label>
           <Select
@@ -79,9 +81,16 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
           <ColorPicker value={watch('color')} onChange={(c) => setValue('color', c, { shouldDirty: true })} />
           <FieldError>{errors.color?.message}</FieldError>
         </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={isSubmitting}>{isEdit ? 'Save' : 'Create'}</Button>
+        <div className="flex items-center justify-between gap-2 pt-2">
+          <div>{isEdit ? <SaveStatus status={status} onRetry={retry} /> : null}</div>
+          {isEdit ? (
+            <Button type="button" onClick={onClose}>Done</Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
+              <Button type="submit" loading={isSubmitting}>Create</Button>
+            </div>
+          )}
         </div>
       </form>
     </Modal>

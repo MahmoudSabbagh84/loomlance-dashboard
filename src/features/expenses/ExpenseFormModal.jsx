@@ -13,6 +13,24 @@ import { useProfile } from '@/hooks/useProfile'
 import { useCreateExpense, useUpdateExpense } from '@/hooks/useExpenses'
 import { uploadReceipt, removeReceipt } from '@/api/expenses'
 import { EXPENSE_CATEGORIES } from '@/lib/expenses'
+import { SaveStatus } from '@/components/ui/SaveStatus'
+import { useAutosaveForm } from '@/hooks/useAutosave'
+
+// Scalar fields (everything except the receipt file, which is uploaded explicitly).
+const expenseScalars = (v) => {
+  const amount = Number(v.amount)
+  if (!(amount >= 0) || v.amount === '' || !String(v.category).trim()) return null
+  return {
+    spent_on: v.spent_on,
+    amount,
+    currency: (v.currency || '').trim() || 'USD',
+    category: v.category.trim(),
+    description: v.description,
+    project_id: v.project_id || null,
+    client_id: v.client_id || null,
+    billable: v.billable,
+  }
+}
 
 export function ExpenseFormModal({ open, onClose, expense }) {
   const { data: projects = [] } = useProjects({ status: 'all' })
@@ -28,6 +46,7 @@ export function ExpenseFormModal({ open, onClose, expense }) {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { isSubmitting },
   } = useForm({
     defaultValues: {
@@ -42,39 +61,42 @@ export function ExpenseFormModal({ open, onClose, expense }) {
     },
   })
 
-  const onSubmit = async (v) => {
-    const amount = Number(v.amount)
-    if (!(amount >= 0) || v.amount === '') {
-      toast.error('Enter an amount')
-      return
+  // Edit mode: scalar fields autosave (receipt uploads explicitly on pick, below).
+  const { status, retry } = useAutosaveForm({
+    watch,
+    enabled: isEdit,
+    commit: async () => {
+      const patch = expenseScalars(getValues())
+      if (!patch) return false // invalid (no amount/category) → hold
+      await update.mutateAsync({ id: expense.id, patch })
+    },
+  })
+
+  // Picking a receipt is an explicit upload. In edit mode it uploads + saves immediately.
+  const onPickFile = async (f) => {
+    setFile(f)
+    if (!isEdit || !f) return
+    try {
+      if (expense?.receipt_path) await removeReceipt(expense.receipt_path)
+      const receipt_path = await uploadReceipt(f)
+      await update.mutateAsync({ id: expense.id, patch: { receipt_path } })
+      toast.success('Receipt updated')
+    } catch (e) {
+      toast.error(e.userMessage || 'Could not upload receipt')
     }
-    if (!v.category.trim()) {
-      toast.error('Pick a category')
+  }
+
+  const onCreate = async (v) => {
+    const patch = expenseScalars(v)
+    if (!patch) {
+      toast.error('Enter an amount and category')
       return
     }
     try {
-      let receiptPath = expense?.receipt_path ?? null
-      if (file) {
-        if (isEdit && expense?.receipt_path) await removeReceipt(expense.receipt_path)
-        receiptPath = await uploadReceipt(file)
-      }
-      const payload = {
-        spent_on: v.spent_on,
-        amount,
-        currency: v.currency.trim() || 'USD',
-        category: v.category.trim(),
-        description: v.description,
-        project_id: v.project_id || null,
-        client_id: v.client_id || null,
-        billable: v.billable,
-        receipt_path: receiptPath,
-      }
-      if (isEdit) {
-        await update.mutateAsync({ id: expense.id, patch: payload })
-      } else {
-        await create.mutateAsync(payload)
-      }
-      toast.success(isEdit ? 'Expense updated' : 'Expense added')
+      let receipt_path = null
+      if (file) receipt_path = await uploadReceipt(file)
+      await create.mutateAsync({ ...patch, receipt_path })
+      toast.success('Expense added')
       onClose()
     } catch (e) {
       toast.error(e.userMessage || 'Could not save')
@@ -83,7 +105,7 @@ export function ExpenseFormModal({ open, onClose, expense }) {
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Edit expense' : 'Add expense'} size="md">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={isEdit ? (e) => e.preventDefault() : handleSubmit(onCreate)} className="space-y-4">
         <div className="grid grid-cols-3 gap-3">
           <div>
             <Label htmlFor="spent_on">Date</Label>
@@ -150,12 +172,19 @@ export function ExpenseFormModal({ open, onClose, expense }) {
             id="receipt"
             type="file"
             accept="application/pdf,image/png,image/jpeg,image/webp"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
           />
         </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={isSubmitting}>{isEdit ? 'Save' : 'Add expense'}</Button>
+        <div className="flex items-center justify-between gap-2">
+          <div>{isEdit ? <SaveStatus status={status} onRetry={retry} /> : null}</div>
+          {isEdit ? (
+            <Button type="button" onClick={onClose}>Done</Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
+              <Button type="submit" loading={isSubmitting}>Add expense</Button>
+            </div>
+          )}
         </div>
       </form>
     </Modal>

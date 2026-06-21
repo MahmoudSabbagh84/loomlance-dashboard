@@ -114,3 +114,82 @@ export function useAutosave({ watch, trigger, save, fields = [], enabled = true,
 
   return { status, retry }
 }
+
+// Whole-form autosave for modal forms (client/project/contract/expense/recurring).
+// On any user change it debounces, then calls `commit()` — a form-specific async fn
+// that builds + validates the full payload and persists it (reusing the form's existing
+// save logic). commit() conventions:
+//   - resolves            → saved
+//   - resolves to `false` → held (invalid; nothing persisted, no error shown)
+//   - throws              → error (retainable via retry)
+// Writes are serialized: a change during an in-flight commit re-runs once it settles.
+export function useAutosaveForm({ watch, commit, enabled = true, debounceMs = 700 }) {
+  const [status, setStatus] = useState('idle')
+  const inFlight = useRef(false)
+  const again = useRef(false)
+  const errored = useRef(false)
+  const debounceTimer = useRef(null)
+  const idleTimer = useRef(null)
+
+  const commitRef = useRef(commit)
+  commitRef.current = commit
+
+  const scheduleIdle = useCallback(() => {
+    clearTimeout(idleTimer.current)
+    idleTimer.current = setTimeout(() => setStatus('idle'), 1500)
+  }, [])
+
+  const run = useCallback(async () => {
+    if (inFlight.current) {
+      again.current = true
+      return
+    }
+    inFlight.current = true
+    setStatus('saving')
+    try {
+      const ok = await commitRef.current()
+      errored.current = false
+      if (ok === false) {
+        setStatus('idle') // invalid → held, nothing written
+      } else {
+        setStatus('saved')
+        scheduleIdle()
+      }
+    } catch {
+      errored.current = true
+      setStatus('error')
+    } finally {
+      inFlight.current = false
+      if (again.current && !errored.current) {
+        again.current = false
+        clearTimeout(debounceTimer.current)
+        debounceTimer.current = setTimeout(run, 0)
+      }
+    }
+  }, [scheduleIdle])
+
+  const schedule = useCallback(() => {
+    clearTimeout(debounceTimer.current)
+    debounceTimer.current = setTimeout(run, debounceMs)
+  }, [run, debounceMs])
+
+  const retry = useCallback(() => {
+    errored.current = false
+    clearTimeout(debounceTimer.current)
+    debounceTimer.current = setTimeout(run, 0)
+  }, [run])
+
+  useEffect(() => {
+    if (!enabled) return undefined
+    const sub = watch((_values, { name } = {}) => {
+      if (name) schedule() // only user-originated changes carry a field name
+    })
+    return () => {
+      sub?.unsubscribe?.()
+      clearTimeout(debounceTimer.current)
+      clearTimeout(idleTimer.current)
+    }
+  }, [enabled, watch, schedule])
+
+  return { status, retry }
+}

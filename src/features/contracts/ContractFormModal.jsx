@@ -13,6 +13,17 @@ import { useCreateContract, useUpdateContract } from '@/hooks/useContracts'
 import { useClients } from '@/hooks/useClients'
 import { useProjects } from '@/hooks/useProjects'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
+import { SaveStatus } from '@/components/ui/SaveStatus'
+import { useAutosaveForm } from '@/hooks/useAutosave'
+
+const buildPayload = (values) => ({
+  ...values,
+  project_id: values.project_id || null,
+  value: values.value === '' || values.value == null || Number.isNaN(values.value) ? null : Number(values.value),
+  hourly_rate: values.hourly_rate === '' || values.hourly_rate == null || Number.isNaN(values.hourly_rate) ? null : Number(values.hourly_rate),
+  start_date: values.start_date || null,
+  end_date: values.end_date || null,
+})
 
 export function ContractFormModal({ open, onClose, contract, defaultClientId }) {
   const isEdit = !!contract
@@ -20,7 +31,7 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
   const update = useUpdateContract()
   const { data: clientsPage } = useClients({ pageSize: 200 })
   const clients = clientsPage?.rows ?? []
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, setValue, trigger, getValues, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(contractCreateSchema),
     defaultValues: {
       client_id: contract?.client_id ?? defaultClientId ?? '',
@@ -39,28 +50,28 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
   const selectedProject = watch('project_id')
   const { data: projects = [] } = useProjects({ clientId: selectedClient, status: 'all' })
 
-  const onSubmit = async (values) => {
+  const { status, retry } = useAutosaveForm({
+    watch,
+    enabled: isEdit,
+    commit: async () => {
+      if (!(await trigger())) return false
+      await update.mutateAsync({ id: contract.id, patch: buildPayload(getValues()) })
+    },
+  })
+
+  const onCreate = async (values) => {
     try {
-      const patch = {
-        ...values,
-        project_id: values.project_id || null,
-        value: values.value === '' || values.value == null ? null : Number(values.value),
-        hourly_rate: values.hourly_rate === '' || values.hourly_rate == null ? null : Number(values.hourly_rate),
-        start_date: values.start_date || null,
-        end_date: values.end_date || null,
-      }
-      if (isEdit) await update.mutateAsync({ id: contract.id, patch })
-      else await create.mutateAsync(patch)
-      toast.success(isEdit ? 'Contract updated' : 'Contract created')
+      await create.mutateAsync(buildPayload(values))
+      toast.success('Contract created')
       onClose()
     } catch (e) {
-      toast.error(e.userMessage || 'Save failed')
+      toast.error(e.userMessage || 'Could not create contract')
     }
   }
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Edit contract' : 'New contract'} size="lg">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={isEdit ? (e) => e.preventDefault() : handleSubmit(onCreate)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="client_id" required>Client</Label>
@@ -133,9 +144,16 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
             </Select>
           </div>
         </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={isSubmitting}>{isEdit ? 'Save' : 'Create'}</Button>
+        <div className="flex items-center justify-between gap-2 pt-2">
+          <div>{isEdit ? <SaveStatus status={status} onRetry={retry} /> : null}</div>
+          {isEdit ? (
+            <Button type="button" onClick={onClose}>Done</Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
+              <Button type="submit" loading={isSubmitting}>Create</Button>
+            </div>
+          )}
         </div>
       </form>
     </Modal>
