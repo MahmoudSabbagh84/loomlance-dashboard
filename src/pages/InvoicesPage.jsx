@@ -70,6 +70,7 @@ export default function InvoicesPage() {
         issue_date: new Date().toISOString().slice(0, 10),
         due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
         currency: profile?.default_currency || 'USD',
+        payment_instructions: profile?.default_payment_instructions || '',
         line_items: [{ description: '', quantity: 1, unit_price: 0, tax_rate: 0, discount_rate: 0, position: 0 }],
       })
       navigate(`/invoices/${inv.id}`)

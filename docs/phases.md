@@ -17,7 +17,7 @@
 | Phase 3 | Send & Pay (mock) | ✅ Done (real integrations deferred → Phase 5) |
 | Phase 4 | Tier features | ✅ Done |
 | **— QA pass —** | Live QA findings (F1–F10) | 🐞 In progress (capturing) |
-| Phase 5 | Real integrations (Resend + Stripe Connect) | 🔜 Slated |
+| Phase 5 | Real integrations (SES + Stripe + PayPal, per-user) | 🔶 In progress (5a code done; deploy pending) |
 | Phase 6 | Hardening & reliability | 🔜 Slated |
 | Phase 7 | Reports & export polish | 🔜 Slated |
 | Phase 8 | Navigation & UX (F6/F4b/F10 done) | ✅ Done |
@@ -82,12 +82,12 @@ Live QA on the tier-2 user; findings logged in `docs/qa-findings.md`. **Fixes ar
 
 ## 🔜 / 🧪 FUTURE — slated
 
-### Phase 5 — Real integrations 🔜  *(biggest deferred item)*
-Replace the Phase 3 MOCKs with real services via **Supabase Edge Functions** (none exist yet).
-- **Email:** real **Resend** (flip `VITE_EMAIL_PROVIDER` off `mock`).
-- **Payments:** real **Stripe Connect** (flip `VITE_PAYMENTS_PROVIDER` off `mock`).
-- Deploy Edge Functions + set their secrets; **disable `app_config.mock_payments_enabled`** for prod.
-- Gate: needs its own brainstorm → spec → plan before build.
+### Phase 5 — Real integrations 🔶  *(spec: `docs/superpowers/specs/2026-06-21-phase-5-real-integrations.md`)*
+Replace the Phase 3 MOCKs with real services via **Supabase Edge Functions** (already scaffolded). Email = **AWS SES**; payments = **Stripe + PayPal**, **optional per user**; cash/bank is the universal baseline.
+- ✅ **5a (code done, 2026-06-21; deploy pending):** migration `profiles.online_payments_enabled` + `default_payment_instructions` + `paypal_link`; `send-invoice` Edge Function rewritten Resend→**SES** (SigV4 via aws4fetch, platform-from + reply-to user); `providers.js` accepts `ses`; `PaymentsTab` master toggle + default-instructions card; new invoices prefill instructions from the profile; public `can_pay` now also requires `online_payments_enabled`. **Cash already works** (`MarkPaidModal` method `cash`).
+- 🔜 **5b — Stripe:** finish/verify `stripe-connect`/`stripe-checkout`/`stripe-webhook` (test mode + Stripe CLI), deploy, gate on toggle+connected.
+- 🔜 **5c — PayPal (link MVP):** save `paypal_link` in `PaymentsTab`; public "Pay with PayPal" link; manual mark-paid (`method: 'paypal'`). Full Orders API + webhook later.
+- **Live prerequisites (USER):** AWS SES (verify domain DKIM/SPF/DMARC + request prod access + IAM keys), Stripe (keys + webhook), PayPal; `supabase functions deploy …`; set secrets (`AWS_*`, `SES_FROM_EMAIL`, `STRIPE_*`); flip `VITE_EMAIL_PROVIDER=ses` / `VITE_PAYMENTS_PROVIDER=stripe`; **disable `app_config.mock_payments_enabled`**.
 
 ### Phase 6 — Hardening & reliability 🔜
 Deferred items noted during Phase 4 review (`context.md` §3/§4):

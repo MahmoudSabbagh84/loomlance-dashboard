@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { CreditCard, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Textarea } from '@/components/ui/Textarea'
+import { Label } from '@/components/ui/Label'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { invokeEdge } from '@/api/edge'
 import { paymentsAreReal } from '@/lib/providers'
@@ -12,8 +14,28 @@ export function PaymentsTab() {
   const { data: profile } = useProfile()
   const update = useUpdateProfile()
   const [connecting, setConnecting] = useState(false)
+  const instructionsRef = useRef(null)
+  const onlineEnabled = !!profile?.online_payments_enabled
   const connected = !!profile?.stripe_connect_account_id && profile.stripe_connect_account_id !== 'mock_connect'
   const mockConnected = profile?.stripe_connect_account_id === 'mock_connect'
+
+  const setOnline = async (next) => {
+    try {
+      await update.mutateAsync({ online_payments_enabled: next })
+      toast.success(next ? 'Online payments enabled' : 'Online payments off — clients pay by your instructions')
+    } catch (e) {
+      toast.error(e.userMessage || 'Could not update')
+    }
+  }
+
+  const saveInstructions = async () => {
+    try {
+      await update.mutateAsync({ default_payment_instructions: instructionsRef.current?.value ?? '' })
+      toast.success('Payment instructions saved')
+    } catch (e) {
+      toast.error(e.userMessage || 'Could not save')
+    }
+  }
 
   const connectReal = async () => {
     setConnecting(true)
@@ -26,7 +48,7 @@ export function PaymentsTab() {
     }
   }
 
-  const toggle = async (next) => {
+  const toggleStripe = async (next) => {
     try {
       await update.mutateAsync({ stripe_connect_account_id: next ? 'mock_connect' : null })
       toast.success(next ? 'Stripe connected (simulated)' : 'Stripe disconnected')
@@ -37,45 +59,65 @@ export function PaymentsTab() {
 
   return (
     <div className="max-w-xl space-y-4">
-      <Card className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <CreditCard className="size-5 text-primary" />
-              <h3 className="text-sm font-semibold">Online payments</h3>
-              {connected || mockConnected ? (
-                <Badge variant="success" className="gap-1">
-                  <CheckCircle2 className="size-3" /> {mockConnected ? 'Connected (simulated)' : 'Connected'}
-                </Badge>
-              ) : (
-                <Badge>Not connected</Badge>
-              )}
-            </div>
-            <p className="mt-2 text-sm text-fg-muted">
-              When connected, your invoices show a “Pay now” button so clients can pay you online.
+      {/* Master switch — cash/bank instructions always work; this turns on online pay buttons. */}
+      <Card className="space-y-2">
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={onlineEnabled}
+            onChange={(e) => setOnline(e.target.checked)}
+            disabled={update.isPending}
+          />
+          <span>
+            <span className="text-sm font-semibold">Accept online payments</span>
+            <p className="mt-0.5 text-sm text-fg-muted">
+              When on, invoices show a pay-online button (Stripe / PayPal once connected). When off, invoices show only
+              your payment instructions below — useful where card processors aren’t supported.
             </p>
+          </span>
+        </label>
+      </Card>
+
+      {/* Payment instructions — the universal cash/bank fallback, prefilled onto new invoices. */}
+      {profile ? (
+        <Card key={profile.id} className="space-y-2">
+          <Label htmlFor="pay-instructions">Default payment instructions</Label>
+          <Textarea
+            id="pay-instructions"
+            ref={instructionsRef}
+            rows={3}
+            defaultValue={profile.default_payment_instructions || ''}
+            placeholder="e.g. Bank transfer to IBAN … · or pay cash on delivery"
+          />
+          <div className="flex justify-end">
+            <Button size="sm" onClick={saveInstructions} loading={update.isPending}>Save</Button>
           </div>
+        </Card>
+      ) : null}
+
+      {/* Stripe (card payments) */}
+      <Card className={`space-y-3 ${onlineEnabled ? '' : 'opacity-60'}`}>
+        <div className="flex items-center gap-2">
+          <CreditCard className="size-5 text-primary" />
+          <h3 className="text-sm font-semibold">Stripe (card payments)</h3>
+          {connected || mockConnected ? (
+            <Badge variant="success" className="gap-1">
+              <CheckCircle2 className="size-3" /> {mockConnected ? 'Connected (simulated)' : 'Connected'}
+            </Badge>
+          ) : (
+            <Badge>Not connected</Badge>
+          )}
         </div>
+        <p className="text-sm text-fg-muted">Connect Stripe so clients can pay invoices by card. Available in Stripe-supported countries.</p>
         {paymentsAreReal ? (
           <Button onClick={connectReal} loading={connecting}>
             {connected ? 'Manage Stripe account' : 'Connect Stripe'}
           </Button>
+        ) : mockConnected ? (
+          <Button variant="secondary" onClick={() => toggleStripe(false)} loading={update.isPending}>Disconnect</Button>
         ) : (
-          <>
-            <p className="rounded-md bg-bg-muted px-3 py-2 text-xs text-fg-muted">
-              This is a simulated connection. Real Stripe Connect onboarding and live payments are enabled by setting
-              <code className="mx-1">VITE_PAYMENTS_PROVIDER=stripe</code> (see pre-production.md).
-            </p>
-            {mockConnected ? (
-              <Button variant="secondary" onClick={() => toggle(false)} loading={update.isPending}>
-                Disconnect
-              </Button>
-            ) : (
-              <Button onClick={() => toggle(true)} loading={update.isPending}>
-                Connect Stripe (simulated)
-              </Button>
-            )}
-          </>
+          <Button onClick={() => toggleStripe(true)} loading={update.isPending}>Connect Stripe (simulated)</Button>
         )}
       </Card>
     </div>
