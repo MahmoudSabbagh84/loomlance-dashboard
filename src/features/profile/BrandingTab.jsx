@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Label } from '@/components/ui/Label'
+import { SaveStatus } from '@/components/ui/SaveStatus'
 import { UpgradeCard } from '@/components/gates/UpgradeCard'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
+import { useAutosaveForm } from '@/hooks/useAutosave'
 import { hasFeature, FEATURES } from '@/lib/tier'
 import { uploadLogo, removeLogo, LOGO_TYPES } from '@/api/branding'
 
@@ -19,10 +21,19 @@ export function BrandingTab() {
   const tier = profile?.subscription_tier ?? 'free'
   const [uploading, setUploading] = useState(false)
 
-  const { register, handleSubmit, watch, setValue } = useForm({
+  const { register, watch, setValue, getValues } = useForm({
     values: {
       invoice_accent_color: profile?.invoice_accent_color || DEFAULT_ACCENT,
       invoice_footer: profile?.invoice_footer || '',
+    },
+    resetOptions: { keepDirtyValues: true },
+  })
+
+  // Called unconditionally (before the tier gate) to respect the rules of hooks.
+  const { status, retry } = useAutosaveForm({
+    watch,
+    commit: async () => {
+      await update.mutateAsync(getValues())
     },
   })
 
@@ -59,18 +70,9 @@ export function BrandingTab() {
     }
   }
 
-  const onSave = async (values) => {
-    try {
-      await update.mutateAsync(values)
-      toast.success('Branding saved')
-    } catch (err) {
-      toast.error(err.userMessage || 'Could not save branding')
-    }
-  }
-
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <form onSubmit={handleSubmit(onSave)} className="space-y-5">
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-5">
         <Card className="space-y-3">
           <h3 className="text-sm font-semibold">
             Logo <span className="font-normal text-fg-muted">(optional)</span>
@@ -130,9 +132,9 @@ export function BrandingTab() {
               {...register('invoice_footer')}
             />
           </div>
-          <Button type="submit" loading={update.isPending}>
-            Save branding
-          </Button>
+          <div className="flex h-5 justify-end">
+            <SaveStatus status={status} onRetry={retry} />
+          </div>
         </Card>
       </form>
 

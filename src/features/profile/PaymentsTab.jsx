@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CreditCard, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/Card'
@@ -6,15 +6,57 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Textarea } from '@/components/ui/Textarea'
 import { Label } from '@/components/ui/Label'
+import { SaveStatus } from '@/components/ui/SaveStatus'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { invokeEdge } from '@/api/edge'
 import { paymentsAreReal } from '@/lib/providers'
+
+// Default payment instructions autosave (debounced) — no manual Save.
+function DefaultInstructionsCard({ profile, update }) {
+  const [value, setValue] = useState(profile.default_payment_instructions || '')
+  const [status, setStatus] = useState('idle')
+  const timer = useRef(null)
+  const idle = useRef(null)
+
+  const save = async (v) => {
+    setStatus('saving')
+    try {
+      await update.mutateAsync({ default_payment_instructions: v })
+      setStatus('saved')
+      clearTimeout(idle.current)
+      idle.current = setTimeout(() => setStatus('idle'), 1500)
+    } catch {
+      setStatus('error')
+    }
+  }
+  const onChange = (v) => {
+    setValue(v)
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => save(v), 700)
+  }
+  useEffect(() => () => { clearTimeout(timer.current); clearTimeout(idle.current) }, [])
+
+  return (
+    <Card className="space-y-2">
+      <Label htmlFor="pay-instructions">Default payment instructions</Label>
+      <Textarea
+        id="pay-instructions"
+        rows={3}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="e.g. Bank transfer to IBAN … · or pay cash on delivery"
+      />
+      <div className="flex h-5 justify-end">
+        <SaveStatus status={status} onRetry={() => save(value)} />
+      </div>
+    </Card>
+  )
+}
 
 export function PaymentsTab() {
   const { data: profile } = useProfile()
   const update = useUpdateProfile()
   const [connecting, setConnecting] = useState(false)
-  const instructionsRef = useRef(null)
   const onlineEnabled = !!profile?.online_payments_enabled
   const connected = !!profile?.stripe_connect_account_id && profile.stripe_connect_account_id !== 'mock_connect'
   const mockConnected = profile?.stripe_connect_account_id === 'mock_connect'
@@ -25,15 +67,6 @@ export function PaymentsTab() {
       toast.success(next ? 'Online payments enabled' : 'Online payments off — clients pay by your instructions')
     } catch (e) {
       toast.error(e.userMessage || 'Could not update')
-    }
-  }
-
-  const saveInstructions = async () => {
-    try {
-      await update.mutateAsync({ default_payment_instructions: instructionsRef.current?.value ?? '' })
-      toast.success('Payment instructions saved')
-    } catch (e) {
-      toast.error(e.userMessage || 'Could not save')
     }
   }
 
@@ -80,21 +113,7 @@ export function PaymentsTab() {
       </Card>
 
       {/* Payment instructions — the universal cash/bank fallback, prefilled onto new invoices. */}
-      {profile ? (
-        <Card key={profile.id} className="space-y-2">
-          <Label htmlFor="pay-instructions">Default payment instructions</Label>
-          <Textarea
-            id="pay-instructions"
-            ref={instructionsRef}
-            rows={3}
-            defaultValue={profile.default_payment_instructions || ''}
-            placeholder="e.g. Bank transfer to IBAN … · or pay cash on delivery"
-          />
-          <div className="flex justify-end">
-            <Button size="sm" onClick={saveInstructions} loading={update.isPending}>Save</Button>
-          </div>
-        </Card>
-      ) : null}
+      {profile ? <DefaultInstructionsCard key={profile.id} profile={profile} update={update} /> : null}
 
       {/* Stripe (card payments) */}
       <Card className={`space-y-3 ${onlineEnabled ? '' : 'opacity-60'}`}>

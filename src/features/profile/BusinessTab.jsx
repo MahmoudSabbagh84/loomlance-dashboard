@@ -1,15 +1,15 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Select } from '@/components/ui/Select'
 import { Label } from '@/components/ui/Label'
 import { FieldError } from '@/components/ui/FieldError'
 import { Card } from '@/components/ui/Card'
+import { SaveStatus } from '@/components/ui/SaveStatus'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
+import { useAutosaveForm } from '@/hooks/useAutosave'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 
 const schema = z.object({
@@ -24,8 +24,10 @@ export function BusinessTab() {
   const update = useUpdateProfile()
   const {
     register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
+    watch,
+    trigger,
+    getValues,
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
     values: {
@@ -34,19 +36,20 @@ export function BusinessTab() {
       address: profile?.address ?? '',
       default_currency: profile?.default_currency ?? 'USD',
     },
+    // A post-save refetch must not clobber fields the user is still editing.
+    resetOptions: { keepDirtyValues: true },
   })
 
-  const onSubmit = async (values) => {
-    try {
-      await update.mutateAsync(values)
-      toast.success('Business details saved')
-    } catch (e) {
-      toast.error(e.userMessage ?? 'Could not save business details')
-    }
-  }
+  const { status, retry } = useAutosaveForm({
+    watch,
+    commit: async () => {
+      if (!(await trigger())) return false
+      await update.mutateAsync(getValues())
+    },
+  })
 
   return (
-    <Card as="form" onSubmit={handleSubmit(onSubmit)} className="max-w-xl space-y-4">
+    <Card as="form" onSubmit={(e) => e.preventDefault()} className="max-w-xl space-y-4">
       <div>
         <Label htmlFor="business_name">Business name</Label>
         <Input id="business_name" {...register('business_name')} />
@@ -73,9 +76,9 @@ export function BusinessTab() {
         </Select>
         <FieldError>{errors.default_currency?.message}</FieldError>
       </div>
-      <Button type="submit" loading={isSubmitting}>
-        Save
-      </Button>
+      <div className="flex h-5 justify-end">
+        <SaveStatus status={status} onRetry={retry} />
+      </div>
     </Card>
   )
 }
