@@ -13,6 +13,9 @@ import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20'
 import { corsHeaders, json } from '../_shared/cors.ts'
 
 const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)))
+// RFC 2045: base64 bodies must be wrapped at <=76 chars per line. Gmail silently
+// quarantines messages with one giant unwrapped base64 line (esp. large attachments).
+const wrap76 = (s: string) => s.replace(/(.{76})/g, '$1\r\n')
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -54,6 +57,8 @@ Deno.serve(async (req) => {
       `To: ${to}`,
       replyTo ? `Reply-To: ${replyTo}` : null,
       `Subject: ${subj}`,
+      `Date: ${new Date().toUTCString()}`,
+      `Message-ID: <${crypto.randomUUID()}@send.loomlance.com>`,
       'MIME-Version: 1.0',
       `Content-Type: multipart/mixed; boundary="${boundary}"`,
       '',
@@ -61,7 +66,7 @@ Deno.serve(async (req) => {
       'Content-Type: text/html; charset=UTF-8',
       'Content-Transfer-Encoding: base64',
       '',
-      b64(html),
+      wrap76(b64(html)),
     ]
     if (pdfBase64) {
       lines.push(
@@ -70,7 +75,7 @@ Deno.serve(async (req) => {
         `Content-Disposition: attachment; filename="${invoice.invoice_number}.pdf"`,
         'Content-Transfer-Encoding: base64',
         '',
-        pdfBase64,
+        wrap76(pdfBase64),
       )
     }
     lines.push(`--${boundary}--`, '')
