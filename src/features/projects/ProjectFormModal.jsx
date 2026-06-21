@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Select } from '@/components/ui/Select'
 import { Label } from '@/components/ui/Label'
 import { FieldError } from '@/components/ui/FieldError'
+import { ColorPicker } from '@/components/ui/ColorPicker'
+import { PROJECT_COLORS } from '@/lib/colors'
 import { projectCreateSchema } from '@/api/schemas/projects'
 import { useCreateProject, useUpdateProject } from '@/hooks/useProjects'
 import { useClients } from '@/hooks/useClients'
@@ -25,7 +27,7 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
       client_id: project?.client_id ?? defaultClientId ?? '',
       name: project?.name ?? '',
       description: project?.description ?? '',
-      color: project?.color ?? '#2D3E50',
+      color: project?.color ?? PROJECT_COLORS[0],
     },
   })
 
@@ -73,8 +75,8 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
           <Textarea id="description" rows={3} {...register('description')} />
         </div>
         <div>
-          <Label htmlFor="color">Accent color</Label>
-          <input id="color" type="color" {...register('color')} className="h-10 w-20 rounded border border-border" />
+          <Label>Accent color</Label>
+          <ColorPicker value={watch('color')} onChange={(c) => setValue('color', c, { shouldDirty: true })} />
           <FieldError>{errors.color?.message}</FieldError>
         </div>
         <div className="flex justify-end gap-2 pt-2">
