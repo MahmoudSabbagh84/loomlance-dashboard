@@ -26,6 +26,8 @@ export function ExpenseFormModal({ open, onClose, expense }) {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { isSubmitting },
   } = useForm({
     defaultValues: {
@@ -113,7 +115,11 @@ export function ExpenseFormModal({ open, onClose, expense }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="project_id">Project</Label>
-            <Select id="project_id" {...register('project_id')}>
+            <Select
+              id="project_id"
+              value={watch('project_id') ?? ''}
+              onChange={(e) => setValue('project_id', e.target.value, { shouldDirty: true })}
+            >
               <option value="">None</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -122,7 +128,11 @@ export function ExpenseFormModal({ open, onClose, expense }) {
           </div>
           <div>
             <Label htmlFor="client_id">Client</Label>
-            <Select id="client_id" {...register('client_id')}>
+            <Select
+              id="client_id"
+              value={watch('client_id') ?? ''}
+              onChange={(e) => setValue('client_id', e.target.value, { shouldDirty: true })}
+            >
               <option value="">None</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -21,6 +22,7 @@ const schema = z.object({
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const queryClient = useQueryClient()
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(schema) })
@@ -28,7 +30,10 @@ export default function LoginPage() {
   const onSubmit = async (values) => {
     setSubmitting(true)
     try {
-      await auth.signInWithPassword(values)
+      const data = await auth.signInWithPassword(values)
+      // Seed the session cache so AuthGate sees the user immediately instead of
+      // reading a stale unauthenticated value and bouncing back to /login.
+      queryClient.setQueryData(['session'], data.session)
       const to = location.state?.from || '/'
       navigate(to, { replace: true })
     } catch (e) {

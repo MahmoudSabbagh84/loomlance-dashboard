@@ -19,7 +19,7 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
   const { data: clientsPage } = useClients({ pageSize: 200 })
   const clients = clientsPage?.rows ?? []
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(projectCreateSchema),
     defaultValues: {
       client_id: project?.client_id ?? defaultClientId ?? '',
@@ -53,7 +53,11 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <Label htmlFor="client_id" required>Client</Label>
-          <Select id="client_id" {...register('client_id')}>
+          <Select
+            id="client_id"
+            value={watch('client_id') ?? ''}
+            onChange={(e) => setValue('client_id', e.target.value, { shouldDirty: true, shouldValidate: true })}
+          >
             <option value="">Select a client</option>
             {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>

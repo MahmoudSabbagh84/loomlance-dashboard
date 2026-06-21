@@ -20,7 +20,7 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
   const update = useUpdateContract()
   const { data: clientsPage } = useClients({ pageSize: 200 })
   const clients = clientsPage?.rows ?? []
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(contractCreateSchema),
     defaultValues: {
       client_id: contract?.client_id ?? defaultClientId ?? '',
@@ -35,6 +35,7 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
     },
   })
   const selectedClient = watch('client_id')
+  const selectedProject = watch('project_id')
   const { data: projects = [] } = useProjects({ clientId: selectedClient, status: 'all' })
 
   const onSubmit = async (values) => {
@@ -61,7 +62,11 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="client_id" required>Client</Label>
-            <Select id="client_id" {...register('client_id')}>
+            <Select
+              id="client_id"
+              value={selectedClient ?? ''}
+              onChange={(e) => setValue('client_id', e.target.value, { shouldDirty: true, shouldValidate: true })}
+            >
               <option value="">Select…</option>
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </Select>
@@ -69,7 +74,11 @@ export function ContractFormModal({ open, onClose, contract, defaultClientId }) 
           </div>
           <div>
             <Label htmlFor="project_id">Project (optional)</Label>
-            <Select id="project_id" {...register('project_id')}>
+            <Select
+              id="project_id"
+              value={selectedProject ?? ''}
+              onChange={(e) => setValue('project_id', e.target.value, { shouldDirty: true })}
+            >
               <option value="">—</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </Select>

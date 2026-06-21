@@ -30,6 +30,7 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
     register,
     control,
     handleSubmit,
+    watch,
     setValue,
     getValues,
     formState: { isSubmitting },
@@ -110,7 +111,11 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="client_id" required>Client</Label>
-            <Select id="client_id" {...register('client_id', { required: true })}>
+            <Select
+              id="client_id"
+              value={watch('client_id') ?? ''}
+              onChange={(e) => setValue('client_id', e.target.value, { shouldDirty: true })}
+            >
               <option value="">Select…</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -119,7 +124,11 @@ export function RecurringTemplateFormModal({ open, onClose, template }) {
           </div>
           <div>
             <Label htmlFor="project_id">Project (optional)</Label>
-            <Select id="project_id" {...register('project_id')}>
+            <Select
+              id="project_id"
+              value={watch('project_id') ?? ''}
+              onChange={(e) => setValue('project_id', e.target.value, { shouldDirty: true })}
+            >
               <option value="">None</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
