@@ -55,6 +55,21 @@ export function readyToBillByProject(entries) {
     .sort((a, b) => a.projectName.localeCompare(b.projectName))
 }
 
+// Active (unpaused) elapsed seconds for a time entry. The active window ends at
+// ended_at (finalized), else paused_at (paused, frozen), else nowMs (running).
+// paused_seconds is the accumulated time from earlier pauses.
+export function activeSeconds(entry, nowMs) {
+  if (!entry?.started_at) return 0
+  const start = new Date(entry.started_at).getTime()
+  const end = entry.ended_at
+    ? new Date(entry.ended_at).getTime()
+    : entry.paused_at
+      ? new Date(entry.paused_at).getTime()
+      : nowMs
+  const secs = (end - start) / 1000 - (Number(entry.paused_seconds) || 0)
+  return Math.max(0, Math.round(secs))
+}
+
 export function groupTimeForInvoice(entries) {
   const groups = new Map()
   for (const e of entries || []) {

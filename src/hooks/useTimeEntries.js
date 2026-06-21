@@ -22,6 +22,14 @@ export function useStopTimer() {
   const inv = useInvalidateTime()
   return useMutation({ mutationFn: api.stopTimer, onSuccess: inv })
 }
+export function usePauseTimer() {
+  const inv = useInvalidateTime()
+  return useMutation({ mutationFn: api.pauseTimer, onSuccess: inv })
+}
+export function useResumeTimer() {
+  const inv = useInvalidateTime()
+  return useMutation({ mutationFn: api.resumeTimer, onSuccess: inv })
+}
 export function useCreateManualEntry() {
   const inv = useInvalidateTime()
   return useMutation({ mutationFn: api.createManualEntry, onSuccess: inv })

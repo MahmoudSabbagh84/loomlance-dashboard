@@ -54,6 +54,18 @@
     animation: slide-in-left 160ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  /* Breathing indicator for an active (running) timer */
+  @keyframes breathe {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .animate-breathe {
+    animation: breathe 1.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-breathe { animation: none; }
+  }
+
   /* Hide native number-input spinner arrows (manual entry only) */
   .no-spinner::-webkit-outer-spin-button,
   .no-spinner::-webkit-inner-spin-button {

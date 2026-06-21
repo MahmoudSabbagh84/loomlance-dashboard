@@ -1,9 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import { mapPostgresError } from '@/lib/errors'
-import { computeDurationMinutes } from '@/lib/time'
 
 const SELECT =
-  'id, project_id, contract_id, task_id, started_at, ended_at, duration_minutes, description, billable, hourly_rate, invoiced_on_invoice_id, projects(name, client_id, clients(name)), contracts(title, hourly_rate)'
+  'id, project_id, contract_id, task_id, started_at, ended_at, duration_minutes, paused_at, paused_seconds, description, billable, hourly_rate, invoiced_on_invoice_id, projects(name, client_id, clients(name)), contracts(title, hourly_rate)'
 
 async function uid() {
   const { data } = await supabase.auth.getSession()
@@ -46,13 +45,51 @@ export async function startTimer({ projectId, contractId = null, description = '
   return data
 }
 
-export async function stopTimer(id) {
-  const { data: row, error: e1 } = await supabase.from('time_entries').select('started_at').eq('id', id).single()
-  if (e1) throw mapPostgresError(e1)
-  const endedAt = new Date().toISOString()
+export async function pauseTimer(id) {
   const { data, error } = await supabase
     .from('time_entries')
-    .update({ ended_at: endedAt, duration_minutes: computeDurationMinutes(row.started_at, endedAt) })
+    .update({ paused_at: new Date().toISOString() })
+    .eq('id', id)
+    .select(SELECT)
+    .single()
+  if (error) throw mapPostgresError(error)
+  return data
+}
+
+export async function resumeTimer(id) {
+  const { data: row, error: e1 } = await supabase.from('time_entries').select('paused_at, paused_seconds').eq('id', id).single()
+  if (e1) throw mapPostgresError(e1)
+  const add = row.paused_at ? Math.round((Date.now() - new Date(row.paused_at).getTime()) / 1000) : 0
+  const { data, error } = await supabase
+    .from('time_entries')
+    .update({ paused_at: null, paused_seconds: (Number(row.paused_seconds) || 0) + add })
+    .eq('id', id)
+    .select(SELECT)
+    .single()
+  if (error) throw mapPostgresError(error)
+  return data
+}
+
+// Commit: finalize the entry, excluding any paused time from the duration.
+export async function stopTimer(id) {
+  const { data: row, error: e1 } = await supabase
+    .from('time_entries')
+    .select('started_at, paused_at, paused_seconds')
+    .eq('id', id)
+    .single()
+  if (e1) throw mapPostgresError(e1)
+  const endedMs = Date.now()
+  let pausedSeconds = Number(row.paused_seconds) || 0
+  if (row.paused_at) pausedSeconds += Math.round((endedMs - new Date(row.paused_at).getTime()) / 1000)
+  const activeSec = Math.max(0, (endedMs - new Date(row.started_at).getTime()) / 1000 - pausedSeconds)
+  const { data, error } = await supabase
+    .from('time_entries')
+    .update({
+      ended_at: new Date(endedMs).toISOString(),
+      duration_minutes: Math.round(activeSec / 60),
+      paused_at: null,
+      paused_seconds: pausedSeconds,
+    })
     .eq('id', id)
     .select(SELECT)
     .single()

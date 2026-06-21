@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeDurationMinutes, hoursFromMinutes, formatDuration, formatElapsed, groupTimeForInvoice, readyToBillByProject } from '@/lib/time'
+import { computeDurationMinutes, hoursFromMinutes, formatDuration, formatElapsed, groupTimeForInvoice, readyToBillByProject, activeSeconds } from '@/lib/time'
 
 describe('computeDurationMinutes', () => {
   it('rounds ms to minutes', () => {
@@ -22,6 +22,29 @@ describe('formatDuration', () => {
 
 describe('formatElapsed', () => {
   it('H:MM:SS', () => expect(formatElapsed(3661)).toBe('1:01:01'))
+})
+
+describe('activeSeconds', () => {
+  const start = '2026-01-01T09:00:00Z'
+  const startMs = new Date(start).getTime()
+
+  it('running: now - start - prior pauses', () => {
+    const now = startMs + 3600_000 // +1h
+    expect(activeSeconds({ started_at: start, paused_seconds: 600 }, now)).toBe(3000) // 3600 - 600
+  })
+  it('paused: frozen at paused_at, ignores now', () => {
+    const paused_at = '2026-01-01T09:30:00Z' // +30m
+    const r = activeSeconds({ started_at: start, paused_at, paused_seconds: 0 }, startMs + 9999_000)
+    expect(r).toBe(1800)
+  })
+  it('finalized: ended_at - start - pauses', () => {
+    const ended_at = '2026-01-01T10:00:00Z' // +1h
+    expect(activeSeconds({ started_at: start, ended_at, paused_seconds: 300 }, startMs + 99999)).toBe(3300)
+  })
+  it('never negative; no started_at -> 0', () => {
+    expect(activeSeconds({ started_at: start, paused_seconds: 99999 }, startMs + 1000)).toBe(0)
+    expect(activeSeconds({}, startMs)).toBe(0)
+  })
 })
 
 describe('readyToBillByProject', () => {
