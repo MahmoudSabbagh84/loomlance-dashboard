@@ -56,6 +56,7 @@ export function MarkPaidModal({ open, onClose, invoice }) {
           <Select id="method" {...register('method')}>
             <option value="bank">Bank transfer</option>
             <option value="cash">Cash</option>
+            <option value="paypal">PayPal</option>
             <option value="other">Other</option>
             <option value="manual">Manual</option>
           </Select>

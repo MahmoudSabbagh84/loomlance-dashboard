@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Label } from '@/components/ui/Label'
 import { SaveStatus } from '@/components/ui/SaveStatus'
@@ -45,6 +46,52 @@ function DefaultInstructionsCard({ profile, update }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="e.g. Bank transfer to IBAN … · or pay cash on delivery"
+      />
+      <div className="flex h-5 justify-end">
+        <SaveStatus status={status} onRetry={() => save(value)} />
+      </div>
+    </Card>
+  )
+}
+
+// PayPal.me link autosave (debounced) — invoices render a "Pay with PayPal" button.
+function PayPalLinkCard({ profile, update, dimmed }) {
+  const [value, setValue] = useState(profile.paypal_link || '')
+  const [status, setStatus] = useState('idle')
+  const timer = useRef(null)
+  const idle = useRef(null)
+
+  const save = async (v) => {
+    setStatus('saving')
+    try {
+      await update.mutateAsync({ paypal_link: v.trim() || null })
+      setStatus('saved')
+      clearTimeout(idle.current)
+      idle.current = setTimeout(() => setStatus('idle'), 1500)
+    } catch {
+      setStatus('error')
+    }
+  }
+  const onChange = (v) => {
+    setValue(v)
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => save(v), 700)
+  }
+  useEffect(() => () => { clearTimeout(timer.current); clearTimeout(idle.current) }, [])
+
+  return (
+    <Card className={`space-y-2 ${dimmed ? 'opacity-60' : ''}`}>
+      <h3 className="text-sm font-semibold">PayPal</h3>
+      <p className="text-sm text-fg-muted">
+        Add your PayPal.me link or username — invoices show a “Pay with PayPal” button. There’s no auto-reconcile, so
+        you confirm receipt with <span className="font-medium">Mark as paid</span>.
+      </p>
+      <Label htmlFor="paypal-link">PayPal.me link or username</Label>
+      <Input
+        id="paypal-link"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="paypal.me/yourname  ·  or just yourname"
       />
       <div className="flex h-5 justify-end">
         <SaveStatus status={status} onRetry={() => save(value)} />
@@ -139,6 +186,9 @@ export function PaymentsTab() {
           <Button onClick={() => toggleStripe(true)} loading={update.isPending}>Connect Stripe (simulated)</Button>
         )}
       </Card>
+
+      {/* PayPal (link MVP) */}
+      {profile ? <PayPalLinkCard key={profile.id} profile={profile} update={update} dimmed={!onlineEnabled} /> : null}
     </div>
   )
 }

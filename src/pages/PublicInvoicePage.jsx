@@ -8,6 +8,8 @@ import { usePublicInvoice, useMockPay } from '@/hooks/usePublicInvoice'
 import { PublicInvoiceView } from '@/features/invoices/PublicInvoiceView'
 import { invokeEdge } from '@/api/edge'
 import { paymentsAreReal } from '@/lib/providers'
+import { invoiceTotals } from '@/lib/money'
+import { paypalHref } from '@/lib/paypal'
 
 export default function PublicInvoicePage() {
   const { token } = useParams()
@@ -86,6 +88,15 @@ export default function PublicInvoicePage() {
   }
 
   const isPaid = paid || data.status === 'paid'
+  const total = invoiceTotals(
+    (data.line_items || []).map((li) => ({
+      quantity: Number(li.quantity),
+      unit_price: Number(li.unit_price),
+      tax_rate: Number(li.tax_rate),
+      discount_rate: Number(li.discount_rate),
+    }))
+  ).total
+  const paypalUrl = data.paypal_link ? paypalHref(data.paypal_link, total, data.currency) : null
 
   return (
     <div className="min-h-screen bg-bg px-4 py-10">
@@ -99,6 +110,11 @@ export default function PublicInvoicePage() {
             {data.can_pay && !isPaid ? (
               <Button size="sm" onClick={onPay} loading={paying || pay.isPending}>
                 <CreditCard className="size-4" /> Pay now
+              </Button>
+            ) : null}
+            {paypalUrl && !isPaid ? (
+              <Button variant="secondary" size="sm" onClick={() => window.open(paypalUrl, '_blank', 'noopener')}>
+                Pay with PayPal
               </Button>
             ) : null}
           </div>
