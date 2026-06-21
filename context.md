@@ -2,20 +2,22 @@
 
 > **Purpose:** Hand off this work session to a fresh Claude Code session (possibly on another computer) so it can pick up with no re-explanation. Read top-to-bottom, then see **"Where we are right now."**
 >
-> **Last updated:** 2026-06-21 (evening, end of session — paused to switch back to the **main PC** tomorrow). **Everything is committed & pushed to `origin/main`** (sync via `git pull`). Live-QA is COMPLETE (F1–F17 ✅); Phases 8/9/10 shipped; **Phase 5a (real integrations — code) is done, deploy pending.** Source of truth: `docs/phases.md` + `docs/qa-findings.md` + `docs/superpowers/specs/2026-06-21-phase-5-real-integrations.md`.
+> **Last updated:** 2026-06-21 (later session — **Phase 5a SES email is now LIVE** + **autosave Phase 1 shipped**). Everything committed to `main` (HEAD `dc35bf4` or later); **not pushed unless you ask**. Live-QA COMPLETE (F1–F17 ✅); Phases 8/9/10 shipped; **5a email = LIVE & verified**. Source of truth: `docs/phases.md` + `docs/qa-findings.md` + `docs/superpowers/specs/2026-06-21-phase-5-real-integrations.md` + `docs/superpowers/{specs,plans}/2026-06-21-autosave*`.
 >
-> ### ⏭️ RESUME HERE tomorrow (main PC)
-> 1. `git pull` (HEAD should be `0aeb10c` or later). `npm install` if deps differ; recreate `.env.local` if missing (see §0). `npx vitest run` (81 green).
-> 2. **Phase 5 is mid-flight.** **5a code is built** (SES email + per-user online-payments toggle + cash-first); it is **NOT live** — needs YOUR AWS account: verify an SES sending domain (DKIM/SPF/DMARC), request SES production access, create IAM keys, set Edge-Function secrets, `supabase functions deploy send-invoice`, set `VITE_EMAIL_PROVIDER=ses`. See the spec's "Live prerequisites".
-> 3. Then continue **5b (Stripe: verify/deploy the existing functions)** and **5c (PayPal link MVP)** — both code-buildable now; see the spec.
-> 4. If the main PC has the **superpowers** plugin installed, you can use `superpowers:*`; this Mac did not (we ran brainstorm/plan manually).
+> ### ⏭️ RESUME HERE
+> 1. `git pull` if syncing machines. `npm install` if deps differ; recreate `.env.local` if missing (see §0 — note `VITE_EMAIL_PROVIDER=ses` now). `npx vitest run` (**87 green**).
+> 2. **Autosave Phase 2 (in progress)** — roll out autosave to the **client/project/contract/expense/recurring** modals (create/edit split), then profile sweep. Phase 1 (invoice editor + `useAutosave` + `<SaveStatus>`) is shipped. Plan: `docs/superpowers/plans/2026-06-21-autosave.md`.
+> 3. **Phase 5a is LIVE** (SES email verified end-to-end). Remaining 5a chore (USER): delete the root AWS access key pasted during setup; swap the `loomlance` CLI profile (currently root in account `183631341841`) for a scoped non-root user.
+> 4. Then **5b (Stripe)** + **5c (PayPal link MVP)** — both code-buildable; see the Phase 5 spec.
+> 5. **superpowers** plugin not installed on this Mac — brainstorm/plan run manually (artifacts still in `docs/superpowers/`).
 
 ---
 
 ## 0. TL;DR / environment
 
 - Working on **macOS** now (was Windows). **Superpowers plugin is NOT installed on this machine** — the brainstorm → spec → plan flow was run **manually** (same artifacts land in `docs/superpowers/specs|plans/`). Don't try to invoke `superpowers:*` skills here.
-- **Env (gitignored `.env.local` exists):** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (fetched via Supabase MCP), `VITE_PUBLIC_SITE_URL=http://localhost:5173`, providers `mock`. If `.env.local` is missing, recreate from `.env.example` (URL = `https://zbipqfsqxnvrzhpdjvvy.supabase.co`; anon key via `mcp__supabase__get_publishable_keys`).
+- **Env (gitignored `.env.local` exists):** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (fetched via Supabase MCP), `VITE_PUBLIC_SITE_URL=http://localhost:5173`, **`VITE_EMAIL_PROVIDER=ses`** (real email — SES is live), `VITE_PAYMENTS_PROVIDER=mock`. If `.env.local` is missing, recreate from `.env.example` (URL = `https://zbipqfsqxnvrzhpdjvvy.supabase.co`; anon key via `mcp__supabase__get_publishable_keys`).
+- **AWS SES (Phase 5a, LIVE):** account `183631341841`; identity `send.loomlance.com` (Easy DKIM + MAIL FROM `bounce.send.loomlance.com` + DMARC, in Route 53); production access granted; IAM sender `loomlance-ses-sender` (scoped `ses:SendEmail`); Supabase secrets set; `send-invoice` deployed **v2** (Date/Message-ID + 76-col base64 — fixed Gmail quarantine). CLI profile `loomlance` (⚠️ currently root — user to replace).
 - **Servers:** `npm run dev` → :5173; `npm run preview` → :4173 (use preview to verify the **invoice PDF** — react-pdf only renders in a prod build).
 - **Tests/build:** `npx vitest run` (**81 tests**, green), `npm run lint` (clean), `npm run build` (OK). Run all three before every commit.
 - **Git:** on `main`, HEAD `4c13ffe`, **everything pushed to `origin/main`**. We commit per task; **user says when to push** (they did, repeatedly).

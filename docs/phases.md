@@ -4,7 +4,7 @@
 >
 > **Status legend:** ✅ Done & shipped · 🔜 Slated (planned, not started) · 🧪 Brainstorming (needs a `superpowers:brainstorming` design pass before build) · 🐞 QA fix (from the current QA session)
 >
-> **Last updated:** 2026-06-20.
+> **Last updated:** 2026-06-21 (SES email LIVE; autosave Phase 1 shipped).
 
 ---
 
@@ -17,13 +17,14 @@
 | Phase 3 | Send & Pay (mock) | ✅ Done (real integrations deferred → Phase 5) |
 | Phase 4 | Tier features | ✅ Done |
 | **— QA pass —** | Live QA findings (F1–F10) | 🐞 In progress (capturing) |
-| Phase 5 | Real integrations (SES + Stripe + PayPal, per-user) | 🔶 In progress (5a code done; deploy pending) |
+| Phase 5 | Real integrations (SES + Stripe + PayPal, per-user) | 🔶 **5a LIVE** (SES email verified end-to-end); 5b/5c pending |
 | Phase 6 | Hardening & reliability | 🔜 Slated |
 | Phase 7 | Reports & export polish | 🔜 Slated |
 | Phase 8 | Navigation & UX (F6/F4b/F10 done) | ✅ Done |
 | Phase 9 | Time tracking v2 + Expenses v2 (F2/F3/F7/F12c done) | ✅ Done |
 | Phase 10 | Client/contacts rework (F9/F8 done) | ✅ Done |
 | Phase 11 | Test coverage (E2E) | 🔜 Slated |
+| Phase 12 | Autosave everywhere (drop manual Save) | 🔶 In progress (Phase 1 pilot shipped) |
 
 ---
 
@@ -84,7 +85,9 @@ Live QA on the tier-2 user; findings logged in `docs/qa-findings.md`. **Fixes ar
 
 ### Phase 5 — Real integrations 🔶  *(spec: `docs/superpowers/specs/2026-06-21-phase-5-real-integrations.md`)*
 Replace the Phase 3 MOCKs with real services via **Supabase Edge Functions** (already scaffolded). Email = **AWS SES**; payments = **Stripe + PayPal**, **optional per user**; cash/bank is the universal baseline.
-- ✅ **5a (code done, 2026-06-21; deploy pending):** migration `profiles.online_payments_enabled` + `default_payment_instructions` + `paypal_link`; `send-invoice` Edge Function rewritten Resend→**SES** (SigV4 via aws4fetch, platform-from + reply-to user); `providers.js` accepts `ses`; `PaymentsTab` master toggle + default-instructions card; new invoices prefill instructions from the profile; public `can_pay` now also requires `online_payments_enabled`. **Cash already works** (`MarkPaidModal` method `cash`).
+- ✅ **5a — LIVE & verified (2026-06-21):** migration `profiles.online_payments_enabled` + `default_payment_instructions` + `paypal_link`; `send-invoice` Edge Function rewritten Resend→**SES** (SigV4 via aws4fetch, platform-from + reply-to user); `providers.js` accepts `ses`; `PaymentsTab` master toggle + default-instructions card; new invoices prefill instructions from the profile; public `can_pay` now also requires `online_payments_enabled`. **Cash already works** (`MarkPaidModal` method `cash`).
+  - **Go-live done:** SES domain `send.loomlance.com` verified in AWS account `183631341841` (Easy DKIM + custom MAIL FROM `bounce.send.loomlance.com` + DMARC `p=none`, all in Route 53); SES **production access granted**; least-privilege IAM user `loomlance-ses-sender` (scoped to `ses:SendEmail` on the identity); Supabase secrets set (`AWS_*`, `SES_FROM_EMAIL=invoices@send.loomlance.com`, `PUBLIC_SITE_URL=https://app.loomlance.com`); `send-invoice` deployed (**v2** — fixed silent Gmail quarantine by adding `Date`/`Message-ID` headers + RFC-2045 76-col base64 wrapping). **Real platform send confirmed delivered to inbox.**
+  - **Outstanding (USER):** delete the root access key pasted during setup; replace the `loomlance` AWS CLI profile (currently root) with a scoped non-root user.
 - 🔜 **5b — Stripe:** finish/verify `stripe-connect`/`stripe-checkout`/`stripe-webhook` (test mode + Stripe CLI), deploy, gate on toggle+connected.
 - 🔜 **5c — PayPal (link MVP):** save `paypal_link` in `PaymentsTab`; public "Pay with PayPal" link; manual mark-paid (`method: 'paypal'`). Full Orders API + webhook later.
 - **Live prerequisites (USER):** AWS SES (verify domain DKIM/SPF/DMARC + request prod access + IAM keys), Stripe (keys + webhook), PayPal; `supabase functions deploy …`; set secrets (`AWS_*`, `SES_FROM_EMAIL`, `STRIPE_*`); flip `VITE_EMAIL_PROVIDER=ses` / `VITE_PAYMENTS_PROVIDER=stripe`; **disable `app_config.mock_payments_enabled`**.
@@ -124,7 +127,14 @@ Source: **F8, F9**.
 
 ### Phase 11 — Test coverage 🔜
 - Broaden **Playwright E2E** for the new Tier-2 pages (Time, Expenses, Recurring, Reports).
-- Current: 68/68 Vitest unit tests green (12 files).
+- Current: **87/87 Vitest unit tests green** (14 files).
+
+### Phase 12 — Autosave everywhere 🔶 *(brainstorm + plan: `docs/superpowers/specs|plans/2026-06-21-autosave*`)*
+Drop the manual **Save** button across the app; edits persist automatically. Decisions: pilot on invoice editor → read-only after send → modals autosave too (via a create/edit split) → creation stays an explicit step.
+- ✅ **Phase 1 (shipped 2026-06-21):** `useAutosave` hook (debounce + per-field validation gate + serialized latest-wins writes + retain/retry) and `<SaveStatus>` indicator; **invoice editor** converted (drafts autosave, sent/paid/void read-only). 6 unit tests. Commit `dc35bf4`.
+- 🔶 **Phase 2 (in progress):** roll out to the **client / project / contract / expense / recurring** modal forms via the create/edit split (explicit Create step → autosaving edit form).
+- 🔜 **Phase 3:** profile/payments sweep; remove any remaining Save buttons.
+- Also fixed the **invoice client-default bug** (new invoices silently bound to client #1 → explicit `NewInvoiceModal` picker; commit `2f30f64`).
 
 ---
 
