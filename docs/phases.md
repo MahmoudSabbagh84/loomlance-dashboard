@@ -20,7 +20,7 @@
 | Phase 5 | Real integrations (Resend + Stripe Connect) | 🔜 Slated |
 | Phase 6 | Hardening & reliability | 🔜 Slated |
 | Phase 7 | Reports & export polish | 🔜 Slated |
-| Phase 8 | Navigation & UX (F6/F4b done; F10 open) | 🔶 In progress |
+| Phase 8 | Navigation & UX (F6/F4b/F10 done) | ✅ Done |
 | Phase 9 | Time tracking v2 + Expenses v2 (F2/F3/F7/F12c done) | ✅ Done |
 | Phase 10 | Client/contacts rework | 🧪 Brainstorming |
 | Phase 11 | Test coverage (E2E) | 🔜 Slated |
@@ -102,11 +102,11 @@ Explicitly deferred during Phase 4 brainstorming:
 - **Accrual-basis** revenue toggle (vs. cash basis).
 - **FX / multi-currency** handling beyond per-currency grouping.
 
-### Phase 8 — Navigation & UX intuitiveness 🔶 *(in progress)*
-Make the platform more intuitive to move around. Sources: **F4b, F6, F10**.
+### Phase 8 — Navigation & UX intuitiveness ✅ *(shipped 2026-06-21)*
+Make the platform more intuitive to move around. Sources: **F4b, F6, F10** — all done.
 - ✅ **F6** — consistent **breadcrumb** navigation: reusable `Breadcrumbs` (parent-route based) on all detail pages (Clients/Projects/Contracts/Invoices + Invoices/Recurring). Commit pending. Done 2026-06-21.
 - ✅ **F4b** — dashboard revenue chart bars are clickable → drill into **Reports → Revenue** scoped to that month (`/reports?tab=&from=&to=` deep-link via `useSearchParams`). Done 2026-06-21.
-- **F10** — client **Activity timeline** (aggregate per-client events) — replaces the stale "Phase 2" stub.
+- ✅ **F10** — client **Activity timeline**: `ActivityTab` aggregates the client's invoices, contracts, and expenses into a chronological timeline (time entries deferred). Done 2026-06-21.
 
 ### Phase 9 — Time tracking v2 ✅ *(shipped 2026-06-21; F7 still open)*
 Redesigned the time experience. Sources: **F2, F3** (done), **F7** (deferred). Spec: `docs/superpowers/specs/2026-06-20-time-page-v2-design.md` (FINAL); plan: `docs/superpowers/plans/2026-06-21-time-page-v2.md`.
