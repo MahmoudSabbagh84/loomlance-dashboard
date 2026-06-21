@@ -21,7 +21,7 @@
 | Phase 6 | Hardening & reliability | 🔜 Slated |
 | Phase 7 | Reports & export polish | 🔜 Slated |
 | Phase 8 | Navigation & UX intuitiveness | 🧪 Brainstorming |
-| Phase 9 | Time tracking v2 (+ paired Expenses v2) | 🧪 Brainstorming |
+| Phase 9 | Time tracking v2 (F2/F3 done; F7 + Expenses v2 open) | ✅ Done (Time) |
 | Phase 10 | Client/contacts rework | 🧪 Brainstorming |
 | Phase 11 | Test coverage (E2E) | 🔜 Slated |
 
@@ -108,13 +108,13 @@ Make the platform more intuitive to move around. Sources: **F4b, F6, F10**.
 - **F4b** — click interactions on the dashboard revenue chart (drill into a month's invoices/payments, filter, set range).
 - **F10** — client **Activity timeline** (aggregate per-client events) — replaces the stale "Phase 2" stub.
 
-### Phase 9 — Time tracking v2 🧪 *(brainstorming — partially started)*
-Redesign the time experience. Sources: **F2, F3, F7**. Draft spec: `docs/superpowers/specs/2026-06-20-time-page-v2-design.md` (DRAFT, paused mid-brainstorm).
-- **Locked decisions:** Ready-to-bill panel + ledger; add real `time_entries.contract_id`; bill **per contract**; untagged time = per-client "No contract" bucket.
-- **F2** — show client/contract on each time entry.
-- **F3** — generate-invoice client list limited to clients with tracked time.
-- **F7** — rework the **topbar timer** (always-visible timer + play/pause + project dropdown + tracking-state animation; note: "pause" is a new data-model concept).
-- **Remaining:** brainstorm Sections 2–5 (data model, RPCs, UI, testing) → final spec → writing-plans → build.
+### Phase 9 — Time tracking v2 ✅ *(shipped 2026-06-21; F7 still open)*
+Redesigned the time experience. Sources: **F2, F3** (done), **F7** (deferred). Spec: `docs/superpowers/specs/2026-06-20-time-page-v2-design.md` (FINAL); plan: `docs/superpowers/plans/2026-06-21-time-page-v2.md`.
+- **Model (revised during brainstorm):** bill **per PROJECT** (not per contract); contract is optional-on-top. Ready-to-bill panel (one row per project with unbilled time → one-click draft invoice); ledger Client + Contract columns/filters; real `time_entries.contract_id` tagging; contract `hourly_rate` pre-fills tagged entries.
+- ✅ **F2** — client/contract shown on each entry.
+- ✅ **F3** — replaced the pick-a-client modal with the per-project panel.
+- 🔜 **F7** — topbar timer visual rework (always-visible timer + play/pause + tracking animation; "pause" is a new data-model concept) — kept a **separate** effort, still open.
+- Built across commits `52bc781`→`3c1c7c4`; verified live via MCP (per-project invoice, contract→rate line grouping, `NO_UNBILLED_TIME`, RLS).
 - **Paired Expenses v2 (F12):** apply the same model to `/expenses` — show project **and** client in one column, scope generate-invoice to clients/projects with eligible expenses, and support **new-or-append** invoice per project. Share one "ready-to-bill → new-or-append, per project/contract" design across time + expenses rather than designing them separately.
 
 ### Phase 10 — Client / contacts rework 🧪 *(brainstorming)*
