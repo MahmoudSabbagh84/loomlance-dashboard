@@ -45,7 +45,10 @@
 2. **Splash `signup.html`** — update `PlanSelector.planData`: `solo $0 / freelancer $19 / studio $49`; map selection → correct tier; reflect trial; Agency not selectable.
 3. **Dashboard `src/lib/tier.js`** — gating for free/tier_1/tier_2 already matches the matrix (no limit/feature change needed). Update `UPGRADE_COPY` wording from "Tier 1/Tier 2" → the **marketing names** ("Freelancer"/"Studio") for consistency. Reserve `tier_3` (Agency) — add when its features ship; not gated now.
 
-## Feeds F6 — Stripe subscription build (next)
+## F6 — Stripe subscription build ✅ (built + test-verified 2026-06-22; live cutover deferred)
+Built: `create-subscription-checkout` (subscription mode, 14-day trial, price IDs via env), `stripe-subscription-webhook` (tier from product `metadata.tier`, idempotent, separate from the Connect webhook), `create-billing-portal`; dashboard Subscription tab (current plan/status/renewal, monthly/annual, Start-trial → checkout, Manage-billing → portal, post-checkout polling). DB: `profiles.stripe_customer_id/stripe_subscription_id/current_period_end` + `protect_billing_columns()` guard. Verified end-to-end in **test mode** (Checkout → trial → webhook → `tier_1`/trialing). **Go-live TODO (deferred):** create LIVE products/prices (live `price_…`), enable live Customer Portal, register both webhooks in live, swap Supabase secrets to `sk_live_` + live price/webhook secrets, re-connect Stripe Connect in live mode.
+
+### (original) Feeds F6 — Stripe subscription build
 - **Stripe Products:** "LoomLance Freelancer", "LoomLance Studio". **Prices (4):** Freelancer monthly ($19) + annual ($190); Studio monthly ($49) + annual ($490). Capture the `price_…` IDs (test + live).
 - **Checkout** in `mode: 'subscription'`, `subscription_data.trial_period_days: 14`, card required; one Stripe **Customer** per Supabase user (store `stripe_customer_id`).
 - **Webhook** (separate from the Connect webhook): `customer.subscription.created/updated/deleted` + `invoice.paid` → set/clear `profiles.subscription_tier` (`tier_1`/`tier_2`/back to `free`); store `stripe_subscription_id` + status.
