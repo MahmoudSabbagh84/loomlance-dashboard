@@ -13,6 +13,7 @@ import { FieldError } from '@/components/ui/FieldError'
 import { Card } from '@/components/ui/Card'
 import { AuthShell } from '@/features/auth/AuthShell'
 import * as auth from '@/api/auth'
+import { setRememberMe } from '@/lib/authStorage'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -25,11 +26,17 @@ export default function LoginPage() {
   const queryClient = useQueryClient()
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { rememberMe: true },
+  })
 
   const onSubmit = async (values) => {
     setSubmitting(true)
     try {
+      // Decide session storage (localStorage vs sessionStorage) before the
+      // sign-in so supabase writes the session to the right place.
+      setRememberMe(values.rememberMe)
       const data = await auth.signInWithPassword(values)
       // Seed the session cache so AuthGate sees the user immediately instead of
       // reading a stale unauthenticated value and bouncing back to /login.
@@ -80,6 +87,15 @@ export default function LoginPage() {
             </div>
             <FieldError>{errors.password?.message}</FieldError>
           </div>
+          <label className="flex items-center gap-2 pt-0.5 text-sm text-fg-muted select-none">
+            <input
+              type="checkbox"
+              className="size-4 rounded border-border text-primary focus:ring-primary"
+              {...register('rememberMe')}
+            />
+            Remember me on this device
+          </label>
+
           <Button type="submit" className="w-full" loading={submitting}>
             <LogIn className="size-4" />
             Sign in
