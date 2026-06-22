@@ -68,7 +68,13 @@ export function InvoiceEditor({ invoice }) {
       qc.setQueryData(['invoices', 'detail', invoice.id], (prev) => (prev ? { ...prev, ...rest } : prev))
     }
     if (line_items) {
-      await replaceLineItems(invoice.id, line_items.map((li, i) => ({ ...li, position: i })))
+      const positioned = line_items.map((li, i) => ({ ...li, position: i }))
+      await replaceLineItems(invoice.id, positioned)
+      // Refresh the detail cache so the Send / Download / PDF path reads the saved
+      // line items instead of the stale seed it was loaded with. Without this the
+      // editor preview looked correct but invoices went out BLANK.
+      qc.setQueryData(['invoices', 'detail', invoice.id], (prev) =>
+        prev ? { ...prev, invoice_line_items: positioned } : prev)
     }
     // Keep the list view fresh without thrashing on every keystroke.
     qc.invalidateQueries({ queryKey: ['invoices', 'list'] })
