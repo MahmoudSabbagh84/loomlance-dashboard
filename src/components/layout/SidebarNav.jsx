@@ -61,7 +61,7 @@ export function SidebarNav({ onNavigate }) {
                 cn(
                   'relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
                   isActive
-                    ? 'bg-primary/12 font-medium text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary'
+                    ? 'bg-primary/12 font-medium text-primary'
                     : 'text-fg-muted hover:bg-bg-muted hover:text-fg'
                 )
               }

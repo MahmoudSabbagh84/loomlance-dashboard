@@ -41,7 +41,7 @@ export function DueSoonPanel() {
     <Card>
       <h3 className="mb-3 text-sm font-semibold">Due soon</h3>
       {items.length === 0 ? (
-        <p className="text-sm text-fg-muted">Nothing due in the near term.</p>
+        <p className="text-sm text-fg-muted">All clear — nothing due in the next 7 days.</p>
       ) : (
         <ul className="space-y-2">
           {items.map((i) => {
@@ -54,7 +54,7 @@ export function DueSoonPanel() {
                     <p className="truncate text-sm">{i.title}</p>
                     <p className="text-xs text-fg-muted">{i.sub}</p>
                   </div>
-                  <span className="text-xs tabular-nums text-fg-subtle">{i.days}d</span>
+                  <span className="text-xs tabular-nums text-fg-muted">{i.days}d</span>
                 </Link>
               </li>
             )

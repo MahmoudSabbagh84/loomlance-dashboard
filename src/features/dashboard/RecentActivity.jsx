@@ -31,7 +31,7 @@ export function RecentActivity() {
     <Card>
       <h3 className="mb-3 text-sm font-semibold">Recent activity</h3>
       {events.length === 0 ? (
-        <p className="text-sm text-fg-muted">No activity yet.</p>
+        <p className="text-sm text-fg-muted">No activity yet — payments, invoices, and updates will show up here as you work.</p>
       ) : (
         <ul className="space-y-2">
           {events.map((e, i) => (
