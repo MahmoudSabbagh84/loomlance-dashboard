@@ -94,6 +94,9 @@ Replace the Phase 3 MOCKs with real services via **Supabase Edge Functions** (al
 - **Live prerequisites (USER):** AWS SES (verify domain DKIM/SPF/DMARC + request prod access + IAM keys), Stripe (keys + webhook), PayPal; `supabase functions deploy …`; set secrets (`AWS_*`, `SES_FROM_EMAIL`, `STRIPE_*`); flip `VITE_EMAIL_PROVIDER=ses` / `VITE_PAYMENTS_PROVIDER=stripe`; **disable `app_config.mock_payments_enabled`**.
 
 ### Phase 6 — Hardening & reliability 🔜
+- ✅ **Server-side tier-feature enforcement (2026-06-22):** UI gating (`tier.js`/`TierGate`/page UpgradeCards) was bypassable via the public REST API with a user's own JWT. Added `enforce_tier_feature()` + `before insert` triggers on `time_entries`/`recurring_invoice_templates` (require tier_1+) and `expenses` (require tier_2), mirroring `enforce_project_limit`. Raises `FEATURE_NOT_IN_TIER`. Migration `20260622010000_tier_feature_enforcement.sql`; verified live across free/tier_1/tier_2 (atomic, rolled-back probe). Tier value itself was already service_role-only (no self-upgrade) and the **project limit** was already DB-enforced. *(Audit verdict: branding data is settable but display is tier-gated in the public invoice → low risk; reports are read-only on own data → low risk; not enforced.)*
+  - **Follow-up (downgrade handling, deferred):** a user who downgrades tier_1→free keeps existing recurring templates → cron still processes them (trigger only guards INSERT). Decide pause/skip-on-downgrade when subscriptions (F6) land.
+
 Deferred items noted during Phase 4 review (`context.md` §3/§4):
 - **Cron robustness:** per-template `begin/exception` isolation across all 3 cron jobs (today a poison row aborts the whole run).
 - **`check (due_days >= 0)`** constraint on `recurring_invoice_templates`.
