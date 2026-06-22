@@ -133,3 +133,6 @@ playwright-report/
 
 # Brainstorming visual companion
 .superpowers/
+
+# Impeccable design tooling — transient (config.local.json already covered by *.local)
+.impeccable/hook.cache.json

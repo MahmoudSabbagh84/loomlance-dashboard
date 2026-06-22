@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-22T00:00:00Z",
+  "title": "Design System: LoomLance Dashboard",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Signal Violet", "canonical": "oklch(0.55 0.24 286)", "tonalRamp": ["oklch(0.20 0.10 286)", "oklch(0.30 0.16 286)", "oklch(0.40 0.21 286)", "oklch(0.50 0.24 286)", "oklch(0.60 0.22 286)", "oklch(0.72 0.16 286)", "oklch(0.84 0.09 286)", "oklch(0.94 0.035 286)"] },
+      "accent": { "role": "primary", "displayName": "Lifted Violet", "canonical": "oklch(0.62 0.20 286)", "tonalRamp": ["oklch(0.24 0.10 286)", "oklch(0.34 0.16 286)", "oklch(0.44 0.20 286)", "oklch(0.54 0.21 286)", "oklch(0.64 0.19 286)", "oklch(0.76 0.13 286)", "oklch(0.86 0.07 286)", "oklch(0.95 0.03 286)"] },
+      "fg": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(0.21 0.02 250)", "tonalRamp": ["oklch(0.18 0.02 250)", "oklch(0.27 0.02 250)", "oklch(0.37 0.018 250)", "oklch(0.47 0.016 250)", "oklch(0.58 0.014 250)", "oklch(0.70 0.012 250)", "oklch(0.83 0.01 250)", "oklch(0.96 0.006 250)"] },
+      "fg-muted": { "role": "neutral", "displayName": "Slate", "canonical": "oklch(0.47 0.02 250)" },
+      "bg-muted": { "role": "neutral", "displayName": "Cool Mist", "canonical": "oklch(0.96 0.006 250)" },
+      "bg": { "role": "neutral", "displayName": "Paper", "canonical": "oklch(0.99 0.002 270)" },
+      "border": { "role": "neutral", "displayName": "Hairline", "canonical": "oklch(0.92 0.006 250)" },
+      "success": { "role": "status", "displayName": "Green", "canonical": "oklch(0.64 0.15 159)" },
+      "warning": { "role": "status", "displayName": "Amber", "canonical": "oklch(0.62 0.13 65)" },
+      "danger": { "role": "status", "displayName": "Red", "canonical": "oklch(0.58 0.20 22)" },
+      "info": { "role": "status", "displayName": "Blue", "canonical": "oklch(0.55 0.17 255)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Auth screens and rare hero moments; not used inside the app shell." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles (PageHeader h1)." },
+      "title": { "displayName": "Title", "purpose": "Card titles, section headers, dialog titles." },
+      "body": { "displayName": "Body", "purpose": "The app base size: form values, table cells, descriptions. 65–75ch max for prose." },
+      "label": { "displayName": "Label", "purpose": "Field labels, badges, table headers, metadata." }
+    },
+    "shadows": [
+      { "name": "primary-lift", "value": "0 1px 2px 0 color-mix(in srgb, var(--color-primary) 20%, transparent)", "purpose": "Primary button only — a faint violet glow that signals 'press me.'" },
+      { "name": "floating-layer", "value": "0 10px 25px -5px rgb(0 0 0 / 0.18)", "purpose": "Transient overlays: popovers, dropdown menus, modals, the auth card." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Default easing for entrances/state — calm exponential ease-out, no bounce." },
+      { "name": "pop-in", "value": "120ms ease-out-expo (opacity + scale .96→1, translateY -2px→0)", "purpose": "Popovers, menus, dialogs appearing." },
+      { "name": "slide-in-left", "value": "160ms ease-out-expo (translateX -100%→0)", "purpose": "Mobile nav drawer." },
+      { "name": "press", "value": "active:scale(0.98)", "purpose": "Tactile button press feedback." },
+      { "name": "breathe", "value": "1.6s ease-in-out infinite (opacity 1→0.3→1); disabled under prefers-reduced-motion", "purpose": "Active/running timer indicator." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one confident action on a screen — Signal Violet with a faint violet lift.",
+      "html": "<button class=\"ds-btn-primary\">Send invoice</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border:none;border-radius:6px;background:var(--color-primary);color:var(--color-primary-fg);font:500 14px/1 'Outfit',system-ui,sans-serif;box-shadow:0 1px 2px 0 color-mix(in srgb,var(--color-primary) 20%,transparent);cursor:pointer;transition:background .15s,transform .1s}.ds-btn-primary:hover{background:var(--color-primary-hover)}.ds-btn-primary:active{transform:scale(.98)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 2px var(--color-bg),0 0 0 4px var(--color-primary)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet companion action — muted fill, hairline border that strengthens on hover.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border:1px solid var(--color-border);border-radius:6px;background:var(--color-bg-muted);color:var(--color-fg);font:500 14px/1 'Outfit',system-ui,sans-serif;cursor:pointer;transition:border-color .15s,background .15s}.ds-btn-secondary:hover{border-color:var(--color-border-strong);background:var(--color-bg-elevated)}.ds-btn-secondary:active{transform:scale(.98)}.ds-btn-secondary:focus-visible{outline:none;box-shadow:0 0 0 2px var(--color-bg),0 0 0 4px var(--color-primary)}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Lowest-emphasis action — no fill until hover; for toolbars and row actions.",
+      "html": "<button class=\"ds-btn-ghost\">Duplicate</button>",
+      "css": ".ds-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border:none;border-radius:6px;background:transparent;color:var(--color-fg-muted);font:500 14px/1 'Outfit',system-ui,sans-serif;cursor:pointer;transition:color .15s,background .15s}.ds-btn-ghost:hover{color:var(--color-fg);background:var(--color-bg-muted)}.ds-btn-ghost:focus-visible{outline:none;box-shadow:0 0 0 2px var(--color-bg),0 0 0 4px var(--color-primary)}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Muted-fill field that 'wakes up' to a white surface + violet border on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search clients…\">",
+      "css": ".ds-input{box-sizing:border-box;height:36px;width:240px;padding:0 12px;border:1px solid var(--color-border);border-radius:6px;background:var(--color-bg-muted);color:var(--color-fg);font:400 14px/1.5 'Outfit',system-ui,sans-serif;transition:border-color .15s,background .15s,box-shadow .15s}.ds-input::placeholder{color:var(--color-fg-subtle)}.ds-input:hover{border-color:var(--color-border-strong)}.ds-input:focus{outline:none;border-color:var(--color-primary);background:var(--color-bg-elevated);box-shadow:0 0 0 2px color-mix(in srgb,var(--color-primary) 25%,transparent)}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat at rest — Pure Surface + hairline border on the Paper page. Never nested, never shadowed at rest.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Acme Corp</h3><p class=\"ds-card-body\">3 active projects · $4,200 outstanding</p></div>",
+      "css": ".ds-card{box-sizing:border-box;width:280px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-bg-elevated);padding:16px}.ds-card-title{margin:0 0 4px;font:600 16px/1.3 'Outfit',system-ui,sans-serif;color:var(--color-fg)}.ds-card-body{margin:0;font:400 14px/1.5 'Outfit',system-ui,sans-serif;color:var(--color-fg-muted)}"
+    },
+    {
+      "name": "Status Badge (Paid)",
+      "kind": "chip",
+      "refersTo": "card",
+      "description": "Status pill — low-tint background + matching ink + an icon. Never color alone.",
+      "html": "<span class=\"ds-badge ds-badge-paid\"><svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"/></svg>Paid</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:9999px;font:500 12px/1.4 'Outfit',system-ui,sans-serif}.ds-badge-paid{background:color-mix(in srgb,var(--color-success) 14%,transparent);color:var(--color-success)}"
+    },
+    {
+      "name": "Nav Item",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Sidebar/top nav link — Slate at rest, Ink on hover, Signal Violet + violet wash when active.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item-active\">Invoices</a><a class=\"ds-nav-item\">Clients</a></nav>",
+      "css": ".ds-nav{display:flex;flex-direction:column;gap:2px;width:200px}.ds-nav-item{display:flex;align-items:center;padding:8px 12px;border-radius:6px;font:500 14px/1 'Outfit',system-ui,sans-serif;color:var(--color-fg-muted);text-decoration:none;cursor:pointer;transition:color .15s,background .15s}.ds-nav-item:hover{color:var(--color-fg);background:var(--color-bg-muted)}.ds-nav-item-active{color:var(--color-primary);background:color-mix(in srgb,var(--color-primary) 10%,transparent)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calm Control Room",
+    "overview": "LoomLance is the control room where a freelance developer runs the business of their business — clients, contracts, invoices, time, money. Everything is legible at a glance, status is always unambiguous, and nothing competes for attention. The operator stays calm because the surface is calm. Light-first on cool near-white neutrals (deliberately not warm cream), one confident violet voice, a tight status palette, flat-by-default depth, and a single typeface (Outfit) carrying the whole hierarchy. A full dark theme mirrors every token.",
+    "keyCharacteristics": [
+      "Cool near-white neutrals (never cream/warm); the data, not the chrome, is the hero.",
+      "One confident violet voice + a tight status palette; both light and dark hold WCAG AA.",
+      "Flat by default; shadows are a response to state, not decoration.",
+      "One typeface (Outfit), full hierarchy by weight/size; numbers tabular and aligned.",
+      "Refined, restrained controls (6–8px radii, muted-fill inputs, understated hovers)."
+    ],
+    "rules": [
+      { "name": "The Confident-Voice Rule", "body": "Signal Violet is the only brand color and always means actionable/active. Use it freely across actions, links, selection, and data emphasis — never decoratively, never a second brand hue beside it.", "section": "colors" },
+      { "name": "The Cool-Neutral Rule", "body": "Neutrals tint toward blue (hue ~230) or stay zero-chroma. Cream/sand/beige/warm-gray is forbidden — it reads as generic-AI.", "section": "colors" },
+      { "name": "The Status-Never-Alone Rule", "body": "A status color is always reinforced by an icon, label, or text. Color alone never conveys state.", "section": "colors" },
+      { "name": "The One-Family Rule", "body": "Outfit carries the entire hierarchy. Never add a second display or body face; hierarchy is weight and size.", "section": "typography" },
+      { "name": "The Tabular-Number Rule", "body": "Money, hours, dates, invoice numbers use tabular figures and right-align in tables.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Cards, panels, rows, and inputs are flat at rest — border + tone only. Shadows are reserved for what's actionable (primary button) or transient (overlays).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep surfaces flat at rest — border + tone, not shadow. Raise only what's actionable or transient.",
+      "Do let Signal Violet (#6D45F0) carry one meaning — actionable/active — used confidently across actions, links, selection, and data emphasis.",
+      "Do keep neutrals cool (hue ~230) or zero-chroma; the page background is Paper (#FBFBFD), a true near-white.",
+      "Do make numbers tabular and right-aligned in tables; money/hours/dates are first-class content.",
+      "Do carry the full type hierarchy in Outfit via weight and size; cap prose at 65–75ch.",
+      "Do hold WCAG AA in light and dark: body ≥4.5:1 (Ink/Slate), visible focus ring, reduced-motion alternatives, status reinforced by icon/label."
+    ],
+    "donts": [
+      "Don't ship the generic SaaS template — no gradient hero, no identical icon-card grids, no Bootstrap-default spacing.",
+      "Don't recreate cluttered enterprise accounting — no dropdown soup, no dense intimidating forms, no joyless gray walls.",
+      "Don't use warm neutrals — no cream, sand, beige, parchment, or warm-gray.",
+      "Don't use Fog (#8A95A5) for body or essential text — hints/placeholders/disabled only (does not meet AA as body).",
+      "Don't introduce a second brand color or a second typeface.",
+      "Don't use a border-left/right color stripe, gradient text, or decorative glassmorphism.",
+      "Don't shadow a resting card or nest cards inside cards.",
+      "Don't convey status with color alone."
+    ]
+  }
+}
