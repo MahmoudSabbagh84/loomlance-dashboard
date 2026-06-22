@@ -15,7 +15,7 @@ export function ProjectCard({ project }) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{project.name}</p>
           <p className="truncate text-xs text-fg-muted">{project.clients?.name}</p>
-          <p className="mt-2 text-xs tabular-nums text-fg-subtle">{openCount} open tasks</p>
+          <p className="mt-2 text-xs tabular-nums text-fg-muted">{openCount} open tasks</p>
         </div>
       </div>
     </Card>

@@ -1,6 +1,7 @@
 import { formatCurrency } from '@/lib/currency'
 import { formatDate } from '@/lib/date'
 import { invoiceTotals } from '@/lib/money'
+import { INVOICE_DEFAULT_ACCENT } from '@/lib/colors'
 
 export function PublicInvoiceView({ data }) {
   const { issuer, client, line_items: lines = [], currency } = data
@@ -13,7 +14,7 @@ export function PublicInvoiceView({ data }) {
     }))
   )
   const branded = issuer.tier !== 'free'
-  const accent = branded ? issuer.invoice_accent_color : '#2D3E50'
+  const accent = branded ? issuer.invoice_accent_color : INVOICE_DEFAULT_ACCENT
 
   return (
     <div className="mx-auto max-w-2xl rounded-lg border border-border bg-white p-6 text-sm leading-snug text-black shadow-sm">

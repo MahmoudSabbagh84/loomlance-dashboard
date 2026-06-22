@@ -44,10 +44,10 @@ export function TimeEntriesTable({ entries, currency = 'USD', onEdit, onDelete }
             </TD>
             <TD>
               <div className="flex justify-end gap-1">
-                <button onClick={() => onEdit(e)} className="text-fg-subtle hover:text-fg" aria-label="Edit">
+                <button onClick={() => onEdit(e)} className="text-fg-muted hover:text-fg" aria-label="Edit">
                   <Pencil className="size-4" />
                 </button>
-                <button onClick={() => onDelete(e)} className="text-fg-subtle hover:text-danger" aria-label="Delete">
+                <button onClick={() => onDelete(e)} className="text-fg-muted hover:text-danger" aria-label="Delete">
                   <Trash2 className="size-4" />
                 </button>
               </div>

@@ -29,7 +29,7 @@ export function ExpensesTable({ expenses, onEdit, onDelete, onOpenReceipt }) {
                 <>
                   {e.projects.name}
                   {e.projects.clients?.name ? (
-                    <span className="text-fg-subtle"> / {e.projects.clients.name}</span>
+                    <span className="text-fg-muted"> / {e.projects.clients.name}</span>
                   ) : null}
                 </>
               ) : (
@@ -49,14 +49,14 @@ export function ExpensesTable({ expenses, onEdit, onDelete, onOpenReceipt }) {
             <TD>
               <div className="flex justify-end gap-1">
                 {e.receipt_path ? (
-                  <button onClick={() => onOpenReceipt(e.receipt_path)} className="text-fg-subtle hover:text-fg" aria-label="View receipt">
+                  <button onClick={() => onOpenReceipt(e.receipt_path)} className="text-fg-muted hover:text-fg" aria-label="View receipt">
                     <Paperclip className="size-4" />
                   </button>
                 ) : null}
-                <button onClick={() => onEdit(e)} className="text-fg-subtle hover:text-fg" aria-label="Edit">
+                <button onClick={() => onEdit(e)} className="text-fg-muted hover:text-fg" aria-label="Edit">
                   <Pencil className="size-4" />
                 </button>
-                <button onClick={() => onDelete(e)} className="text-fg-subtle hover:text-danger" aria-label="Delete">
+                <button onClick={() => onDelete(e)} className="text-fg-muted hover:text-danger" aria-label="Delete">
                   <Trash2 className="size-4" />
                 </button>
               </div>

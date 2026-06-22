@@ -53,12 +53,13 @@ export function PeopleCard({ clientId }) {
                     catch (e) { toast.error(e.userMessage) }
                   }}
                   title="Make primary"
+                  aria-label={`Make ${c.name} the primary contact`}
                 >
                   <Star className="size-4" />
                 </Button>
               ) : null}
-              <Button size="sm" variant="ghost" onClick={() => setEditing(c)} title="Edit"><Edit className="size-4" /></Button>
-              <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(c)} title="Delete"><Trash2 className="size-4 text-danger" /></Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(c)} title="Edit" aria-label={`Edit ${c.name}`}><Edit className="size-4" /></Button>
+              <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(c)} title="Delete" aria-label={`Delete ${c.name}`}><Trash2 className="size-4 text-danger" /></Button>
             </li>
           ))}
         </ul>

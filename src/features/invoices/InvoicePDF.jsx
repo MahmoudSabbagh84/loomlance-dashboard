@@ -5,8 +5,9 @@ import { Document, Page, View, Text, Image, StyleSheet, pdf } from '@react-pdf/r
 import { formatCurrency } from '@/lib/currency'
 import { formatDate } from '@/lib/date'
 import { invoiceTotals } from '@/lib/money'
+import { INVOICE_DEFAULT_ACCENT } from '@/lib/colors'
 
-const ACCENT_FALLBACK = '#2D3E50'
+const ACCENT_FALLBACK = INVOICE_DEFAULT_ACCENT
 const LOGO_URL = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '/logo.png'
 
 const styles = StyleSheet.create({

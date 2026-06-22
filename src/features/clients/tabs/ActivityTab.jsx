@@ -47,7 +47,7 @@ export function ActivityTab({ clientId }) {
             <p className="truncate text-sm">{ev.title}</p>
             <p className="text-xs capitalize text-fg-muted">{ev.meta}</p>
           </div>
-          <span className="shrink-0 text-xs tabular-nums text-fg-subtle">{ev.date ? formatDate(ev.date) : '—'}</span>
+          <span className="shrink-0 text-xs tabular-nums text-fg-muted">{ev.date ? formatDate(ev.date) : '—'}</span>
         </li>
       ))}
     </ol>

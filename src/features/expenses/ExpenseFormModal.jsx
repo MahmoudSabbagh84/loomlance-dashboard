@@ -12,7 +12,8 @@ import { useClients } from '@/hooks/useClients'
 import { useProfile } from '@/hooks/useProfile'
 import { useCreateExpense, useUpdateExpense } from '@/hooks/useExpenses'
 import { uploadReceipt, removeReceipt } from '@/api/expenses'
-import { EXPENSE_CATEGORIES } from '@/lib/expenses'
+import { EXPENSE_CATEGORIES, validateReceiptFile } from '@/lib/expenses'
+import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { SaveStatus } from '@/components/ui/SaveStatus'
 import { useAutosaveForm } from '@/hooks/useAutosave'
 
@@ -41,6 +42,7 @@ export function ExpenseFormModal({ open, onClose, expense }) {
   const update = useUpdateExpense()
   const isEdit = !!expense
   const [file, setFile] = useState(null)
+  const [receiptBusy, setReceiptBusy] = useState(false)
   const {
     register,
     handleSubmit,
@@ -66,27 +68,51 @@ export function ExpenseFormModal({ open, onClose, expense }) {
     watch,
     enabled: isEdit,
     commit: async () => {
-      const patch = expenseScalars(getValues())
+      const v = getValues()
+      // A billable expense with nowhere to bill it can never be invoiced — hold (inline note explains).
+      if (v.billable && !v.project_id && !v.client_id) return false
+      const patch = expenseScalars(v)
       if (!patch) return false // invalid (no amount/category) → hold
       await update.mutateAsync({ id: expense.id, patch })
     },
   })
 
+  const billableNeedsTarget = watch('billable') && !watch('project_id') && !watch('client_id')
+
   // Picking a receipt is an explicit upload. In edit mode it uploads + saves immediately.
   const onPickFile = async (f) => {
+    if (f) {
+      // Validate up front so the user gets immediate feedback (create and edit).
+      try {
+        validateReceiptFile(f)
+      } catch (e) {
+        toast.error(e.userMessage || 'Invalid receipt file')
+        return // don't stage an invalid file
+      }
+    }
     setFile(f)
     if (!isEdit || !f) return
+    setReceiptBusy(true)
     try {
-      if (expense?.receipt_path) await removeReceipt(expense.receipt_path)
+      // Upload the NEW receipt before removing the old one, so a failed upload
+      // never leaves the expense pointing at a deleted file.
       const receipt_path = await uploadReceipt(f)
+      const oldPath = expense?.receipt_path
       await update.mutateAsync({ id: expense.id, patch: { receipt_path } })
+      if (oldPath) await removeReceipt(oldPath)
       toast.success('Receipt updated')
     } catch (e) {
       toast.error(e.userMessage || 'Could not upload receipt')
+    } finally {
+      setReceiptBusy(false)
     }
   }
 
   const onCreate = async (v) => {
+    if (v.billable && !v.project_id && !v.client_id) {
+      toast.error('Pick a project or client to bill this expense to.')
+      return
+    }
     const patch = expenseScalars(v)
     if (!patch) {
       toast.error('Enter an amount and category')
@@ -117,7 +143,15 @@ export function ExpenseFormModal({ open, onClose, expense }) {
           </div>
           <div>
             <Label htmlFor="currency">Currency</Label>
-            <Input id="currency" {...register('currency')} />
+            <Select
+              id="currency"
+              value={watch('currency') ?? 'USD'}
+              onChange={(e) => setValue('currency', e.target.value, { shouldDirty: true })}
+            >
+              {SUPPORTED_CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.code}</option>
+              ))}
+            </Select>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -130,9 +164,14 @@ export function ExpenseFormModal({ open, onClose, expense }) {
               ))}
             </datalist>
           </div>
-          <label className="flex items-end gap-2 pb-2 text-sm">
-            <input type="checkbox" {...register('billable')} /> Billable to client
-          </label>
+          <div className="flex flex-col justify-end pb-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" {...register('billable')} /> Billable to client
+            </label>
+            {billableNeedsTarget ? (
+              <p className="mt-1 text-xs text-danger">Choose a project or client below to bill this to.</p>
+            ) : null}
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -172,8 +211,12 @@ export function ExpenseFormModal({ open, onClose, expense }) {
             id="receipt"
             type="file"
             accept="application/pdf,image/png,image/jpeg,image/webp"
+            disabled={receiptBusy}
             onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
           />
+          <p className="mt-1 text-xs text-fg-muted">
+            {receiptBusy ? 'Uploading…' : 'PDF, PNG, JPG, or WebP · up to 5 MB.'}
+          </p>
         </div>
         <div className="flex items-center justify-between gap-2">
           <div>{isEdit ? <SaveStatus status={status} onRetry={retry} /> : null}</div>

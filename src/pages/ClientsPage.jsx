@@ -101,7 +101,7 @@ export default function ClientsPage() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => setEditClient(c)}
-                        className="grid size-8 place-items-center rounded-md text-fg-subtle transition-colors hover:bg-bg-muted hover:text-fg"
+                        className="grid size-8 place-items-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg"
                         aria-label={`Edit ${c.name}`}
                       >
                         <Pencil className="size-4" />
@@ -109,7 +109,7 @@ export default function ClientsPage() {
                       {c.email ? (
                         <a
                           href={`mailto:${c.email}`}
-                          className="grid size-8 place-items-center rounded-md text-fg-subtle transition-colors hover:bg-bg-muted hover:text-fg"
+                          className="grid size-8 place-items-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg"
                           aria-label={`Email ${c.name}`}
                         >
                           <Mail className="size-4" />
@@ -117,7 +117,7 @@ export default function ClientsPage() {
                       ) : null}
                       <button
                         onClick={() => setDeleteTarget(c)}
-                        className="grid size-8 place-items-center rounded-md text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+                        className="grid size-8 place-items-center rounded-md text-fg-muted transition-colors hover:bg-danger/10 hover:text-danger"
                         aria-label={`Delete ${c.name}`}
                       >
                         <Trash2 className="size-4" />

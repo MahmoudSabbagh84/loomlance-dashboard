@@ -40,7 +40,7 @@ export function InvoicesBoard({ invoices, onOpen }) {
                   >
                     <p className="text-sm font-medium tabular-nums">{inv.invoice_number}</p>
                     <p className="truncate text-xs text-fg-muted">{inv.clients?.name || '—'}</p>
-                    <p className="mt-1 tabular-nums text-xs text-fg-subtle">Due {formatDate(inv.due_date)}</p>
+                    <p className="mt-1 tabular-nums text-xs text-fg-muted">Due {formatDate(inv.due_date)}</p>
                   </button>
                 ))
               )}

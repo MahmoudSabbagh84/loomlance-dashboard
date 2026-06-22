@@ -38,16 +38,16 @@ export function RecurringTemplatesTable({ templates, onGenerate, onToggleActive,
             <TD className="tabular-nums">{formatCurrency(invoiceTotals(t.line_items || []).total, t.currency)}</TD>
             <TD>
               <div className="flex justify-end gap-1">
-                <button onClick={() => onGenerate(t)} className="text-fg-subtle hover:text-fg" aria-label="Generate now">
+                <button onClick={() => onGenerate(t)} className="text-fg-muted hover:text-fg" aria-label="Generate now">
                   <FilePlus className="size-4" />
                 </button>
-                <button onClick={() => onToggleActive(t)} className="text-fg-subtle hover:text-fg" aria-label={t.active ? 'Pause' : 'Resume'}>
+                <button onClick={() => onToggleActive(t)} className="text-fg-muted hover:text-fg" aria-label={t.active ? 'Pause' : 'Resume'}>
                   {t.active ? <Pause className="size-4" /> : <Play className="size-4" />}
                 </button>
-                <button onClick={() => onEdit(t)} className="text-fg-subtle hover:text-fg" aria-label="Edit">
+                <button onClick={() => onEdit(t)} className="text-fg-muted hover:text-fg" aria-label="Edit">
                   <Pencil className="size-4" />
                 </button>
-                <button onClick={() => onDelete(t)} className="text-fg-subtle hover:text-danger" aria-label="Delete">
+                <button onClick={() => onDelete(t)} className="text-fg-muted hover:text-danger" aria-label="Delete">
                   <Trash2 className="size-4" />
                 </button>
               </div>

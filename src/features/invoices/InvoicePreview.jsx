@@ -2,6 +2,7 @@ import { useWatch } from 'react-hook-form'
 import { formatCurrency } from '@/lib/currency'
 import { formatDate } from '@/lib/date'
 import { invoiceTotals } from '@/lib/money'
+import { INVOICE_DEFAULT_ACCENT } from '@/lib/colors'
 import { useProfile } from '@/hooks/useProfile'
 
 export function InvoicePreview({ control, client }) {
@@ -18,7 +19,7 @@ export function InvoicePreview({ control, client }) {
           {branded && profile?.logo_url ? (
             <img src={profile.logo_url} alt="" className="mb-2 h-12" />
           ) : (
-            <h2 className="text-xl font-bold" style={{ color: branded ? profile?.invoice_accent_color : '#2D3E50' }}>
+            <h2 className="text-xl font-bold" style={{ color: branded ? profile?.invoice_accent_color : INVOICE_DEFAULT_ACCENT }}>
               {profile?.business_name || 'Your Business'}
             </h2>
           )}

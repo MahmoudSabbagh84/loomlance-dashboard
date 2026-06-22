@@ -12,8 +12,10 @@ import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useAutosaveForm } from '@/hooks/useAutosave'
 import { hasFeature, FEATURES } from '@/lib/tier'
 import { uploadLogo, removeLogo, LOGO_TYPES } from '@/api/branding'
+import { INVOICE_DEFAULT_ACCENT } from '@/lib/colors'
 
-const DEFAULT_ACCENT = '#2D3E50'
+const DEFAULT_ACCENT = INVOICE_DEFAULT_ACCENT
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/
 
 export function BrandingTab() {
   const { data: profile } = useProfile()
@@ -33,7 +35,10 @@ export function BrandingTab() {
   const { status, retry } = useAutosaveForm({
     watch,
     commit: async () => {
-      await update.mutateAsync(getValues())
+      const values = getValues()
+      // Hold (don't persist) an invalid accent — the inline error explains why.
+      if (!HEX_COLOR.test(values.invoice_accent_color)) return false
+      await update.mutateAsync(values)
     },
   })
 
@@ -43,6 +48,7 @@ export function BrandingTab() {
 
   const accent = watch('invoice_accent_color')
   const footer = watch('invoice_footer')
+  const accentValid = HEX_COLOR.test(accent)
 
   const onLogoChange = async (e) => {
     const file = e.target.files?.[0]
@@ -114,14 +120,19 @@ export function BrandingTab() {
                 onChange={(e) => setValue('invoice_accent_color', e.target.value, { shouldDirty: true })}
               />
               <Input
+                id="accent"
                 className="w-32"
                 value={accent}
+                aria-invalid={!accentValid}
                 onChange={(e) => setValue('invoice_accent_color', e.target.value, { shouldDirty: true })}
               />
               <Button type="button" variant="ghost" size="sm" onClick={() => setValue('invoice_accent_color', DEFAULT_ACCENT, { shouldDirty: true })}>
                 Reset
               </Button>
             </div>
+            {!accentValid ? (
+              <p className="mt-1 text-xs text-danger">Enter a 6-digit hex color, e.g. #6D45F0.</p>
+            ) : null}
           </div>
           <div>
             <Label htmlFor="invoice_footer">Invoice footer</Label>
