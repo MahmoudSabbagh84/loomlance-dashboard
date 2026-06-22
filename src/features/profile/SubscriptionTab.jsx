@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { ExternalLink } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { ExternalLink, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
@@ -25,11 +27,39 @@ export function SubscriptionTab() {
   const [period, setPeriod] = useState('monthly')
   const { loading, startCheckout, openPortal } = useBilling()
 
+  // After returning from Checkout (?upgraded=1) the subscription webhook is async, so poll the
+  // profile for a few seconds until the new plan/status shows.
+  const qc = useQueryClient()
+  const [params] = useSearchParams()
+  const [finalizing, setFinalizing] = useState(params.get('upgraded') === '1')
+  useEffect(() => {
+    if (params.get('upgraded') !== '1') return undefined
+    let tries = 0
+    const id = setInterval(() => {
+      tries += 1
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      if (tries >= 6) {
+        clearInterval(id)
+        setFinalizing(false)
+      }
+    }, 2000)
+    return () => clearInterval(id)
+  }, [params, qc])
+  useEffect(() => {
+    if (finalizing && tier !== 'free') setFinalizing(false)
+  }, [finalizing, tier])
+
   const periodLabel =
     status === 'trialing' ? 'Trial ends' : status === 'canceled' ? 'Access until' : 'Renews'
 
   return (
     <div className="max-w-2xl space-y-4">
+      {finalizing ? (
+        <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-fg">
+          <Loader2 className="size-4 animate-spin text-primary" /> Finalizing your subscription — this can take a few seconds…
+        </div>
+      ) : null}
+
       {/* Current plan */}
       <Card>
         <div className="flex items-start justify-between gap-4">
