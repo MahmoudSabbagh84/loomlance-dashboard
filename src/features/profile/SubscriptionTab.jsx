@@ -1,45 +1,118 @@
+import { useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { useProfile } from '@/hooks/useProfile'
-import { getSplashUpgradeUrl } from '@/lib/tier'
+import { useBilling } from '@/hooks/useBilling'
+import { formatDate } from '@/lib/date'
+
+// Display prices mirror the Stripe Prices (see the pricing spec). The actual charge comes from
+// Stripe; the plan/period is mapped to a price ID in the create-subscription-checkout function.
+const PLANS = [
+  { id: 'freelancer', tier: 'tier_1', name: 'Freelancer', monthly: 19, annual: 190, blurb: '5 projects · branding · recurring · time tracking' },
+  { id: 'studio', tier: 'tier_2', name: 'Studio', monthly: 49, annual: 490, blurb: 'Unlimited projects · expenses · reports' },
+]
+const RANK = { free: 0, tier_1: 1, tier_2: 2 }
+const TIER_NAME = { free: 'Solo (Free)', tier_1: 'Freelancer', tier_2: 'Studio' }
 
 export function SubscriptionTab() {
   const { data: profile } = useProfile()
   const tier = profile?.subscription_tier ?? 'free'
   const status = profile?.subscription_status ?? 'active'
-  const splashUrl = import.meta.env.VITE_SPLASH_URL || 'https://splash.loomlance.com'
+  const hasCustomer = !!profile?.stripe_customer_id
+  const periodEnd = profile?.current_period_end
+  const [period, setPeriod] = useState('monthly')
+  const { loading, startCheckout, openPortal } = useBilling()
+
+  const periodLabel =
+    status === 'trialing' ? 'Trial ends' : status === 'canceled' ? 'Access until' : 'Renews'
 
   return (
-    <div className="max-w-xl space-y-4">
+    <div className="max-w-2xl space-y-4">
+      {/* Current plan */}
       <Card>
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm text-fg-muted">Current plan</p>
-            <p className="text-xl font-semibold capitalize">{tier.replace('_', ' ')}</p>
-            <Badge variant={status === 'active' ? 'success' : 'warning'} className="mt-1 capitalize">
+            <p className="text-xl font-semibold">{TIER_NAME[tier] ?? tier}</p>
+            <Badge variant={status === 'active' || status === 'trialing' ? 'success' : 'warning'} className="mt-1 capitalize">
               {status}
             </Badge>
+            {periodEnd ? (
+              <p className="mt-2 text-xs text-fg-muted">{periodLabel} {formatDate(periodEnd)}</p>
+            ) : null}
           </div>
-          <Button variant="secondary" onClick={() => window.open(`${splashUrl}/billing`, '_blank', 'noopener')}>
-            <ExternalLink className="size-4" /> Manage subscription
-          </Button>
+          {hasCustomer ? (
+            <Button variant="secondary" onClick={openPortal} loading={loading === 'portal'}>
+              <ExternalLink className="size-4" /> Manage billing
+            </Button>
+          ) : null}
         </div>
-        <p className="mt-3 text-xs text-fg-muted">
-          Billing, plan changes, and invoices for your LoomLance subscription are managed on the main site.
-        </p>
+        {tier === 'free' ? (
+          <p className="mt-3 text-xs text-fg-muted">
+            You’re on the free Solo plan. Start a 14-day trial of a paid plan below — card required, cancel anytime before it ends.
+          </p>
+        ) : null}
       </Card>
 
-      {tier === 'free' || tier === 'tier_1' ? (
-        <Card className="border-primary/30 bg-primary/5">
-          <p className="text-sm">Want more projects, branded invoices, time tracking, expenses, or reports?</p>
-          <Button
-            className="mt-3"
-            onClick={() => window.open(getSplashUpgradeUrl(tier === 'free' ? 'tier_1' : 'tier_2'), '_blank', 'noopener')}
-          >
-            See plans
-          </Button>
+      {/* Upgrade / choose a plan (only when there's a higher tier to move to) */}
+      {RANK[tier] < 2 ? (
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">{tier === 'free' ? 'Choose a plan' : 'Upgrade'}</h3>
+            <div className="flex items-center rounded-md border border-border p-0.5 text-xs">
+              {['monthly', 'annual'].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPeriod(p)}
+                  className={`rounded px-2.5 py-1 capitalize transition-colors ${period === p ? 'bg-bg-muted font-medium text-fg' : 'text-fg-muted hover:text-fg'}`}
+                >
+                  {p === 'annual' ? 'Annual · 2 mo free' : 'Monthly'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {PLANS.map((plan) => {
+              const isCurrent = plan.tier === tier
+              const isUpgrade = RANK[plan.tier] > RANK[tier]
+              const price = period === 'annual' ? plan.annual : plan.monthly
+              return (
+                <div key={plan.id} className="rounded-lg border border-border p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold">{plan.name}</p>
+                    {isCurrent ? <Badge variant="success">Current</Badge> : null}
+                  </div>
+                  <p className="mt-1 text-2xl font-semibold tabular-nums">
+                    ${price}
+                    <span className="text-sm font-normal text-fg-muted">/{period === 'annual' ? 'yr' : 'mo'}</span>
+                  </p>
+                  <p className="mt-1 text-xs text-fg-muted">{plan.blurb}</p>
+                  {isUpgrade ? (
+                    <Button
+                      className="mt-3 w-full"
+                      onClick={() => startCheckout(plan.id, period)}
+                      loading={loading === `${plan.id}:${period}`}
+                    >
+                      Start 14-day trial
+                    </Button>
+                  ) : isCurrent ? (
+                    <Button className="mt-3 w-full" variant="secondary" disabled>Current plan</Button>
+                  ) : (
+                    <Button className="mt-3 w-full" variant="ghost" onClick={openPortal} loading={loading === 'portal'}>
+                      Manage
+                    </Button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-xs text-fg-muted">
+            Plan changes and cancellations are handled in the billing portal (Manage billing).
+          </p>
         </Card>
       ) : null}
     </div>
