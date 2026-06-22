@@ -36,33 +36,35 @@ export function hasFeature(tier, feature) {
   return TIER_LIMITS[tier]?.features.has(feature) ?? false
 }
 
+// Marketing plan names map to internal tiers: Freelancer = tier_1, Studio = tier_2
+// (Solo = free; Agency = tier_3, coming soon). Keep upgrade copy in marketing terms.
 export const UPGRADE_COPY = Object.freeze({
   active_projects: {
     title: 'You’ve hit your project limit',
     body: (tier) =>
       tier === 'free'
-        ? 'Free includes 1 active project. Upgrade to Tier 1 for 5, or Tier 2 for unlimited.'
-        : 'Tier 1 includes 5 active projects. Upgrade to Tier 2 for unlimited.',
+        ? 'Solo includes 1 active project. Upgrade to Freelancer for 5, or Studio for unlimited.'
+        : 'Freelancer includes 5 active projects. Upgrade to Studio for unlimited.',
   },
   [FEATURES.CUSTOM_BRANDING]: {
     title: 'Brand your invoices',
-    body: () => 'Add your logo, accent color, and custom footer. Available on Tier 1 and Tier 2.',
+    body: () => 'Add your logo, accent color, and custom footer. Available on Freelancer and Studio.',
   },
   [FEATURES.RECURRING_INVOICES]: {
     title: 'Automate monthly billing',
-    body: () => 'Set up recurring invoices that send themselves. Available on Tier 1 and Tier 2.',
+    body: () => 'Set up recurring invoices that send themselves. Available on Freelancer and Studio.',
   },
   [FEATURES.TIME_TRACKING]: {
     title: 'Track billable hours',
-    body: () => 'Built-in timer and manual entries; generate invoices from tracked time. Tier 1 and Tier 2.',
+    body: () => 'Built-in timer and manual entries; generate invoices from tracked time. Freelancer and Studio.',
   },
   [FEATURES.EXPENSES]: {
     title: 'Track expenses with receipts',
-    body: () => 'Log expenses by category and project; upload receipts. Available on Tier 2.',
+    body: () => 'Log expenses by category and project; upload receipts. Available on Studio.',
   },
   [FEATURES.REPORTS]: {
     title: 'Run revenue and P&L reports',
-    body: () => 'Detailed reporting on revenue, profit & loss, aging, and time. Available on Tier 2.',
+    body: () => 'Detailed reporting on revenue, profit & loss, aging, and time. Available on Studio.',
   },
 })
 

@@ -40,6 +40,7 @@
 - **Agency (`tier_3`):** Team members/seats, white-label client portal, subcontractor management, advanced permission controls. (Whole tier is coming-soon.)
 
 ## Reconciliation actions (the three sources → make them agree)
+> **Applied 2026-06-22 (content-level):** `pricing.html` cards (4 tiers, correct features, coming-soon clocks, $19/$49 + annual, Studio live, Agency added), `signup.html` (planData + plan-option cards + billing-summary), and `tier.js` `UPGRADE_COPY` (marketing names) are all reconciled. The **visual** restyle of the splash still rides with **F1**. Billing wiring is **F6** (not yet built — paid signups still create a free account + plan intent).
 1. **Splash `pricing.html`** — rebuild the cards: 4 tiers, correct feature lists (matrix above), "Coming soon" badges on unbuilt items, new prices ($0/$19/$49 + annual), Studio is **live** (drop its "Coming Soon"), Agency is the new **Coming Soon** card. *(Visual rebuild aligns with F1 design-system work; this spec fixes the content/structure.)*
 2. **Splash `signup.html`** — update `PlanSelector.planData`: `solo $0 / freelancer $19 / studio $49`; map selection → correct tier; reflect trial; Agency not selectable.
 3. **Dashboard `src/lib/tier.js`** — gating for free/tier_1/tier_2 already matches the matrix (no limit/feature change needed). Update `UPGRADE_COPY` wording from "Tier 1/Tier 2" → the **marketing names** ("Freelancer"/"Studio") for consistency. Reserve `tier_3` (Agency) — add when its features ship; not gated now.
