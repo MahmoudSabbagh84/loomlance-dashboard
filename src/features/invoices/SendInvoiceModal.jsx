@@ -27,17 +27,21 @@ export function SendInvoiceModal({ open, onClose, invoice }) {
   const [to, setTo] = useState(client?.email || '')
   const [subject, setSubject] = useState(`Invoice ${invoice.invoice_number}`)
   const [body, setBody] = useState(
-    `Hi ${client?.name || ''},\n\nPlease find invoice ${invoice.invoice_number} attached. You can view and pay it online via the link below.\n\nThank you.`
+    `Hi ${client?.name || ''},\n\nHere's invoice ${invoice.invoice_number}. You can view and pay it online using the secure link below.\n\nThank you.`
   )
+  const [attachPdf, setAttachPdf] = useState(false)
 
   const onConfirm = async () => {
     setSubmitting(true)
     try {
       if (emailIsReal) {
-        const { buildInvoiceBlob } = await import('./InvoicePDF')
-        const blob = await buildInvoiceBlob({ invoice, client, profile })
-        const pdfBase64 = await blobToBase64(blob)
-        await invokeEdge('send-invoice', { invoiceId: invoice.id, to, subject, body, pdfBase64 })
+        let pdfBase64
+        if (attachPdf) {
+          const { buildInvoiceBlob } = await import('./InvoicePDF')
+          const blob = await buildInvoiceBlob({ invoice, client, profile })
+          pdfBase64 = await blobToBase64(blob)
+        }
+        await invokeEdge('send-invoice', { invoiceId: invoice.id, to, subject, body, ...(pdfBase64 ? { pdfBase64 } : {}) })
         qc.invalidateQueries({ queryKey: ['invoices', 'detail', invoice.id] })
         qc.invalidateQueries({ queryKey: ['invoices', 'list'] })
         toast.success('Invoice emailed')
@@ -58,7 +62,7 @@ export function SendInvoiceModal({ open, onClose, invoice }) {
       <div className="space-y-4">
         <p className="rounded-md bg-bg-muted px-3 py-2 text-xs text-fg-muted">
           {emailIsReal
-            ? 'This will email the invoice (PDF attached) and a pay-online link to the recipient.'
+            ? 'This emails the recipient a secure pay-online link. They can view and download the PDF from that page.'
             : 'Email delivery is simulated for now — confirming will mark the invoice sent and give you a shareable link to send manually.'}
         </p>
         <div>
@@ -73,6 +77,17 @@ export function SendInvoiceModal({ open, onClose, invoice }) {
           <Label htmlFor="body">Message</Label>
           <Textarea id="body" rows={5} value={body} onChange={(e) => setBody(e.target.value)} />
         </div>
+        {emailIsReal ? (
+          <label className="flex items-start gap-2.5 text-sm text-fg-muted">
+            <input
+              type="checkbox"
+              checked={attachPdf}
+              onChange={(e) => setAttachPdf(e.target.checked)}
+              className="mt-0.5 size-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <span>Also attach the PDF. Off by default — attachments can trip spam filters; the recipient can always download it from the pay page.</span>
+          </label>
+        ) : null}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>
             Cancel
