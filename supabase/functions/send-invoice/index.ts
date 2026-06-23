@@ -20,8 +20,18 @@ const wrap76 = (s: string) => s.replace(/(.{76})/g, '$1\r\n')
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   try {
-    const { invoiceId, to, subject, body, pdfBase64 } = await req.json()
-    if (!invoiceId || !to) return json({ error: 'invoiceId and to are required' }, 400)
+    const { invoiceId, to, cc, subject, body, pdfBase64 } = await req.json()
+    // Normalize + validate recipients (also strips CR/LF/commas → no header injection).
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const clean = (v: unknown) =>
+      (Array.isArray(v) ? v : v ? [v] : [])
+        .map((e) => String(e).replace(/[\r\n,]/g, '').trim())
+        .filter((e) => EMAIL_RE.test(e) && e.length <= 254)
+    const toList = clean(to)
+    const ccList = clean(cc).filter((e) => !toList.some((t) => t.toLowerCase() === e.toLowerCase()))
+    if (!invoiceId || toList.length === 0) {
+      return json({ error: 'invoiceId and at least one valid recipient are required' }, 400)
+    }
 
     // User-scoped client → RLS guarantees the caller can only act on their own data.
     const supabase = createClient(
@@ -84,7 +94,8 @@ Deno.serve(async (req) => {
     const mixed = `mix_${crypto.randomUUID()}`
     const lines = [
       `From: "${businessName}" <${fromEmail}>`,
-      `To: ${to}`,
+      `To: ${toList.join(', ')}`,
+      ccList.length ? `Cc: ${ccList.join(', ')}` : null,
       replyTo ? `Reply-To: ${replyTo}` : null,
       `Subject: ${subj}`,
       `Date: ${new Date().toUTCString()}`,
