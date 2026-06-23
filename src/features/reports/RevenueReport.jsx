@@ -8,7 +8,7 @@ import { Table, THead, TR, TH, TD } from '@/components/ui/Table'
 import { CurrencyTabs } from './CurrencyTabs'
 import { usePaymentsReport } from '@/hooks/useReports'
 import { useProfile } from '@/hooks/useProfile'
-import { revenueReport, toCSV } from '@/lib/reports'
+import { revenueReport, toCSV, reportFileName } from '@/lib/reports'
 import { downloadTextFile } from '@/lib/download'
 import { formatCurrency } from '@/lib/currency'
 
@@ -52,7 +52,7 @@ export function RevenueReport({ range }) {
 
   const exportCsv = () => {
     const rows = report.months.map((m) => ({ month: m.label, revenue: bucket.monthTotals[m.key] || 0 }))
-    downloadTextFile(`revenue-${currency}.csv`, toCSV(rows, [{ key: 'month', label: 'Month' }, { key: 'revenue', label: `Revenue (${currency})` }]))
+    downloadTextFile(reportFileName('revenue', currency, range), toCSV(rows, [{ key: 'month', label: 'Month' }, { key: 'revenue', label: `Revenue (${currency})` }]))
   }
 
   return (

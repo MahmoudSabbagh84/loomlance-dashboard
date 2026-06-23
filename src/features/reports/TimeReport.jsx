@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Table, THead, TR, TH, TD } from '@/components/ui/Table'
 import { useTimeEntriesInRange } from '@/hooks/useReports'
 import { useProfile } from '@/hooks/useProfile'
-import { timeReport, toCSV } from '@/lib/reports'
+import { timeReport, toCSV, reportFileName } from '@/lib/reports'
 import { downloadTextFile } from '@/lib/download'
 import { formatCurrency } from '@/lib/currency'
 
@@ -28,7 +28,7 @@ export function TimeReport({ range }) {
   const chartData = report.byProject.map((p) => ({ label: p.project, billableHours: p.billableHours, nonBillableHours: p.nonBillableHours }))
 
   const exportCsv = () => {
-    downloadTextFile('time.csv', toCSV(report.byProject, [
+    downloadTextFile(reportFileName('time', currency, range), toCSV(report.byProject, [
       { key: 'project', label: 'Project' },
       { key: 'billableHours', label: 'Billable hours' },
       { key: 'nonBillableHours', label: 'Non-billable hours' },

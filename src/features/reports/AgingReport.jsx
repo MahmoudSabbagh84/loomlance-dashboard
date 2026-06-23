@@ -8,7 +8,7 @@ import { Table, THead, TR, TH, TD } from '@/components/ui/Table'
 import { CurrencyTabs } from './CurrencyTabs'
 import { useOpenInvoices } from '@/hooks/useReports'
 import { useProfile } from '@/hooks/useProfile'
-import { agingReport, toCSV } from '@/lib/reports'
+import { agingReport, toCSV, reportFileName, iso } from '@/lib/reports'
 import { downloadTextFile } from '@/lib/download'
 import { formatCurrency } from '@/lib/currency'
 import { formatDate } from '@/lib/date'
@@ -41,7 +41,7 @@ export function AgingReport() {
   const chartData = BUCKETS.map((b) => ({ label: b.label, amount: bucket.buckets[b.key] || 0 }))
 
   const exportCsv = () => {
-    downloadTextFile(`aging-${currency}.csv`, toCSV(bucket.rows, [
+    downloadTextFile(reportFileName('aging', currency, { asOf: iso(new Date()) }), toCSV(bucket.rows, [
       { key: 'invoice_number', label: 'Invoice' },
       { key: 'client', label: 'Client' },
       { key: 'due_date', label: 'Due date' },

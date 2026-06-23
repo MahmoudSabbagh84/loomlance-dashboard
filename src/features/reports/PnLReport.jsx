@@ -9,7 +9,7 @@ import { cn } from '@/components/ui/cn'
 import { CurrencyTabs } from './CurrencyTabs'
 import { usePaymentsReport, useExpensesInRange } from '@/hooks/useReports'
 import { useProfile } from '@/hooks/useProfile'
-import { plReport, toCSV } from '@/lib/reports'
+import { plReport, toCSV, reportFileName } from '@/lib/reports'
 import { downloadTextFile } from '@/lib/download'
 import { formatCurrency } from '@/lib/currency'
 
@@ -35,7 +35,7 @@ export function PnLReport({ range }) {
 
   const exportCsv = () => {
     const rows = bucket.months.map((m) => ({ month: m.label, revenue: m.revenue, expense: m.expense, net: m.net }))
-    downloadTextFile(`pnl-${currency}.csv`, toCSV(rows, [
+    downloadTextFile(reportFileName('pnl', currency, range), toCSV(rows, [
       { key: 'month', label: 'Month' },
       { key: 'revenue', label: `Revenue (${currency})` },
       { key: 'expense', label: `Expense (${currency})` },

@@ -71,6 +71,19 @@ export function toCSV(rows, columns) {
   return body ? `${header}\n${body}` : header
 }
 
+// Descriptive CSV filename so the download names its contents AND the period:
+//   reportFileName('revenue', 'USD', { from: '2026-01-01', to: '2026-03-31' })
+//     -> "revenue-USD (2026-01-01 to 2026-03-31).csv"
+//   reportFileName('aging', 'USD', { asOf: '2026-06-23' })
+//     -> "aging-USD (as of 2026-06-23).csv"  (point-in-time reports)
+export function reportFileName(type, currency, period = {}) {
+  const cur = currency ? `-${currency}` : ''
+  let span = ''
+  if (period.from && period.to) span = ` (${period.from} to ${period.to})`
+  else if (period.asOf) span = ` (as of ${period.asOf})`
+  return `${type}${cur}${span}.csv`
+}
+
 function daysBetween(fromStr, toStr) {
   const a = new Date(`${fromStr}T00:00:00Z`).getTime()
   const b = new Date(`${toStr}T00:00:00Z`).getTime()
