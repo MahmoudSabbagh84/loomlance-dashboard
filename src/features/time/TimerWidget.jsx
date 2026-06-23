@@ -134,7 +134,7 @@ export function TimerWidget() {
           </button>
           <button
             onClick={() => setConfirmDiscard(true)}
-            className="grid size-6 place-items-center rounded text-fg-subtle transition-colors hover:bg-danger/15 hover:text-danger"
+            className="grid size-6 place-items-center rounded text-fg-muted transition-colors hover:bg-danger/15 hover:text-danger"
             aria-label="Discard timer"
           >
             <X className="size-4" />

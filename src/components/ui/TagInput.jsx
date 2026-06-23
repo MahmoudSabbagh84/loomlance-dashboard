@@ -17,7 +17,7 @@ export function TagInput({ value = [], onChange, placeholder = 'Add tag and pres
       {value.map((t) => (
         <span key={t} className="inline-flex items-center gap-1 rounded-full bg-bg-muted px-2 py-0.5 text-xs">
           {t}
-          <button type="button" onClick={() => remove(t)} className="text-fg-subtle hover:text-fg" aria-label={`Remove ${t}`}>
+          <button type="button" onClick={() => remove(t)} className="text-fg-muted hover:text-fg" aria-label={`Remove ${t}`}>
             <X className="size-3" />
           </button>
         </span>

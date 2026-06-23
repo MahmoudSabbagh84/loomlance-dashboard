@@ -9,6 +9,8 @@ export function CurrencyTabs({ currencies, value, onChange }) {
           key={c}
           type="button"
           onClick={() => onChange(c)}
+          aria-pressed={c === value}
+          aria-label={`Show ${c} amounts`}
           className={cn(
             'rounded-md px-2 py-1 text-xs font-medium tabular-nums transition-colors',
             c === value ? 'bg-primary/10 text-primary' : 'text-fg-muted hover:bg-bg-muted'

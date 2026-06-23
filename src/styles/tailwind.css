@@ -63,7 +63,11 @@
     animation: breathe 1.6s ease-in-out infinite;
   }
   @media (prefers-reduced-motion: reduce) {
-    .animate-breathe { animation: none; }
+    .animate-breathe,
+    .animate-pop-in,
+    .animate-slide-in-left {
+      animation: none;
+    }
   }
 
   /* Hide native number-input spinner arrows (manual entry only) */

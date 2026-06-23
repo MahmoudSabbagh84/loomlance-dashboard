@@ -58,6 +58,8 @@ export function DashboardInsights() {
                   key={c}
                   type="button"
                   onClick={() => setPicked(c)}
+                  aria-pressed={c === currency}
+                  aria-label={`Show ${c} revenue`}
                   className={cn(
                     'rounded-md px-2 py-1 text-xs font-medium tabular-nums transition-colors',
                     c === currency ? 'bg-primary/10 text-primary' : 'text-fg-muted hover:bg-bg-muted'

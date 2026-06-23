@@ -57,6 +57,7 @@ export default function ReportsPage() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
+              aria-pressed={tab === t.key}
               className={cn(
                 'h-8 rounded-full border px-3 text-xs font-medium transition-colors',
                 tab === t.key ? 'border-primary bg-primary/10 text-primary' : 'border-border text-fg-muted hover:bg-bg-muted hover:text-fg'
