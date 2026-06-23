@@ -47,17 +47,32 @@ Deno.serve(async (req) => {
     const safeSubjectHeader = subject.replace(/[\r\n]/g, ' ').slice(0, 200)
     const safeReplyTo = email.replace(/[\r\n]/g, '')
 
+    // Full HTML document (avoids SpamAssassin HTML_MIME_NO_HTML_TAG); inline styles, web-safe font.
     const html =
-      `<div style="font-family:sans-serif;line-height:1.5">` +
-      `<h2 style="margin:0 0 12px">New contact form message</h2>` +
-      `<p><strong>Name:</strong> ${esc(name)}<br>` +
-      `<strong>Email:</strong> ${esc(email)}<br>` +
-      `<strong>Subject:</strong> ${esc(subject)}</p>` +
-      `<p style="white-space:pre-wrap;border-top:1px solid #eee;padding-top:12px">${esc(message)}</p>` +
-      `<p style="color:#888;font-size:12px">Sent from the LoomLance contact form. Reply directly to reach ${esc(email)}.</p>` +
-      `</div>`
+      `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">` +
+      `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+      `<title>New contact form message</title></head>` +
+      `<body style="margin:0;background:#f4f4f7;font-family:Arial,Helvetica,sans-serif;color:#14181f">` +
+      `<div style="max-width:560px;margin:0 auto;padding:24px">` +
+      `<div style="background:#ffffff;border:1px solid #e4e7ec;border-radius:12px;padding:28px">` +
+      `<h1 style="margin:0 0 16px;font-size:18px;color:#14181f">New contact form message</h1>` +
+      `<p style="margin:0 0 4px;font-size:14px"><strong>Name:</strong> ${esc(name)}</p>` +
+      `<p style="margin:0 0 4px;font-size:14px"><strong>Email:</strong> ${esc(email)}</p>` +
+      `<p style="margin:0 0 16px;font-size:14px"><strong>Subject:</strong> ${esc(subject)}</p>` +
+      `<p style="white-space:pre-wrap;border-top:1px solid #e4e7ec;padding-top:16px;font-size:14px;line-height:1.6;color:#14181f">${esc(message)}</p>` +
+      `<p style="color:#8a95a5;font-size:12px;margin:20px 0 0">Sent from the LoomLance contact form. Reply directly to reach ${esc(email)}.</p>` +
+      `</div></div></body></html>`
 
-    const boundary = `b_${crypto.randomUUID()}`
+    // Plain-text alternative (avoids MIME_HTML_ONLY).
+    const text =
+      `New contact form message\n\n` +
+      `Name: ${name}\n` +
+      `Email: ${email}\n` +
+      `Subject: ${subject}\n\n` +
+      `${message}\n\n` +
+      `Sent from the LoomLance contact form. Reply directly to reach ${email}.`
+
+    const alt = `alt_${crypto.randomUUID()}`
     const rawMime = [
       `From: "LoomLance Contact" <${fromEmail}>`,
       `To: ${toEmail}`,
@@ -66,14 +81,19 @@ Deno.serve(async (req) => {
       `Date: ${new Date().toUTCString()}`,
       `Message-ID: <${crypto.randomUUID()}@send.loomlance.com>`,
       'MIME-Version: 1.0',
-      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      `Content-Type: multipart/alternative; boundary="${alt}"`,
       '',
-      `--${boundary}`,
+      `--${alt}`,
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      wrap76(b64(text)),
+      `--${alt}`,
       'Content-Type: text/html; charset=UTF-8',
       'Content-Transfer-Encoding: base64',
       '',
       wrap76(b64(html)),
-      `--${boundary}--`,
+      `--${alt}--`,
       '',
     ].join('\r\n')
 

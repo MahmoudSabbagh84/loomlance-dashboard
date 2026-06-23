@@ -46,12 +46,42 @@ Deno.serve(async (req) => {
     const fromEmail = Deno.env.get('SES_FROM_EMAIL') ?? 'invoices@send.loomlance.com'
     const region = Deno.env.get('AWS_REGION') ?? 'us-east-1'
     const link = `${siteUrl}/i/${invoice.public_token}`
-    const safeBody = String(body ?? '').replace(/</g, '&lt;').replace(/\n/g, '<br>')
-    const html = `<div style="font-family:sans-serif">${safeBody}<p><a href="${link}">View &amp; pay invoice ${invoice.invoice_number}</a></p></div>`
-    const subj = subject ?? `Invoice ${invoice.invoice_number}`
+    const num = invoice.invoice_number
+    const subj = subject ?? `Invoice ${num} from ${businessName}`
+    const note = String(body ?? '').trim()
+    const noteEsc = note.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const noteHtml = note
+      ? `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#14181f;white-space:pre-wrap">${noteEsc}</p>`
+      : ''
 
-    // Build a raw MIME message so we can attach the PDF.
-    const boundary = `b_${crypto.randomUUID()}`
+    // Full HTML document (avoids SpamAssassin HTML_MIME_NO_HTML_TAG); inline styles, no externals.
+    const html =
+      `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">` +
+      `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+      `<title>Invoice ${num} from ${businessName}</title></head>` +
+      `<body style="margin:0;background:#f4f4f7;font-family:Arial,Helvetica,sans-serif;color:#14181f">` +
+      `<div style="max-width:560px;margin:0 auto;padding:24px">` +
+      `<div style="background:#ffffff;border:1px solid #e4e7ec;border-radius:12px;padding:28px">` +
+      `<p style="margin:0 0 2px;font-size:13px;color:#5a6472">${businessName}</p>` +
+      `<h1 style="margin:0 0 16px;font-size:20px;color:#14181f">Invoice ${num}</h1>` +
+      noteHtml +
+      `<p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#5a6472">View and pay this invoice securely online using the button below.</p>` +
+      `<a href="${link}" style="display:inline-block;background:#6d45f0;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;font-size:14px">View &amp; pay invoice ${num}</a>` +
+      `<p style="margin:24px 0 0;font-size:12px;color:#8a95a5;word-break:break-all">Or paste this link into your browser:<br>${link}</p>` +
+      `</div>` +
+      `<p style="text-align:center;margin:16px 0 0;font-size:11px;color:#8a95a5">Sent with LoomLance on behalf of ${businessName}.</p>` +
+      `</div></body></html>`
+
+    // Plain-text alternative (avoids MIME_HTML_ONLY; also looks far less like phishing).
+    const text =
+      `Invoice ${num} from ${businessName}\n\n` +
+      (note ? `${note}\n\n` : '') +
+      `View and pay this invoice securely online:\n${link}\n\n` +
+      `Sent with LoomLance on behalf of ${businessName}.`
+
+    // multipart/mixed [ multipart/alternative (text + html), optional PDF attachment ]
+    const alt = `alt_${crypto.randomUUID()}`
+    const mixed = `mix_${crypto.randomUUID()}`
     const lines = [
       `From: "${businessName}" <${fromEmail}>`,
       `To: ${to}`,
@@ -60,25 +90,34 @@ Deno.serve(async (req) => {
       `Date: ${new Date().toUTCString()}`,
       `Message-ID: <${crypto.randomUUID()}@send.loomlance.com>`,
       'MIME-Version: 1.0',
-      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      `Content-Type: multipart/mixed; boundary="${mixed}"`,
       '',
-      `--${boundary}`,
+      `--${mixed}`,
+      `Content-Type: multipart/alternative; boundary="${alt}"`,
+      '',
+      `--${alt}`,
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      wrap76(b64(text)),
+      `--${alt}`,
       'Content-Type: text/html; charset=UTF-8',
       'Content-Transfer-Encoding: base64',
       '',
       wrap76(b64(html)),
+      `--${alt}--`,
     ]
     if (pdfBase64) {
       lines.push(
-        `--${boundary}`,
+        `--${mixed}`,
         'Content-Type: application/pdf',
-        `Content-Disposition: attachment; filename="${invoice.invoice_number}.pdf"`,
+        `Content-Disposition: attachment; filename="${num}.pdf"`,
         'Content-Transfer-Encoding: base64',
         '',
         wrap76(pdfBase64),
       )
     }
-    lines.push(`--${boundary}--`, '')
+    lines.push(`--${mixed}--`, '')
     const rawMime = lines.filter((l) => l !== null).join('\r\n')
 
     const aws = new AwsClient({
