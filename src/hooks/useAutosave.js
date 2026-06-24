@@ -108,6 +108,11 @@ export function useAutosave({ watch, trigger, save, fields = [], enabled = true,
       sub?.unsubscribe?.()
       clearTimeout(debounceTimer.current)
       clearTimeout(idleTimer.current)
+      // Flush a staged-but-undebounced edit instead of dropping it when the editor
+      // unmounts (page nav) or a conditionally-mounted form closes within debounceMs.
+      if (!inFlight.current && !errored.current && pending.current && Object.keys(pending.current).length) {
+        flush()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, watch, stage, fields.join(',')])
@@ -127,6 +132,7 @@ export function useAutosaveForm({ watch, commit, enabled = true, debounceMs = 70
   const [status, setStatus] = useState('idle')
   const inFlight = useRef(false)
   const again = useRef(false)
+  const dirty = useRef(false) // a change is debounced but not yet committed
   const errored = useRef(false)
   const debounceTimer = useRef(null)
   const idleTimer = useRef(null)
@@ -144,6 +150,7 @@ export function useAutosaveForm({ watch, commit, enabled = true, debounceMs = 70
       again.current = true
       return
     }
+    dirty.current = false
     inFlight.current = true
     setStatus('saving')
     try {
@@ -169,6 +176,7 @@ export function useAutosaveForm({ watch, commit, enabled = true, debounceMs = 70
   }, [scheduleIdle])
 
   const schedule = useCallback(() => {
+    dirty.current = true
     clearTimeout(debounceTimer.current)
     debounceTimer.current = setTimeout(run, debounceMs)
   }, [run, debounceMs])
@@ -188,8 +196,10 @@ export function useAutosaveForm({ watch, commit, enabled = true, debounceMs = 70
       sub?.unsubscribe?.()
       clearTimeout(debounceTimer.current)
       clearTimeout(idleTimer.current)
+      // Flush a debounced-but-unsaved edit instead of dropping it on unmount/close.
+      if (dirty.current && !inFlight.current && !errored.current) run()
     }
-  }, [enabled, watch, schedule])
+  }, [enabled, watch, schedule, run])
 
   return { status, retry }
 }
