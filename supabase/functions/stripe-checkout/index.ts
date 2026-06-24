@@ -37,6 +37,11 @@ Deno.serve(async (req) => {
     const destination = profile?.stripe_connect_account_id
     if (!destination || destination === 'mock_connect') return json({ error: 'not connected' }, 400)
 
+    // Onboarding can be incomplete even with an account id — confirm the account can
+    // actually accept charges before sending the client into a checkout that would fail.
+    const account = await stripe.accounts.retrieve(destination)
+    if (!account.charges_enabled) return json({ error: "This business can't accept card payments yet." }, 400)
+
     const { data: items } = await admin
       .from('invoice_line_items')
       .select('description, quantity, unit_price, tax_rate, discount_rate')
