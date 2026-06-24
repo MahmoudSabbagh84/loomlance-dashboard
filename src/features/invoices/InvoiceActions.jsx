@@ -38,6 +38,7 @@ export function InvoiceActions({ invoice }) {
       <Button
         size="sm"
         variant="secondary"
+        loading={dup.isPending}
         onClick={async () => {
           try { const inv = await dup.mutateAsync(invoice.id); toast.success('Duplicated'); navigate(`/invoices/${inv.id}`) }
           catch (e) { toast.error(e.userMessage) }
