@@ -5,12 +5,13 @@
 // Deploy: supabase functions deploy stripe-connect
 import Stripe from 'npm:stripe@^16'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { corsHeaders, json } from '../_shared/cors.ts'
+import { corsHeadersFor, json as jsonBase } from '../_shared/cors.ts'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', { apiVersion: '2024-06-20' })
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const json = (obj: unknown, status = 200) => jsonBase(obj, status, req)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) })
   try {
     const userClient = createClient(
       Deno.env.get('SUPABASE_URL')!,

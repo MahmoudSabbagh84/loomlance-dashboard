@@ -10,7 +10,7 @@
 // Deploy: supabase functions deploy send-invoice
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20'
-import { corsHeaders, json } from '../_shared/cors.ts'
+import { corsHeadersFor, json as jsonBase } from '../_shared/cors.ts'
 
 const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)))
 // RFC 2045: base64 bodies must be wrapped at <=76 chars per line. Gmail silently
@@ -18,7 +18,8 @@ const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)))
 const wrap76 = (s: string) => s.replace(/(.{76})/g, '$1\r\n')
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const json = (obj: unknown, status = 200) => jsonBase(obj, status, req)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) })
   try {
     const { invoiceId, to, cc, subject, body, pdfBase64 } = await req.json()
     // Normalize + validate recipients (also strips CR/LF/commas → no header injection).

@@ -13,12 +13,13 @@
 // Deploy: supabase functions deploy create-subscription-checkout
 import Stripe from 'npm:stripe@^16'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { corsHeaders, json } from '../_shared/cors.ts'
+import { corsHeadersFor, json as jsonBase } from '../_shared/cors.ts'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', { apiVersion: '2024-06-20' })
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const json = (obj: unknown, status = 200) => jsonBase(obj, status, req)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) })
   try {
     const { plan, period } = await req.json()
     const key = `STRIPE_PRICE_${String(plan || '').toUpperCase()}_${String(period || '').toUpperCase()}`

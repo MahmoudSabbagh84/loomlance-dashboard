@@ -8,7 +8,7 @@
 //   Optional: CONTACT_TO_EMAIL (default info@loomlance.com), CONTACT_FROM_EMAIL (default SES_FROM_EMAIL).
 // Deploy: supabase functions deploy contact-form --no-verify-jwt
 import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20'
-import { corsHeaders, json } from '../_shared/cors.ts'
+import { corsHeadersFor, json as jsonBase } from '../_shared/cors.ts'
 
 const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)))
 const wrap76 = (s: string) => s.replace(/(.{76})/g, '$1\r\n')
@@ -17,7 +17,8 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const json = (obj: unknown, status = 200) => jsonBase(obj, status, req)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
   try {
