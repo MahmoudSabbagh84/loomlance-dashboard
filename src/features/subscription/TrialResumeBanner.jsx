@@ -1,0 +1,35 @@
+import { Sparkles, X } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+
+// Shown when a paid signup bailed out of Stripe Checkout (customer exists, no subscription).
+// Lets them resume the 14-day trial, or dismiss to stay on Solo.
+export function TrialResumeBanner({ planName, onResume, onDismiss }) {
+  return (
+    <div
+      role="region"
+      aria-label="Trial"
+      className="mb-5 flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="flex items-start gap-2.5">
+        <Sparkles className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+        <p className="text-sm text-fg">
+          <span className="font-semibold">Finish starting your {planName} trial</span>
+          <span className="text-fg-muted"> — 14 days free, cancel anytime.</span>
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
+        <Button size="sm" onClick={onResume}>
+          Start trial
+        </Button>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="grid size-8 place-items-center rounded-md text-fg-muted transition-colors hover:bg-bg-muted hover:text-fg"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
