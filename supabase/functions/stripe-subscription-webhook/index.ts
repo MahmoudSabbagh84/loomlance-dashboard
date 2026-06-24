@@ -45,9 +45,13 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   })
 
-  // Idempotency: first insert wins; duplicate event id is a no-op.
+  // Idempotency: only a unique-violation (23505) means "already processed". Any other insert
+  // error is transient → return 500 so Stripe retries (don't silently drop a subscription event).
   const { error: dupErr } = await admin.from('stripe_events').insert({ id: event.id, type: event.type })
-  if (dupErr) return new Response('already processed', { status: 200 })
+  if (dupErr) {
+    if (dupErr.code === '23505') return new Response('already processed', { status: 200 })
+    return new Response('ledger error', { status: 500 })
+  }
 
   if (event.type.startsWith('customer.subscription.')) {
     const sub = event.data.object as Stripe.Subscription
