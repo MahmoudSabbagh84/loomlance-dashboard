@@ -152,7 +152,7 @@ describe('useAutosaveForm', () => {
     expect(commit).not.toHaveBeenCalled()
   })
 
-  it('treats commit()===false as held (no error, status idle)', async () => {
+  it('treats commit()===false as held with an invalid status (surfaced, not silent)', async () => {
     const { watch, emit } = makeWatch()
     const commit = vi.fn().mockResolvedValue(false)
     const { result } = renderHook(() => useAutosaveForm({ watch, commit, debounceMs: 100 }))
@@ -161,7 +161,7 @@ describe('useAutosaveForm', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(100) })
 
     expect(commit).toHaveBeenCalledTimes(1)
-    expect(result.current.status).toBe('idle')
+    expect(result.current.status).toBe('invalid')
   })
 
   it('serializes: a change during an in-flight commit re-runs after it', async () => {
