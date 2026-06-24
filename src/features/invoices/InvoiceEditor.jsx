@@ -65,7 +65,15 @@ export function InvoiceEditor({ invoice }) {
     const { line_items, ...rest } = patch
     if (Object.keys(rest).length) {
       await updateInvoice(invoice.id, rest)
-      qc.setQueryData(['invoices', 'detail', invoice.id], (prev) => (prev ? { ...prev, ...rest } : prev))
+      qc.setQueryData(['invoices', 'detail', invoice.id], (prev) => {
+        if (!prev) return prev
+        const next = { ...prev, ...rest }
+        // Keep the joined client row in sync when the client changes, so Send
+        // (recipient) and Download (PDF) read the NEW client, not the previous one
+        // (LOO-6). The clients list holds full rows (select *), matching clients(*).
+        if ('client_id' in rest) next.clients = clients.find((c) => c.id === rest.client_id) ?? null
+        return next
+      })
     }
     if (line_items) {
       const positioned = line_items.map((li, i) => ({ ...li, position: i }))

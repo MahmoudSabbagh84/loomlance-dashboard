@@ -4,7 +4,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Lightweight mocks so the editor renders without network/hooks.
 vi.mock('@/hooks/useClients', () => ({
-  useClients: () => ({ data: { rows: [{ id: '11111111-1111-1111-1111-111111111111', name: 'ACME' }] } }),
+  useClients: () => ({
+    data: {
+      rows: [
+        { id: '11111111-1111-1111-1111-111111111111', name: 'ACME', email: 'acme@x.com' },
+        { id: '22222222-2222-2222-2222-222222222222', name: 'Globex', email: 'globex@x.com' },
+      ],
+    },
+  }),
 }))
 vi.mock('@/hooks/useProjects', () => ({ useProjects: () => ({ data: [] }) }))
 vi.mock('@/api/invoices', () => ({ updateInvoice: vi.fn().mockResolvedValue(undefined) }))
@@ -43,6 +50,31 @@ describe('InvoiceEditor — detail cache stays fresh after autosave (regression:
     await waitFor(() => {
       const cached = qc.getQueryData(['invoices', 'detail', 'inv-1'])
       expect(cached.invoice_line_items[0].description).toBe('Web design')
+    }, { timeout: 2000 })
+  })
+
+  it('keeps the joined client in sync in the detail cache when the client changes (LOO-6)', async () => {
+    const qc = new QueryClient()
+    qc.setQueryData(['invoices', 'detail', 'inv-1'], {
+      ...baseInvoice,
+      clients: { id: '11111111-1111-1111-1111-111111111111', name: 'ACME', email: 'acme@x.com' },
+    })
+
+    const { container } = render(
+      <QueryClientProvider client={qc}>
+        <InvoiceEditor invoice={baseInvoice} />
+      </QueryClientProvider>
+    )
+
+    fireEvent.change(container.querySelector('#client_id'), {
+      target: { value: '22222222-2222-2222-2222-222222222222' },
+    })
+
+    await waitFor(() => {
+      const cached = qc.getQueryData(['invoices', 'detail', 'inv-1'])
+      expect(cached.client_id).toBe('22222222-2222-2222-2222-222222222222')
+      expect(cached.clients.name).toBe('Globex')
+      expect(cached.clients.email).toBe('globex@x.com')
     }, { timeout: 2000 })
   })
 })
