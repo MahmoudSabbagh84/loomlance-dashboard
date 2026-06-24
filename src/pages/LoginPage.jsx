@@ -13,11 +13,14 @@ import { FieldError } from '@/components/ui/FieldError'
 import { Card } from '@/components/ui/Card'
 import { AuthShell } from '@/features/auth/AuthShell'
 import * as auth from '@/api/auth'
-import { setRememberMe } from '@/lib/authStorage'
+import { setRememberMe, getRememberMe, getRememberedEmail, setRememberedEmail } from '@/lib/authStorage'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
   password: z.string().min(6, 'Min 6 characters'),
+  // Must be declared or zod strips it from the parsed values → "Remember me"
+  // silently becomes a no-op (the bug this fixes).
+  rememberMe: z.boolean().optional(),
 })
 
 export default function LoginPage() {
@@ -28,7 +31,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { rememberMe: true },
+    defaultValues: { email: getRememberedEmail(), rememberMe: getRememberMe() },
   })
 
   const onSubmit = async (values) => {
@@ -37,6 +40,8 @@ export default function LoginPage() {
       // Decide session storage (localStorage vs sessionStorage) before the
       // sign-in so supabase writes the session to the right place.
       setRememberMe(values.rememberMe)
+      // Combined "Remember me": also prefill the email next visit (or forget it).
+      setRememberedEmail(values.rememberMe ? values.email : null)
       const data = await auth.signInWithPassword(values)
       // Seed the session cache so AuthGate sees the user immediately instead of
       // reading a stale unauthenticated value and bouncing back to /login.

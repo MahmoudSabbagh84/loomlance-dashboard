@@ -35,6 +35,28 @@ function other() {
   return getRememberMe() ? window.sessionStorage : window.localStorage
 }
 
+// "Remember me" also prefills the email on the next visit (the session-persistence
+// half is the storage adapter below). Stored in localStorage; cleared when the box
+// is unchecked at sign-in.
+export const EMAIL_KEY = 'loomlance.rememberedEmail'
+
+export function setRememberedEmail(email) {
+  try {
+    if (email) window.localStorage.setItem(EMAIL_KEY, email)
+    else window.localStorage.removeItem(EMAIL_KEY)
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
+
+export function getRememberedEmail() {
+  try {
+    return window.localStorage.getItem(EMAIL_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
 export const rememberMeStorage = {
   getItem(key) {
     try {

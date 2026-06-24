@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { rememberMeStorage, getRememberMe, setRememberMe, REMEMBER_KEY } from '@/lib/authStorage'
+import { rememberMeStorage, getRememberMe, setRememberMe, REMEMBER_KEY, setRememberedEmail, getRememberedEmail, EMAIL_KEY } from '@/lib/authStorage'
 
 beforeEach(() => {
   localStorage.clear()
@@ -65,5 +65,23 @@ describe('rememberMeStorage routing', () => {
     rememberMeStorage.removeItem('sb-token')
     expect(localStorage.getItem('sb-token')).toBeNull()
     expect(sessionStorage.getItem('sb-token')).toBeNull()
+  })
+})
+
+describe('rememberedEmail (combined "Remember me" prefill)', () => {
+  it('stores and reads back the email', () => {
+    setRememberedEmail('a@b.com')
+    expect(getRememberedEmail()).toBe('a@b.com')
+  })
+
+  it('clears the email when passed a falsy value (box unchecked)', () => {
+    setRememberedEmail('a@b.com')
+    setRememberedEmail(null)
+    expect(getRememberedEmail()).toBe('')
+    expect(localStorage.getItem(EMAIL_KEY)).toBeNull()
+  })
+
+  it('returns empty string when nothing is stored', () => {
+    expect(getRememberedEmail()).toBe('')
   })
 })
