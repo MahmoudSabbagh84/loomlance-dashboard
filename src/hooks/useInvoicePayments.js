@@ -11,6 +11,7 @@ export function useCreatePayment(invoiceId) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoice-payments', invoiceId] })
       qc.invalidateQueries({ queryKey: ['invoices', 'detail', invoiceId] })
+      qc.invalidateQueries({ queryKey: ['reports'] })
     },
   })
 }
@@ -21,6 +22,7 @@ export function useDeletePayment(invoiceId) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoice-payments', invoiceId] })
       qc.invalidateQueries({ queryKey: ['invoices', 'detail', invoiceId] })
+      qc.invalidateQueries({ queryKey: ['reports'] })
     },
   })
 }

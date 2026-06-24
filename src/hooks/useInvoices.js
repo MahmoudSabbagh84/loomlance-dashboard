@@ -55,6 +55,7 @@ export function useSendInvoice() {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['invoices', 'list'] })
       qc.invalidateQueries({ queryKey: ['invoices', 'detail', data.id] })
+      qc.invalidateQueries({ queryKey: ['reports'] })
     },
   })
 }

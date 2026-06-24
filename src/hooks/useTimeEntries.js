@@ -11,7 +11,11 @@ export function useRunningTimer() {
 
 function useInvalidateTime() {
   const qc = useQueryClient()
-  return () => qc.invalidateQueries({ queryKey: ['time-entries'] })
+  return () => {
+    qc.invalidateQueries({ queryKey: ['time-entries'] })
+    // Time changes feed the Time report (and the project financials rollups).
+    qc.invalidateQueries({ queryKey: ['reports'] })
+  }
 }
 
 export function useStartTimer() {
