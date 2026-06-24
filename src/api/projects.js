@@ -58,3 +58,45 @@ export async function deleteProject(id) {
   const { error } = await supabase.from('projects').delete().eq('id', id)
   if (error) throw mapPostgresError(error)
 }
+
+export async function fetchProjectFinancialsData(projectId) {
+  const [inv, exp, time] = await Promise.all([
+    supabase
+      .from('invoices')
+      .select('status, currency, invoice_line_items(quantity, unit_price, tax_rate, discount_rate), invoice_payments(amount, currency)')
+      .eq('project_id', projectId),
+    supabase
+      .from('expenses')
+      .select('amount, currency, billable, invoiced_on_invoice_id')
+      .eq('project_id', projectId),
+    supabase
+      .from('time_entries')
+      .select('duration_minutes, billable, hourly_rate, invoiced_on_invoice_id')
+      .eq('project_id', projectId)
+      .not('ended_at', 'is', null),
+  ])
+  if (inv.error) throw mapPostgresError(inv.error)
+  if (exp.error) throw mapPostgresError(exp.error)
+  if (time.error) throw mapPostgresError(time.error)
+  return { invoices: inv.data || [], expenses: exp.data || [], timeEntries: time.data || [] }
+}
+
+export async function setProjectBudget({ projectId, amount, currency, note }) {
+  const { error } = await supabase.rpc('set_project_budget', {
+    p_project_id: projectId,
+    p_amount: amount,
+    p_currency: currency,
+    p_note: note || null,
+  })
+  if (error) throw mapPostgresError(error)
+}
+
+export async function fetchBudgetHistory(projectId) {
+  const { data, error } = await supabase
+    .from('project_budget_changes')
+    .select('id, previous_amount, new_amount, currency, note, created_at')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false })
+  if (error) throw mapPostgresError(error)
+  return data || []
+}
