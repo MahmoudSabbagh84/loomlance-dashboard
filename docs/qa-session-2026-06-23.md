@@ -129,6 +129,6 @@ _(I'll keep this updated and file each as a Linear issue. Format: # · area · s
 | 2 | Invoices / Send modal | P1 | Additional contacts unreachable when sending; rework as email composer (To/Cc chips + contact suggestions) | LOO-83 | ✅ Built (`c8423cd`, via `/impeccable craft`); fn v8 live, UI ships on next dashboard push |
 | 3 | Time tracking / Timer | P2 | Rework topbar timer: remove clock icon, inline controls + Start-timer selection modal | LOO-84 | ✅ Built (`c287774`, via `/impeccable craft`) — ships on next dashboard push |
 | 4 | Invoices / Editor | P2 | Bigger status indicator (enlarge/color) + lock fields once sent | LOO-85 | 📋 Captured — to build |
-| 5 | Projects / Financials | P2 | Optional project budget + invoiced/expenses/hours rollups (budget-vs-actual) | LOO-86 | 📋 Captured — to brainstorm/spec |
+| 5 | Projects / Financials | P2 | Optional project budget + invoiced/expenses/hours rollups (budget-vs-actual) | LOO-86 | ✅ Built (`e252f96`→`31043f6`, brainstorm→spec→plan→Impeccable) — ships on next dashboard push |
 
 **Session wrapped 2026-06-23.** 5 findings: 2 shipped (LOO-82, LOO-83), 1 shaped & paused (LOO-84), 2 captured (LOO-85 to build, LOO-86 to spec). Regression checklist + known-issue confirmations above remain for the next testing pass.
