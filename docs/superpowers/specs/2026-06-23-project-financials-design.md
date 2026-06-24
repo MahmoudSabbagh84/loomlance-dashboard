@@ -56,9 +56,9 @@ Give each Project an **optional budget** and a **financial panel** on its detail
 
 Computed client-side by `useProjectFinancials(projectId)`, in the project's `budget_currency` (fallback: account default if no budget set). Any linked invoice / expense / time entry whose currency ≠ project currency is **excluded** from sums and counted into `excludedCount` for the flag.
 
-- **invoiced** = Σ `invoiceTotals(line_items).total` for the project's invoices with status ∈ {`sent`, `overdue`, `partially_paid`, `paid`}. (`draft`, void excluded.)
+- **invoiced** = Σ `invoiceTotals(line_items).total` for the project's invoices with status ∈ {`sent`, `viewed`, `paid`, `overdue`}. (`draft`, `void` excluded. Note: the enum has no `partially_paid`.)
 - **draftInvoiced** = same for status `draft` (shown faded, **not** in `invoiced`).
-- **paid** = Σ `payments.amount` for payments on the project's invoices.
+- **paid** = Σ `invoice_payments.amount` for payments on the project's invoices.
 - **expenses** = Σ `expenses.amount` for the project.
 - **unbilledExpenses** = Σ `expenses.amount` where `billable = true` and `invoiced_on_invoice_id is null`.
 - **unbilledTime** = Σ (`duration_minutes`/60 × `hourly_rate`) for `time_entries` where `billable = true` and `invoiced_on_invoice_id is null`.
