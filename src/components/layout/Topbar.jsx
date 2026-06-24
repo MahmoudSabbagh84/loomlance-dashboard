@@ -56,6 +56,9 @@ export function Topbar() {
       <div className="relative ml-1" ref={ref}>
         <button
           onClick={() => setOpen((v) => !v)}
+          aria-label="Account menu"
+          aria-haspopup="menu"
+          aria-expanded={open}
           className="flex h-9 items-center gap-2 rounded-md pl-1 pr-2 transition-colors hover:bg-bg-muted"
         >
           <div className="grid size-7 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-fg">

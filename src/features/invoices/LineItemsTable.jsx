@@ -82,27 +82,27 @@ export function LineItemsTable({ control, register, setValue, getValues, disable
             {fields.map((field, i) => (
               <tr key={field.id} className="border-t border-border">
                 <td className="px-2 py-2">
-                  <Textarea rows={1} disabled={disabled} {...register(`line_items.${i}.description`)} />
+                  <Textarea rows={1} aria-label={`Line ${i + 1} description`} disabled={disabled} {...register(`line_items.${i}.description`)} />
                 </td>
                 <td className="px-2 py-2">
-                  <Input type="number" step="0.01" disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.quantity`, { valueAsNumber: true })} />
+                  <Input type="number" step="0.01" aria-label={`Line ${i + 1} quantity`} disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.quantity`, { valueAsNumber: true })} />
                 </td>
                 <td className="px-2 py-2">
-                  <Input type="number" step="0.01" disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.unit_price`, { valueAsNumber: true })} />
+                  <Input type="number" step="0.01" aria-label={`Line ${i + 1} unit price`} disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.unit_price`, { valueAsNumber: true })} />
                 </td>
                 {showTax ? (
                   <td className="px-2 py-2">
-                    <Input type="number" step="0.1" disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.tax_rate`, { valueAsNumber: true })} />
+                    <Input type="number" step="0.1" aria-label={`Line ${i + 1} tax percent`} disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.tax_rate`, { valueAsNumber: true })} />
                   </td>
                 ) : null}
                 {showDiscount ? (
                   <td className="px-2 py-2">
-                    <Input type="number" step="0.1" disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.discount_rate`, { valueAsNumber: true })} />
+                    <Input type="number" step="0.1" aria-label={`Line ${i + 1} discount percent`} disabled={disabled} className="no-spinner text-right tabular-nums" {...register(`line_items.${i}.discount_rate`, { valueAsNumber: true })} />
                   </td>
                 ) : null}
                 <td className="px-2 py-2 text-right">
                   {!disabled ? (
-                    <Button variant="ghost" size="sm" type="button" onClick={() => removeLine(i)} aria-label="Remove">
+                    <Button variant="ghost" size="sm" type="button" onClick={() => removeLine(i)} aria-label={`Remove line ${i + 1}`}>
                       <Trash2 className="size-4 text-danger" />
                     </Button>
                   ) : null}

@@ -49,7 +49,7 @@ export function TimeReport({ range }) {
             data={chartData}
             bars={[
               { dataKey: 'billableHours', name: 'Billable', color: 'var(--color-primary)' },
-              { dataKey: 'nonBillableHours', name: 'Non-billable', color: 'var(--color-fg-subtle)' },
+              { dataKey: 'nonBillableHours', name: 'Non-billable', color: 'var(--color-fg-muted)' },
             ]}
             formatValue={(v, name) => `${v}h ${name}`}
           />

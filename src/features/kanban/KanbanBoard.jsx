@@ -101,10 +101,25 @@ export function KanbanBoard({ projectId, onTaskClick }) {
     updateTask.mutate({ id: t.id, patch: { column_id: dest.columnId, position: dest.position } })
   }
 
+  // Screen-reader announcements for keyboard drag-and-drop (WCAG 4.1.3).
+  const columnName = (id) => columns.find((c) => c.id === id)?.name ?? 'a column'
+  const overName = (over) =>
+    columns.some((c) => c.id === over.id) ? columnName(over.id) : columnName(findTask(over.id)?.column_id)
+  const announcements = {
+    onDragStart: ({ active }) => `Picked up task ${findTask(active.id)?.title ?? ''}.`,
+    onDragOver: ({ active, over }) =>
+      over ? `Task ${findTask(active.id)?.title ?? ''} moved over ${overName(over)}.` : '',
+    onDragEnd: ({ active, over }) =>
+      over
+        ? `Task ${findTask(active.id)?.title ?? ''} dropped into ${overName(over)}.`
+        : `Task ${findTask(active.id)?.title ?? ''} dropped.`,
+    onDragCancel: ({ active }) => `Dragging cancelled. Task ${findTask(active.id)?.title ?? ''} returned.`,
+  }
+
   return (
     <div className="space-y-3">
       <KanbanFilters value={filters} onChange={setFilters} />
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveTask(null)}>
+      <DndContext sensors={sensors} collisionDetection={closestCorners} accessibility={{ announcements }} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveTask(null)}>
         <div className="overflow-x-auto pb-2">
           <div className="flex items-start gap-3 snap-x">
             {columns.map((col) => (
