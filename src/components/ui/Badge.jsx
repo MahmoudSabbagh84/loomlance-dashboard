@@ -9,9 +9,14 @@ const VARIANTS = {
   primary: 'bg-primary/15 text-primary',
 }
 
-export function Badge({ variant = 'default', className, children }) {
+const SIZES = {
+  sm: 'gap-1 px-2 py-0.5 text-xs font-medium',
+  lg: 'gap-1.5 px-3 py-1 text-sm font-semibold',
+}
+
+export function Badge({ variant = 'default', size = 'sm', className, children }) {
   return (
-    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tabular-nums', VARIANTS[variant], className)}>
+    <span className={cn('inline-flex items-center rounded-full tabular-nums', SIZES[size], VARIANTS[variant], className)}>
       {children}
     </span>
   )

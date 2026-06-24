@@ -21,7 +21,7 @@ export default function InvoiceDetailPage() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <h1 className="text-xl font-semibold tracking-tight tabular-nums">{invoice.invoice_number}</h1>
-          <InvoiceStatusBadge status={invoice.status} />
+          <InvoiceStatusBadge status={invoice.status} size="lg" />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <InvoiceActions invoice={invoice} />
