@@ -127,7 +127,7 @@ _(I'll keep this updated and file each as a Linear issue. Format: # · area · s
 |---|------|-----|-------|--------|--------|
 | 1 | Reports / CSV export | P2 | CSV filename should include the selected date range (was `revenue-USD.csv`; Time had no currency) | LOO-82 | ✅ Fixed (`990d62d`, via `/impeccable clarify`) — ships on next dashboard push |
 | 2 | Invoices / Send modal | P1 | Additional contacts unreachable when sending; rework as email composer (To/Cc chips + contact suggestions) | LOO-83 | ✅ Built (`c8423cd`, via `/impeccable craft`); fn v8 live, UI ships on next dashboard push |
-| 3 | Time tracking / Timer | P2 | Rework topbar timer: remove clock icon, inline controls + Start-timer selection modal | LOO-84 | 🟡 Shaped (`/impeccable craft`) — awaiting confirm (is "user" = Client?) |
+| 3 | Time tracking / Timer | P2 | Rework topbar timer: remove clock icon, inline controls + Start-timer selection modal | LOO-84 | ✅ Built (`c287774`, via `/impeccable craft`) — ships on next dashboard push |
 | 4 | Invoices / Editor | P2 | Bigger status indicator (enlarge/color) + lock fields once sent | LOO-85 | 📋 Captured — to build |
 | 5 | Projects / Financials | P2 | Optional project budget + invoiced/expenses/hours rollups (budget-vs-actual) | LOO-86 | 📋 Captured — to brainstorm/spec |
 
