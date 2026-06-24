@@ -2,7 +2,9 @@ import { supabase } from '@/lib/supabase'
 import { mapPostgresError } from '@/lib/errors'
 
 export async function listInvoices({ clientId, projectId, status, search = '', currency, sort = { field: 'issue_date', dir: 'desc' }, page = 0, pageSize = 25 } = {}) {
-  let q = supabase.from('invoices').select('*, clients(name), projects(name)', { count: 'exact' })
+  let q = supabase
+    .from('invoices')
+    .select('*, clients(name), projects(name), invoice_line_items(quantity, unit_price, tax_rate, discount_rate)', { count: 'exact' })
   if (clientId) q = q.eq('client_id', clientId)
   if (projectId) q = q.eq('project_id', projectId)
   if (status) q = q.eq('status', status)

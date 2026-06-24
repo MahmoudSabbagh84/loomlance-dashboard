@@ -16,6 +16,8 @@ import { InvoiceStatusBadge } from '@/features/invoices/InvoiceStatusBadge'
 import { InvoicesBoard } from '@/features/invoices/InvoicesBoard'
 import { NewInvoiceModal } from '@/features/invoices/NewInvoiceModal'
 import { formatDate } from '@/lib/date'
+import { formatCurrency } from '@/lib/currency'
+import { invoiceTotals } from '@/lib/money'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { toast } from 'sonner'
 
@@ -126,7 +128,7 @@ export default function InvoicesPage() {
       ) : (
         <>
           <Table>
-            <THead><TR><TH>Number</TH><TH>Client</TH><TH>Issue</TH><TH>Due</TH><TH>Status</TH></TR></THead>
+            <THead><TR><TH>Number</TH><TH>Client</TH><TH>Issue</TH><TH>Due</TH><TH>Status</TH><TH className="text-right">Total</TH></TR></THead>
             <tbody>
               {data.rows.map((inv) => (
                 <TR key={inv.id} onClick={() => navigate(`/invoices/${inv.id}`)}>
@@ -135,6 +137,7 @@ export default function InvoicesPage() {
                   <TD className="text-xs tabular-nums text-fg-muted">{formatDate(inv.issue_date)}</TD>
                   <TD className="text-xs tabular-nums text-fg-muted">{formatDate(inv.due_date)}</TD>
                   <TD><InvoiceStatusBadge status={inv.status} /></TD>
+                  <TD className="text-right font-medium tabular-nums">{formatCurrency(invoiceTotals(inv.invoice_line_items || []).total, inv.currency)}</TD>
                 </TR>
               ))}
             </tbody>
