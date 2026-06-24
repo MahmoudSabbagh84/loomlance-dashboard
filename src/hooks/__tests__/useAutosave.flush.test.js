@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { renderHook } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import { useAutosave, useAutosaveForm } from '@/hooks/useAutosave'
 
 const tick = () => new Promise((r) => setTimeout(r, 0))
@@ -45,6 +45,18 @@ describe('autosave flush on unmount (LOO-15)', () => {
     )
     unmount()
     await tick()
+    expect(save).not.toHaveBeenCalled()
+  })
+
+  it('useAutosave surfaces an invalid status when a staged field fails validation (LOO-24)', async () => {
+    const save = vi.fn().mockResolvedValue()
+    const trigger = vi.fn().mockResolvedValue(false) // field is invalid
+    const { watch, fire } = makeWatch()
+    const { result } = renderHook(() =>
+      useAutosave({ watch, trigger, save, fields: ['name'], debounceMs: 1, initial: { name: 'old' } })
+    )
+    fire({ name: '' }, 'name')
+    await waitFor(() => expect(result.current.status).toBe('invalid'))
     expect(save).not.toHaveBeenCalled()
   })
 })

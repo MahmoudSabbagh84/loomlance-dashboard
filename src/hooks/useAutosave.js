@@ -45,13 +45,16 @@ export function useAutosave({ watch, trigger, save, fields = [], enabled = true,
 
     // Validate each staged field; persist only the valid ones (don't write garbage).
     const patch = {}
+    let anyInvalid = false
     for (const key of Object.keys(staged)) {
       const ok = await triggerRef.current(key)
       if (ok) patch[key] = staged[key]
+      else anyInvalid = true
     }
     pending.current = null
     if (Object.keys(patch).length === 0) {
-      setStatus('idle')
+      // Nothing valid to write — surface "fix errors" rather than a misleading idle.
+      setStatus(anyInvalid ? 'invalid' : 'idle')
       return
     }
 
@@ -61,8 +64,13 @@ export function useAutosave({ watch, trigger, save, fields = [], enabled = true,
       await saveRef.current(patch)
       saved.current = { ...saved.current, ...patch }
       errored.current = false
-      setStatus('saved')
-      scheduleIdle()
+      // If some staged fields were invalid (dropped), keep flagging "fix errors".
+      if (anyInvalid) {
+        setStatus('invalid')
+      } else {
+        setStatus('saved')
+        scheduleIdle()
+      }
     } catch {
       // Retain the failed patch (newer staged changes win on top) for retry.
       pending.current = { ...patch, ...(pending.current || {}) }
@@ -157,7 +165,7 @@ export function useAutosaveForm({ watch, commit, enabled = true, debounceMs = 70
       const ok = await commitRef.current()
       errored.current = false
       if (ok === false) {
-        setStatus('idle') // invalid → held, nothing written
+        setStatus('invalid') // invalid → held, nothing written; surface "fix errors"
       } else {
         setStatus('saved')
         scheduleIdle()
