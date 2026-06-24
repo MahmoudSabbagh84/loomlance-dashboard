@@ -61,26 +61,35 @@ Deno.serve(async (req) => {
 
     if (uid) {
       const canceled = sub.status === 'canceled'
-      // Derive tier from the product metadata (set tier=tier_1 / tier_2 on each Stripe Product).
-      let tier = 'free'
-      const priceId = sub.items?.data?.[0]?.price?.id
-      if (!canceled && priceId) {
-        const price = await stripe.prices.retrieve(priceId, { expand: ['product'] })
-        const product = price.product as Stripe.Product
-        tier = (product?.metadata?.tier as string) || 'free'
+      // Derive tier from the product metadata (set tier=tier_1 / tier_2 on each Stripe
+      // Product). null = couldn't resolve → leave subscription_tier UNCHANGED. Defaulting
+      // a live paying subscription to 'free' on a metadata misconfig would silently
+      // downgrade the customer.
+      let tier: string | null = canceled ? 'free' : null
+      if (!canceled) {
+        const priceId = sub.items?.data?.[0]?.price?.id
+        if (priceId) {
+          const price = await stripe.prices.retrieve(priceId, { expand: ['product'] })
+          const product = price.product as Stripe.Product
+          const metaTier = product?.metadata?.tier as string | undefined
+          if (metaTier) tier = metaTier
+          else console.error(`[subscription-webhook] sub ${sub.id}: product ${product?.id} missing metadata.tier — leaving tier unchanged`)
+        } else {
+          console.error(`[subscription-webhook] sub ${sub.id}: no price id — leaving tier unchanged`)
+        }
       }
 
-      await admin
-        .from('profiles')
-        .update({
-          subscription_tier: canceled ? 'free' : tier,
-          subscription_status: STATUS_MAP[sub.status] ?? 'active',
-          stripe_subscription_id: sub.id,
-          current_period_end: sub.current_period_end
-            ? new Date(sub.current_period_end * 1000).toISOString()
-            : null,
-        })
-        .eq('id', uid)
+      const patch: Record<string, unknown> = {
+        subscription_status: STATUS_MAP[sub.status] ?? 'active',
+        stripe_subscription_id: sub.id,
+        current_period_end: sub.current_period_end
+          ? new Date(sub.current_period_end * 1000).toISOString()
+          : null,
+      }
+      // Only touch the tier when we actually resolved one.
+      if (tier !== null) patch.subscription_tier = tier
+
+      await admin.from('profiles').update(patch).eq('id', uid)
     }
   }
 
