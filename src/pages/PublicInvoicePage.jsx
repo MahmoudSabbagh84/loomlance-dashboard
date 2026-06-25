@@ -10,6 +10,8 @@ import { invokeEdge } from '@/api/edge'
 import { paymentsAreReal } from '@/lib/providers'
 import { invoiceTotals } from '@/lib/money'
 import { paypalHref } from '@/lib/paypal'
+import { paymentMethods } from '@/lib/payments'
+import { formatCurrency } from '@/lib/currency'
 
 export default function PublicInvoicePage() {
   const { token } = useParams()
@@ -97,33 +99,66 @@ export default function PublicInvoicePage() {
     }))
   ).total
   const paypalUrl = data.paypal_link ? paypalHref(data.paypal_link, total, data.currency) : null
+  const methods = isPaid ? [] : paymentMethods({ can_pay: data.can_pay, paypal_link: data.paypal_link })
 
   return (
     <div className="min-h-screen bg-bg px-4 py-10">
       <div className="mx-auto max-w-2xl space-y-4">
         <div className="flex items-center justify-between">
           <img src="/logo.png" alt="LoomLance" className="size-8" />
-          <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={download}>
-              <Download className="size-4" /> Download PDF
-            </Button>
-            {data.can_pay && !isPaid ? (
-              <Button size="sm" onClick={onPay} loading={paying || pay.isPending}>
-                <CreditCard className="size-4" /> Pay now
-              </Button>
-            ) : null}
-            {paypalUrl && !isPaid ? (
-              <Button variant="secondary" size="sm" onClick={() => window.open(paypalUrl, '_blank', 'noopener')}>
-                Pay with PayPal
-              </Button>
-            ) : null}
-          </div>
+          <Button variant="secondary" size="sm" onClick={download}>
+            <Download className="size-4" /> Download PDF
+          </Button>
         </div>
+
         {isPaid ? (
           <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
-            <CheckCircle2 className="size-4" /> This invoice has been paid. Thank you!
+            <CheckCircle2 className="size-4 shrink-0" /> This invoice has been paid. Thank you!
           </div>
-        ) : null}
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border bg-bg-elevated">
+            {/* Amount zone */}
+            <div className="px-5 py-4">
+              <p className="mb-3 text-sm font-medium text-fg">Pay this invoice</p>
+              <p className="text-xs uppercase tracking-wider text-fg-muted">Amount due</p>
+              <p className="mt-0.5 text-2xl font-semibold text-fg tabular-nums">
+                {formatCurrency(total, data.currency)}
+              </p>
+            </div>
+
+            {/* Action zone */}
+            {methods.length > 0 ? (
+              <div className="border-t border-border px-5 py-4">
+                <div className="flex flex-wrap gap-2">
+                  {methods.includes('card') ? (
+                    <Button onClick={onPay} loading={paying || pay.isPending}>
+                      <CreditCard className="size-4" /> Pay by card
+                    </Button>
+                  ) : null}
+                  {methods.includes('paypal') && paypalUrl ? (
+                    <Button variant="secondary" onClick={() => window.open(paypalUrl, '_blank', 'noopener')}>
+                      Pay with PayPal
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ) : data.payment_instructions ? (
+              <div className="border-t border-border px-5 py-4">
+                <p className="mb-1.5 text-xs uppercase tracking-wider text-fg-muted">
+                  Payment instructions
+                </p>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-fg">
+                  {data.payment_instructions}
+                </p>
+              </div>
+            ) : (
+              <div className="border-t border-border px-5 py-4">
+                <p className="text-sm text-fg-muted">Contact the sender to arrange payment.</p>
+              </div>
+            )}
+          </div>
+        )}
+
         <PublicInvoiceView data={data} />
       </div>
     </div>
