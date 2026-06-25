@@ -148,8 +148,18 @@ redirect URLs), LOO-10 (IAM SES key), LOO-11 (token rotation), LOO-13 (register 
 
 ## Deploy/apply checklist for the 2026-06-25 P2 fixes
 
-- `supabase db push` (applies `20260625000000_contact_rate_limit.sql`).
-- `supabase functions deploy contact-form` (now reads `verify_jwt` from `config.toml` — the
-  `--no-verify-jwt` flag is no longer needed but is harmless).
-- Optionally redeploy the other functions so the gateway picks up their pinned `verify_jwt`.
-- Smoke: 6 rapid contact submissions from one IP → the 6th returns HTTP 429.
+✅ **DEPLOYED LIVE 2026-06-25** (via Supabase MCP, project `zbipqfsqxnvrzhpdjvvy`):
+
+- ✅ Migration applied — `contact_rate_limit` table + `check_contact_rate_limit` RPC live
+  (recorded remote as version `20260625191002`; the committed file is `20260625000000` — a
+  cosmetic version mismatch since it went via MCP `apply_migration`, not `db push`. SQL is fully
+  idempotent so a future `db push` is a harmless no-op re-record).
+- ✅ `contact-form` redeployed — now **version 4**, `verify_jwt = false` (public, self-authenticating).
+- ✅ Smoke-tested the limiter directly via the RPC (no emails sent): 6 calls from one IP →
+  `true,true,true,true,true,false` (cap = 5 / 10 min). Test rows cleaned up.
+- ✅ Security advisor re-run: `contact_rate_limit` shows only the **intended** INFO "RLS enabled,
+  no policy" notice; `check_contact_rate_limit` is **not** anon/authenticated-executable (revoke
+  confirmed). No new warnings introduced.
+- Linear: **LOO-93** (rate limit) + **LOO-94** (verify_jwt) created & closed Done.
+- ⏳ Still optional: redeploy the other 7 functions so the gateway picks up their pinned
+  `verify_jwt` from `config.toml` (none changed posture; current deployed flags already match).
