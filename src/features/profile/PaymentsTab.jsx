@@ -12,7 +12,7 @@ import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { invokeEdge } from '@/api/edge'
 import { paymentsAreReal } from '@/lib/providers'
 
-// Default payment instructions autosave (debounced) — no manual Save.
+// Payment instructions autosave (debounced) — no manual Save.
 function DefaultInstructionsCard({ profile, update }) {
   const [value, setValue] = useState(profile.default_payment_instructions || '')
   const [status, setStatus] = useState('idle')
@@ -39,7 +39,13 @@ function DefaultInstructionsCard({ profile, update }) {
 
   return (
     <Card className="space-y-2">
-      <Label htmlFor="pay-instructions">Default payment instructions</Label>
+      <div>
+        <h3 className="text-sm font-semibold">Payment instructions</h3>
+        <p className="mt-0.5 text-sm text-fg-muted">
+          Added to every new invoice — bank details, a preferred method, or anything clients need to pay you.
+        </p>
+      </div>
+      <Label htmlFor="pay-instructions">Default text</Label>
       <Textarea
         id="pay-instructions"
         rows={3}
@@ -55,7 +61,7 @@ function DefaultInstructionsCard({ profile, update }) {
 }
 
 // PayPal.me link autosave (debounced) — invoices render a "Pay with PayPal" button.
-function PayPalLinkCard({ profile, update, dimmed }) {
+function PayPalLinkCard({ profile, update }) {
   const [value, setValue] = useState(profile.paypal_link || '')
   const [status, setStatus] = useState('idle')
   const timer = useRef(null)
@@ -80,10 +86,10 @@ function PayPalLinkCard({ profile, update, dimmed }) {
   useEffect(() => () => { clearTimeout(timer.current); clearTimeout(idle.current) }, [])
 
   return (
-    <Card className={`space-y-2 ${dimmed ? 'opacity-60' : ''}`}>
+    <Card className="space-y-2">
       <h3 className="text-sm font-semibold">PayPal</h3>
       <p className="text-sm text-fg-muted">
-        Add your PayPal.me link or username — invoices show a “Pay with PayPal” button. There’s no auto-reconcile, so
+        Add your PayPal.me link or username — invoices show a &ldquo;Pay with PayPal&rdquo; button. There&apos;s no auto-reconcile, so
         you confirm receipt with <span className="font-medium">Mark as paid</span>.
       </p>
       <Label htmlFor="paypal-link">PayPal.me link or username</Label>
@@ -104,18 +110,8 @@ export function PaymentsTab() {
   const { data: profile } = useProfile()
   const update = useUpdateProfile()
   const [connecting, setConnecting] = useState(false)
-  const onlineEnabled = !!profile?.online_payments_enabled
   const connected = !!profile?.stripe_connect_account_id && profile.stripe_connect_account_id !== 'mock_connect'
   const mockConnected = profile?.stripe_connect_account_id === 'mock_connect'
-
-  const setOnline = async (next) => {
-    try {
-      await update.mutateAsync({ online_payments_enabled: next })
-      toast.success(next ? 'Online payments enabled' : 'Online payments off — clients pay by your instructions')
-    } catch (e) {
-      toast.error(e.userMessage || 'Could not update')
-    }
-  }
 
   const connectReal = async () => {
     setConnecting(true)
@@ -139,31 +135,18 @@ export function PaymentsTab() {
 
   return (
     <div className="max-w-xl space-y-4">
-      {/* Master switch — cash/bank instructions always work; this turns on online pay buttons. */}
-      <Card className="space-y-2">
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            className="mt-1"
-            checked={onlineEnabled}
-            onChange={(e) => setOnline(e.target.checked)}
-            disabled={update.isPending}
-          />
-          <span>
-            <span className="text-sm font-semibold">Accept online payments</span>
-            <p className="mt-0.5 text-sm text-fg-muted">
-              When on, invoices show a pay-online button (Stripe / PayPal once connected). When off, invoices show only
-              your payment instructions below — useful where card processors aren’t supported.
-            </p>
-          </span>
-        </label>
-      </Card>
+      <div>
+        <h2 className="text-sm font-semibold">How clients can pay you</h2>
+        <p className="mt-0.5 text-sm text-fg-muted">
+          Clients always see your payment instructions. Connect Stripe or PayPal to also let them pay online — they choose how.
+        </p>
+      </div>
 
-      {/* Payment instructions — the universal cash/bank fallback, prefilled onto new invoices. */}
+      {/* Payment instructions — the universal cash/bank baseline, prefilled onto new invoices. */}
       {profile ? <DefaultInstructionsCard key={profile.id} profile={profile} update={update} /> : null}
 
-      {/* Stripe (card payments) */}
-      <Card className={`space-y-3 ${onlineEnabled ? '' : 'opacity-60'}`}>
+      {/* Stripe (card payments) — always live; connect/disconnect is the switch. */}
+      <Card className="space-y-3">
         <div className="flex items-center gap-2">
           <CreditCard className="size-5 text-primary" />
           <h3 className="text-sm font-semibold">Stripe (card payments)</h3>
@@ -187,8 +170,8 @@ export function PaymentsTab() {
         )}
       </Card>
 
-      {/* PayPal (link MVP) */}
-      {profile ? <PayPalLinkCard key={profile.id} profile={profile} update={update} dimmed={!onlineEnabled} /> : null}
+      {/* PayPal (link MVP) — always live. */}
+      {profile ? <PayPalLinkCard key={profile.id} profile={profile} update={update} /> : null}
     </div>
   )
 }
