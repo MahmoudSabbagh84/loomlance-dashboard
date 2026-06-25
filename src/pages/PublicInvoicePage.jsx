@@ -100,6 +100,7 @@ export default function PublicInvoicePage() {
   ).total
   const paypalUrl = data.paypal_link ? paypalHref(data.paypal_link, total, data.currency) : null
   const methods = isPaid ? [] : paymentMethods({ can_pay: data.can_pay, paypal_link: data.paypal_link })
+  const renderableMethods = methods.filter((m) => (m === 'paypal' ? !!paypalUrl : true))
 
   return (
     <div className="min-h-screen bg-bg px-4 py-10">
@@ -127,15 +128,15 @@ export default function PublicInvoicePage() {
             </div>
 
             {/* Action zone */}
-            {methods.length > 0 ? (
+            {renderableMethods.length > 0 ? (
               <div className="border-t border-border px-5 py-4">
                 <div className="flex flex-wrap gap-2">
-                  {methods.includes('card') ? (
+                  {renderableMethods.includes('card') ? (
                     <Button onClick={onPay} loading={paying || pay.isPending}>
                       <CreditCard className="size-4" /> Pay by card
                     </Button>
                   ) : null}
-                  {methods.includes('paypal') && paypalUrl ? (
+                  {renderableMethods.includes('paypal') ? (
                     <Button variant="secondary" onClick={() => window.open(paypalUrl, '_blank', 'noopener')}>
                       Pay with PayPal
                     </Button>

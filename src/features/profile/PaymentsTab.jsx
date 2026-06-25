@@ -45,7 +45,7 @@ function DefaultInstructionsCard({ profile, update }) {
           Added to every new invoice — bank details, a preferred method, or anything clients need to pay you.
         </p>
       </div>
-      <Label htmlFor="pay-instructions">Default text</Label>
+      <Label htmlFor="pay-instructions">Default payment instructions</Label>
       <Textarea
         id="pay-instructions"
         rows={3}
