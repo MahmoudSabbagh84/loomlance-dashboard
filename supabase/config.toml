@@ -385,6 +385,35 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Per-function JWT posture, pinned declaratively so it can't drift from deploy-time flags.
+# PUBLIC (verify_jwt = false): clients/Stripe have no Supabase session — these authenticate
+# themselves (Stripe signature, invoice public_token, or honeypot+validation).
+# AUTHENTICATED (verify_jwt = true): the gateway rejects un-JWT'd calls; each also re-checks
+# auth.getUser() / RLS as defense-in-depth.
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.stripe-subscription-webhook]
+verify_jwt = false
+
+[functions.stripe-checkout]
+verify_jwt = false
+
+[functions.contact-form]
+verify_jwt = false
+
+[functions.send-invoice]
+verify_jwt = true
+
+[functions.create-subscription-checkout]
+verify_jwt = true
+
+[functions.create-billing-portal]
+verify_jwt = true
+
+[functions.stripe-connect]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

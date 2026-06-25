@@ -8,6 +8,7 @@
 //   Optional: CONTACT_TO_EMAIL (default info@loomlance.com), CONTACT_FROM_EMAIL (default SES_FROM_EMAIL).
 // Deploy: supabase functions deploy contact-form --no-verify-jwt
 import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeadersFor, json as jsonBase } from '../_shared/cors.ts'
 
 const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)))
@@ -39,6 +40,22 @@ Deno.serve(async (req) => {
     if (!EMAIL_RE.test(email) || email.length > 254) return json({ error: 'Please enter a valid email address.' }, 400)
     if (subject.length < 2 || subject.length > 200) return json({ error: 'Please enter a subject.' }, 400)
     if (message.length < 10 || message.length > 2000) return json({ error: 'Message must be 10–2000 characters.' }, 400)
+
+    // Per-IP rate limit (5 / 10 min). Checked AFTER validation so malformed spam can't even
+    // record an attempt, and BEFORE the SES send so a flood can't burn quota or fill the inbox.
+    // x-forwarded-for is platform-set; the leftmost hop is the client (spoofable, but raises the
+    // bar). A null/empty IP is allowed through rather than hard-blocked (see the RPC).
+    const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() ||
+      (req.headers.get('x-real-ip') ?? '').trim()
+    const rl = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+      auth: { persistSession: false },
+    })
+    const { data: allowed, error: rlErr } = await rl.rpc('check_contact_rate_limit', { p_ip: ip })
+    // Fail-open on an RPC error (don't break a legit contact attempt on infra hiccups), but block
+    // when the limiter explicitly says we're over the cap.
+    if (!rlErr && allowed === false) {
+      return json({ error: 'Too many messages. Please wait a few minutes and try again.' }, 429)
+    }
 
     const region = Deno.env.get('AWS_REGION') ?? 'us-east-1'
     const fromEmail = Deno.env.get('CONTACT_FROM_EMAIL') ?? Deno.env.get('SES_FROM_EMAIL') ?? 'contact@send.loomlance.com'
