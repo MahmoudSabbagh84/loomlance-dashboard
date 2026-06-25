@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -59,36 +60,44 @@ export function BusinessTab() {
 
   const businessType = watch('business_type')
   const isIndividual = businessType === 'individual'
+  const buttonRefs = useRef([])
+
+  function selectType(idx) {
+    setValue('business_type', TYPE_OPTIONS[idx].value, { shouldDirty: true })
+    // setValue re-renders the buttons (new tabIndex/aria-checked); move browser
+    // focus onto the newly selected one so the roving tabindex stays coherent.
+    buttonRefs.current[idx]?.focus()
+  }
 
   function handleTypeKeyDown(e) {
-    const values = TYPE_OPTIONS.map((o) => o.value)
-    const idx = values.indexOf(businessType)
+    const idx = TYPE_OPTIONS.findIndex((o) => o.value === businessType)
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault()
-      const next = values[(idx + 1) % values.length]
-      setValue('business_type', next, { shouldDirty: true })
+      selectType((idx + 1) % TYPE_OPTIONS.length)
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault()
-      const prev = values[(idx - 1 + values.length) % values.length]
-      setValue('business_type', prev, { shouldDirty: true })
+      selectType((idx - 1 + TYPE_OPTIONS.length) % TYPE_OPTIONS.length)
     }
   }
 
   return (
     <Card as="form" onSubmit={(e) => e.preventDefault()} className="max-w-xl space-y-4">
       <div>
-        <Label>How do you work?</Label>
+        <div id="business-type-label">
+          <Label>How do you work?</Label>
+        </div>
         <div
           role="radiogroup"
-          aria-label="How do you work?"
+          aria-labelledby="business-type-label"
           className="mt-1 inline-flex rounded-lg border border-border bg-bg-muted p-0.5"
           onKeyDown={handleTypeKeyDown}
         >
-          {TYPE_OPTIONS.map((opt) => {
+          {TYPE_OPTIONS.map((opt, i) => {
             const active = businessType === opt.value
             return (
               <button
                 key={opt.value}
+                ref={(el) => (buttonRefs.current[i] = el)}
                 type="button"
                 role="radio"
                 aria-checked={active}
