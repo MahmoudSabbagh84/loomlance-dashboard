@@ -6,6 +6,7 @@ import { InvoiceEditor } from '@/features/invoices/InvoiceEditor'
 import { InvoiceActions } from '@/features/invoices/InvoiceActions'
 import { InvoiceStatusBadge } from '@/features/invoices/InvoiceStatusBadge'
 import { ShareLinkPanel } from '@/features/invoices/ShareLinkPanel'
+import { PaymentsSummary } from '@/features/invoices/PaymentsSummary'
 
 export default function InvoiceDetailPage() {
   const { id } = useParams()
@@ -29,6 +30,7 @@ export default function InvoiceDetailPage() {
       </div>
       {invoice.status !== 'draft' ? <ShareLinkPanel invoice={invoice} /> : null}
       <InvoiceEditor invoice={invoice} />
+      <PaymentsSummary invoice={invoice} />
     </div>
   )
 }

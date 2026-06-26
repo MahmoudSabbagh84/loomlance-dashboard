@@ -1,4 +1,4 @@
-import { PencilLine, Send, Eye, CheckCircle2, AlertTriangle, Ban } from 'lucide-react'
+import { PencilLine, Send, Eye, CheckCircle2, AlertTriangle, Ban, CircleDollarSign } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 
 const MAP = {
@@ -6,6 +6,7 @@ const MAP = {
   sent: { variant: 'info', label: 'Sent', Icon: Send },
   viewed: { variant: 'info', label: 'Viewed', Icon: Eye },
   paid: { variant: 'success', label: 'Paid', Icon: CheckCircle2 },
+  partially_paid: { variant: 'warning', label: 'Partially paid', Icon: CircleDollarSign },
   overdue: { variant: 'danger', label: 'Overdue', Icon: AlertTriangle },
   void: { variant: 'default', label: 'Void', Icon: Ban },
 }

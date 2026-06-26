@@ -21,7 +21,7 @@ import { invoiceTotals } from '@/lib/money'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { toast } from 'sonner'
 
-const STATUSES = ['', 'draft', 'sent', 'viewed', 'paid', 'overdue', 'void']
+const STATUSES = ['', 'draft', 'sent', 'viewed', 'paid', 'partially_paid', 'overdue', 'void']
 
 function readView() {
   try {
@@ -90,7 +90,7 @@ export default function InvoicesPage() {
                     : 'border-border text-fg-muted hover:bg-bg-muted hover:text-fg'
                 )}
               >
-                {s || 'all'}
+                {s ? s.replace(/_/g, ' ') : 'all'}
               </button>
             ))}
         </div>

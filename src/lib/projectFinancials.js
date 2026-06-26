@@ -1,6 +1,6 @@
 import { invoiceTotals } from './money'
 
-const INVOICED_STATUSES = new Set(['sent', 'viewed', 'paid', 'overdue'])
+const INVOICED_STATUSES = new Set(['sent', 'viewed', 'paid', 'partially_paid', 'overdue'])
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100
 
 // Pure rollup of one project's financials, in the project's currency.
