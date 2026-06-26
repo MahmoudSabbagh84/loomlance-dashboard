@@ -7,6 +7,7 @@
 import Stripe from 'npm:stripe@^16'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeadersFor, json as jsonBase } from '../_shared/cors.ts'
+import { invoiceTotals, lineTotal } from '../_shared/money.ts'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', { apiVersion: '2024-06-20' })
 
@@ -48,18 +49,29 @@ Deno.serve(async (req) => {
       .select('description, quantity, unit_price, tax_rate, discount_rate')
       .eq('invoice_id', inv.id)
 
-    const lineItems = (items ?? []).map((li) => {
-      const net = Number(li.unit_price) * (1 - Number(li.discount_rate) / 100)
-      const withTax = net * (1 + Number(li.tax_rate) / 100)
-      return {
-        price_data: {
-          currency: String(inv.currency).toLowerCase(),
-          product_data: { name: li.description || 'Item' },
-          unit_amount: Math.round(withTax * 100),
-        },
-        quantity: Number(li.quantity),
-      }
-    })
+    const cents = (n: number) => Math.round(n * 100)
+    const grandTotalCents = cents(invoiceTotals(items ?? []).total)
+
+    const lineItems = (items ?? []).map((li) => ({
+      price_data: {
+        currency: String(inv.currency).toLowerCase(),
+        product_data: { name: `${Number(li.quantity)} × ${li.description || 'Item'}` },
+        unit_amount: cents(lineTotal(li).total), // full per-line total, quantity folded in
+      },
+      quantity: 1,
+    }))
+
+    // Reconcile any residual cent (bucketed tax rounding) onto the last line so the
+    // charged sum == the money.js grand total exactly.
+    const built = lineItems.reduce((s, l) => s + l.price_data.unit_amount, 0)
+    const delta = grandTotalCents - built
+    if (delta !== 0 && lineItems.length > 0) {
+      lineItems[lineItems.length - 1].price_data.unit_amount += delta
+    }
+
+    if (lineItems.length === 0 || grandTotalCents <= 0) {
+      return json({ error: 'no payable items' }, 400)
+    }
 
     const siteUrl = Deno.env.get('PUBLIC_SITE_URL') ?? ''
     const session = await stripe.checkout.sessions.create({
