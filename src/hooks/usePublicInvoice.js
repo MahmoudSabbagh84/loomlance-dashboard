@@ -1,5 +1,5 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
-import { getPublicInvoice, mockPayInvoice } from '@/api/publicInvoice'
+import { useQuery } from '@tanstack/react-query'
+import { getPublicInvoice } from '@/api/publicInvoice'
 
 export function usePublicInvoice(token) {
   return useQuery({
@@ -9,8 +9,4 @@ export function usePublicInvoice(token) {
     retry: false,
     staleTime: 30_000,
   })
-}
-
-export function useMockPay() {
-  return useMutation({ mutationFn: (token) => mockPayInvoice(token) })
 }

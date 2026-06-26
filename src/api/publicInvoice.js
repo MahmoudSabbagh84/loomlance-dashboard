@@ -7,9 +7,3 @@ export async function getPublicInvoice(token) {
   if (error) throw mapPostgresError(error)
   return data
 }
-
-export async function mockPayInvoice(token) {
-  const { data, error } = await supabase.rpc('mock_pay_invoice', { p_token: token })
-  if (error) throw mapPostgresError(error)
-  return data
-}

@@ -4,10 +4,9 @@ import { Download, CreditCard, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { usePublicInvoice, useMockPay } from '@/hooks/usePublicInvoice'
+import { usePublicInvoice } from '@/hooks/usePublicInvoice'
 import { PublicInvoiceView } from '@/features/invoices/PublicInvoiceView'
 import { invokeEdge } from '@/api/edge'
-import { paymentsAreReal } from '@/lib/providers'
 import { invoiceTotals } from '@/lib/money'
 import { paypalHref } from '@/lib/paypal'
 import { paymentMethods } from '@/lib/payments'
@@ -16,7 +15,6 @@ import { formatCurrency } from '@/lib/currency'
 export default function PublicInvoicePage() {
   const { token } = useParams()
   const { data, isLoading, refetch } = usePublicInvoice(token)
-  const pay = useMockPay()
   const [paid, setPaid] = useState(false)
   const [paying, setPaying] = useState(false)
 
@@ -74,14 +72,8 @@ export default function PublicInvoicePage() {
   const onPay = async () => {
     setPaying(true)
     try {
-      if (paymentsAreReal) {
-        const { url } = await invokeEdge('stripe-checkout', { token })
-        window.location.href = url // hand off to Stripe Checkout
-        return
-      }
-      await pay.mutateAsync(token)
-      setPaid(true)
-      await refetch()
+      const { url } = await invokeEdge('stripe-checkout', { token })
+      window.location.href = url // hand off to Stripe Checkout
     } catch (e) {
       toast.error(e.userMessage || 'Payment could not be completed')
     } finally {
@@ -132,7 +124,7 @@ export default function PublicInvoicePage() {
               <div className="border-t border-border px-5 py-4">
                 <div className="flex flex-wrap gap-2">
                   {renderableMethods.includes('card') ? (
-                    <Button onClick={onPay} loading={paying || pay.isPending}>
+                    <Button onClick={onPay} loading={paying}>
                       <CreditCard className="size-4" /> Pay by card
                     </Button>
                   ) : null}
