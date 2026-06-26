@@ -22,6 +22,12 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) })
   try {
     const { invoiceId, to, cc, subject, body, pdfBase64 } = await req.json()
+    // Cap the attached PDF. SES's hard raw-message limit is 40 MB; 10 MB of base64
+    // (~7.5 MB decoded) is a sane ceiling and keeps the in-memory MIME string bounded.
+    const MAX_PDF_B64 = 10 * 1024 * 1024
+    if (pdfBase64 && typeof pdfBase64 === 'string' && pdfBase64.length > MAX_PDF_B64) {
+      return json({ error: 'PDF attachment too large' }, 413)
+    }
     // Normalize + validate recipients (also strips CR/LF/commas → no header injection).
     const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const clean = (v: unknown) =>
@@ -58,7 +64,9 @@ Deno.serve(async (req) => {
     const region = Deno.env.get('AWS_REGION') ?? 'us-east-1'
     const link = `${siteUrl}/i/${invoice.public_token}`
     const num = invoice.invoice_number
-    const subj = subject ?? `Invoice ${num} from ${businessName}`
+    const subj = subject
+      ? String(subject).replace(/[\r\n]/g, ' ').slice(0, 200)
+      : `Invoice ${num} from ${businessName}`
     const note = String(body ?? '').trim()
     const noteEsc = note.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const noteHtml = note
