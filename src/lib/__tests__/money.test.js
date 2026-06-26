@@ -19,6 +19,13 @@ describe('lineTotal', () => {
 })
 
 describe('invoiceTotals', () => {
+  it('LOO-33 parity anchor: mixed qty/discount/tax grand total', () => {
+    const lines = [
+      { quantity: 3, unit_price: 3.33, tax_rate: 10, discount_rate: 0 },
+      { quantity: 2, unit_price: 10, tax_rate: 0, discount_rate: 15 },
+    ]
+    expect(invoiceTotals(lines).total).toBe(27.99)
+  })
   it('sums lines and groups tax by rate', () => {
     const r = invoiceTotals([
       { quantity: 1, unit_price: 100, tax_rate: 20, discount_rate: 0 },
