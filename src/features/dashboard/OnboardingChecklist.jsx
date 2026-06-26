@@ -7,7 +7,7 @@ import { mapPostgresError } from '@/lib/errors'
 import { useProfile } from '@/hooks/useProfile'
 import { onboardingTasks } from '@/lib/onboarding'
 
-const WELCOME_KEY = 'loomlance.onboardingWelcomeDismissed'
+const DISMISS_KEY = 'loomlance.onboardingDismissed'
 
 async function fetchCounts() {
   const [clients, projects, invoices] = await Promise.all([
@@ -26,8 +26,8 @@ async function fetchCounts() {
 export function OnboardingChecklist() {
   const { data: counts } = useQuery({ queryKey: ['dashboard', 'onboarding'], queryFn: fetchCounts, staleTime: 60_000 })
   const { data: profile } = useProfile()
-  const [welcomeDismissed, setWelcomeDismissed] = useState(
-    () => typeof window !== 'undefined' && window.localStorage.getItem(WELCOME_KEY) === 'true'
+  const [dismissed, setDismissed] = useState(
+    () => typeof window !== 'undefined' && window.localStorage.getItem(DISMISS_KEY) === 'true'
   )
 
   // Render nothing until both profile + counts have loaded.
@@ -35,34 +35,33 @@ export function OnboardingChecklist() {
 
   const tier = profile.subscription_tier ?? 'free'
   const items = onboardingTasks(tier, counts, profile)
-  if (items.every((i) => i.done)) return null
+  // Hide the whole card once the user dismisses it, or when every task is done.
+  if (dismissed || items.every((i) => i.done)) return null
 
-  const dismissWelcome = () => {
+  const dismiss = () => {
     try {
-      window.localStorage.setItem(WELCOME_KEY, 'true')
+      window.localStorage.setItem(DISMISS_KEY, 'true')
     } catch {
       /* private mode — in-memory only */
     }
-    setWelcomeDismissed(true)
+    setDismissed(true)
   }
 
   return (
     <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-      {!welcomeDismissed ? (
-        <div className="mb-4 flex items-start justify-between gap-3 rounded-md bg-primary/10 px-3 py-2.5">
-          <p className="text-sm font-medium text-fg">
-            Welcome to LoomLance 👋 Start by setting up your business profile.
-          </p>
-          <button
-            type="button"
-            onClick={dismissWelcome}
-            aria-label="Dismiss welcome message"
-            className="shrink-0 rounded p-1 text-fg-muted transition-colors hover:bg-primary/15 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      ) : null}
+      <div className="mb-4 flex items-start justify-between gap-3 rounded-md bg-primary/10 px-3 py-2.5">
+        <p className="text-sm font-medium text-fg">
+          Welcome to LoomLance 👋 Start by setting up your business profile.
+        </p>
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Dismiss the get started checklist"
+          className="shrink-0 rounded p-1 text-fg-muted transition-colors hover:bg-primary/15 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
       <h3 className="mb-3 text-sm font-semibold">Get started with LoomLance</h3>
       <ul className="grid gap-2 sm:grid-cols-2">
         {items.map((i) => (
