@@ -61,16 +61,21 @@ Deno.serve(async (req) => {
       quantity: 1,
     }))
 
-    // Reconcile any residual cent (bucketed tax rounding) onto the last line so the
-    // charged sum == the money.js grand total exactly.
+    if (lineItems.length === 0 || grandTotalCents <= 0) {
+      return json({ error: 'no payable items' }, 400)
+    }
+
+    // Reconcile any residual cent (bucketed tax rounding) so the charged sum ==
+    // the money.js grand total exactly.
     const built = lineItems.reduce((s, l) => s + l.price_data.unit_amount, 0)
     const delta = grandTotalCents - built
     if (delta !== 0 && lineItems.length > 0) {
-      lineItems[lineItems.length - 1].price_data.unit_amount += delta
-    }
-
-    if (lineItems.length === 0 || grandTotalCents <= 0) {
-      return json({ error: 'no payable items' }, 400)
+      // Fold the residual cent(s) into the largest line so a negative delta can't drive a unit_amount below zero.
+      let maxIdx = 0
+      for (let i = 1; i < lineItems.length; i++) {
+        if (lineItems[i].price_data.unit_amount > lineItems[maxIdx].price_data.unit_amount) maxIdx = i
+      }
+      lineItems[maxIdx].price_data.unit_amount += delta
     }
 
     const siteUrl = Deno.env.get('PUBLIC_SITE_URL') ?? ''
