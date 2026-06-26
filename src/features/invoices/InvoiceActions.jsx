@@ -20,7 +20,7 @@ export function InvoiceActions({ invoice }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const canMarkSent = invoice.status === 'draft'
-  const canMarkPaid = ['sent', 'viewed', 'overdue'].includes(invoice.status)
+  const canMarkPaid = ['sent', 'viewed', 'overdue', 'partially_paid'].includes(invoice.status)
   const canVoid = ['sent', 'viewed', 'overdue'].includes(invoice.status)
   const canDelete = invoice.status === 'draft'
 
@@ -33,7 +33,7 @@ export function InvoiceActions({ invoice }) {
         </Button>
       ) : null}
       {canMarkPaid ? (
-        <Button size="sm" onClick={() => setMarkPaidOpen(true)}><CheckCircle2 className="size-4" /> Mark paid</Button>
+        <Button size="sm" onClick={() => setMarkPaidOpen(true)}><CheckCircle2 className="size-4" /> Record payment</Button>
       ) : null}
       <Button
         size="sm"
