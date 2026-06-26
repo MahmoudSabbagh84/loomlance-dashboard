@@ -10,19 +10,13 @@
 //   checkout.session.async_payment_failed, charge.refunded, charge.dispute.created.
 import Stripe from 'npm:stripe@^16'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { invoiceTotals } from '../_shared/money.ts'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', { apiVersion: '2024-06-20' })
 
-// Mirror stripe-checkout's per-line rounding so reconciliation can't drift from what was charged.
-function expectedAmountCents(items: Array<Record<string, unknown>>): number {
-  let cents = 0
-  for (const li of items) {
-    const net = Number(li.unit_price) * (1 - Number(li.discount_rate) / 100)
-    const withTax = net * (1 + Number(li.tax_rate) / 100)
-    cents += Math.round(withTax * 100) * Number(li.quantity)
-  }
-  return cents
-}
+// Same basis as stripe-checkout: round(invoiceTotals(items).total * 100).
+// Using the shared helper guarantees reconciliation can never drift from what was charged.
+const expectedAmountCents = (items: any[]) => Math.round(invoiceTotals(items ?? []).total * 100)
 
 Deno.serve(async (req) => {
   const signature = req.headers.get('stripe-signature')
