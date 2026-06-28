@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, FileText, List, LayoutGrid, Repeat } from 'lucide-react'
+import { Plus, FileText, List, LayoutGrid, Repeat, SearchX, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Table, THead, TR, TH, TD } from '@/components/ui/Table'
@@ -49,6 +49,7 @@ export default function InvoicesPage() {
   const { data: clientsPage } = useClients({ pageSize: 200 })
   const clients = clientsPage?.rows ?? []
   const [newOpen, setNewOpen] = useState(false)
+  const hasActiveFilters = status !== '' || search.trim().length > 0
 
   const setViewPersist = (v) => {
     setView(v)
@@ -122,7 +123,28 @@ export default function InvoicesPage() {
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
       ) : data?.rows.length === 0 ? (
-        <EmptyState icon={FileText} title="No invoices yet" description="Spin up your first draft." action={<Button onClick={handleNew}><Plus className="size-4" /> New invoice</Button>} />
+        hasActiveFilters ? (
+          <EmptyState
+            icon={SearchX}
+            title="No matches"
+            description="No invoices match your filters."
+            action={<Button variant="secondary" onClick={() => { setStatus(''); setSearch(''); setPage(0) }}>Clear filters</Button>}
+          />
+        ) : clients.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="Add a client first"
+            description="Invoices are billed to a client. Add your first client, then come back to create and send invoices."
+            action={<Button onClick={() => navigate('/clients')}><Plus className="size-4" /> Add a client</Button>}
+          />
+        ) : (
+          <EmptyState
+            icon={FileText}
+            title="No invoices yet"
+            description="Create an invoice, send it, and get paid online — all from here."
+            action={<Button onClick={handleNew}><Plus className="size-4" /> New invoice</Button>}
+          />
+        )
       ) : isBoard ? (
         <InvoicesBoard invoices={data.rows} onOpen={(id) => navigate(`/invoices/${id}`)} />
       ) : (

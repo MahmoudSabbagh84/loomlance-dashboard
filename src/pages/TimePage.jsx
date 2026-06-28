@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, FileText } from 'lucide-react'
+import { Plus, Clock, SearchX } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
@@ -50,6 +50,7 @@ export default function TimePage() {
     (e) => (!clientFilter || e.projects?.client_id === clientFilter) && (!contractFilter || e.contract_id === contractFilter),
   )
   const totalMinutes = entries.reduce((s, e) => s + (e.duration_minutes || 0), 0)
+  const hasActiveFilters = projectId !== '' || clientFilter !== '' || contractFilter !== '' || status !== 'all'
 
   return (
     <div className="space-y-5">
@@ -105,12 +106,21 @@ export default function TimePage() {
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
       ) : entries.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          title="No time logged"
-          description="Start the timer in the top bar or log time manually."
-          action={<Button onClick={() => setFormOpen(true)}><Plus className="size-4" /> Log time</Button>}
-        />
+        hasActiveFilters ? (
+          <EmptyState
+            icon={SearchX}
+            title="No matches"
+            description="No time entries match your filters."
+            action={<Button variant="secondary" onClick={() => { setProjectId(''); setClientFilter(''); setContractFilter(''); setStatus('all') }}>Clear filters</Button>}
+          />
+        ) : (
+          <EmptyState
+            icon={Clock}
+            title="No time logged"
+            description="Start the timer in the top bar, or log time manually, to bill hours accurately."
+            action={<Button onClick={() => setFormOpen(true)}><Plus className="size-4" /> Log time</Button>}
+          />
+        )
       ) : (
         <>
           <TimeEntriesTable

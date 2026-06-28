@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Briefcase } from 'lucide-react'
+import { Plus, Briefcase, SearchX } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Input } from '@/components/ui/Input'
@@ -23,6 +23,7 @@ export default function ProjectsPage() {
   const { data: profile } = useProfile()
   const { data: projects = [], isLoading } = useProjects({ status, search })
   const { data: activeCount = 0 } = useActiveProjectCount()
+  const hasActiveFilters = status !== 'active' || search.trim().length > 0
   const tier = profile?.subscription_tier ?? 'free'
   const limit = TIER_LIMITS[tier].maxActiveProjects
   const limitText = limit === Infinity ? 'Unlimited' : `${activeCount} / ${limit}`
@@ -59,12 +60,21 @@ export default function ProjectsPage() {
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
         </div>
       ) : projects.length === 0 ? (
-        <EmptyState
-          icon={Briefcase}
-          title="No projects yet"
-          description="Spin up your first project to start a kanban board for it."
-          action={<Button onClick={handleNewClick}><Plus className="size-4" /> New project</Button>}
-        />
+        hasActiveFilters ? (
+          <EmptyState
+            icon={SearchX}
+            title="No matches"
+            description="No projects match your filters."
+            action={<Button variant="secondary" onClick={() => { setStatus('active'); setSearch('') }}>Clear filters</Button>}
+          />
+        ) : (
+          <EmptyState
+            icon={Briefcase}
+            title="No projects yet"
+            description="Create a project to organize work, track time, and bill against it."
+            action={<Button onClick={handleNewClick}><Plus className="size-4" /> New project</Button>}
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((p) => <ProjectCard key={p.id} project={p} />)}

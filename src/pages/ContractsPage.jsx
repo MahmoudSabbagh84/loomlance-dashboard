@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, FileCheck } from 'lucide-react'
+import { Plus, FileCheck, SearchX } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -24,6 +24,7 @@ export default function ContractsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const debounced = useDebouncedValue(search, 250)
   const { data, isLoading } = useContracts({ search: debounced, status: status || undefined, page, pageSize: 25 })
+  const hasActiveFilters = status !== '' || search.trim().length > 0
 
   return (
     <div className="space-y-5">
@@ -46,12 +47,21 @@ export default function ContractsPage() {
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
       ) : data?.rows.length === 0 ? (
-        <EmptyState
-          icon={FileCheck}
-          title="No contracts yet"
-          description="Track agreements and upload signed PDFs."
-          action={<Button onClick={() => setFormOpen(true)}><Plus className="size-4" /> New contract</Button>}
-        />
+        hasActiveFilters ? (
+          <EmptyState
+            icon={SearchX}
+            title="No matches"
+            description="No contracts match your filters."
+            action={<Button variant="secondary" onClick={() => { setStatus(''); setSearch(''); setPage(0) }}>Clear filters</Button>}
+          />
+        ) : (
+          <EmptyState
+            icon={FileCheck}
+            title="No contracts yet"
+            description="Set out scope, rates, and dates, and attach the signed PDF, before the work starts."
+            action={<Button onClick={() => setFormOpen(true)}><Plus className="size-4" /> New contract</Button>}
+          />
+        )
       ) : (
         <>
           <Table>

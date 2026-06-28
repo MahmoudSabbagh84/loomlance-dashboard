@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Receipt } from 'lucide-react'
+import { Plus, Receipt, SearchX } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
@@ -48,6 +48,7 @@ export default function ExpensesPage() {
 
   const currency = profile?.default_currency || 'USD'
   const totals = expenseTotals(expenses)
+  const hasActiveFilters = projectId !== '' || category !== '' || status !== 'all'
 
   const openReceipt = async (path) => {
     try {
@@ -91,12 +92,21 @@ export default function ExpensesPage() {
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
       ) : expenses.length === 0 ? (
-        <EmptyState
-          icon={Receipt}
-          title="No expenses yet"
-          description="Add your business costs and attach receipts."
-          action={<Button onClick={() => setFormOpen(true)}><Plus className="size-4" /> Add expense</Button>}
-        />
+        hasActiveFilters ? (
+          <EmptyState
+            icon={SearchX}
+            title="No matches"
+            description="No expenses match your filters."
+            action={<Button variant="secondary" onClick={() => { setProjectId(''); setCategory(''); setStatus('all') }}>Clear filters</Button>}
+          />
+        ) : (
+          <EmptyState
+            icon={Receipt}
+            title="No expenses yet"
+            description="Track project costs and attach receipts, then add billable ones to an invoice."
+            action={<Button onClick={() => { setEditing(null); setFormOpen(true) }}><Plus className="size-4" /> Add expense</Button>}
+          />
+        )
       ) : (
         <>
           <ExpensesTable

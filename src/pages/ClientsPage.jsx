@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Plus, Search, Users, Pencil, Mail, Trash2 } from 'lucide-react'
+import { Plus, Search, Users, Pencil, Mail, Trash2, SearchX } from 'lucide-react'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useClients, useDeleteClient } from '@/hooks/useClients'
 import { Button } from '@/components/ui/Button'
@@ -27,6 +27,7 @@ export default function ClientsPage() {
 
   const { data, isLoading } = useClients({ search: debouncedSearch, page, pageSize })
   const del = useDeleteClient()
+  const hasActiveFilters = search.trim().length > 0
 
   const onDelete = async () => {
     try {
@@ -64,12 +65,21 @@ export default function ClientsPage() {
           {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12" />)}
         </div>
       ) : data?.rows.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="No clients yet"
-          description="Add your first client to start tracking projects and invoices."
-          action={<Button onClick={() => setFormOpen(true)}><Plus className="size-4" /> New client</Button>}
-        />
+        hasActiveFilters ? (
+          <EmptyState
+            icon={SearchX}
+            title="No matches"
+            description="No clients match your filters."
+            action={<Button variant="secondary" onClick={() => { setSearch(''); setPage(0) }}>Clear filters</Button>}
+          />
+        ) : (
+          <EmptyState
+            icon={Users}
+            title="No clients yet"
+            description="Add a client to start scoping projects, logging time, and sending invoices."
+            action={<Button onClick={() => setFormOpen(true)}><Plus className="size-4" /> New client</Button>}
+          />
+        )
       ) : (
         <>
           <Table>
