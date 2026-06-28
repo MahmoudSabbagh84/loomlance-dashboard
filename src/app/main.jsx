@@ -2,7 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { Providers } from './providers'
 import App from './App'
+import { installGlobalErrorLogging } from '@/lib/logError'
 import '@/styles/tailwind.css'
+
+installGlobalErrorLogging()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
