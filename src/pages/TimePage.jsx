@@ -118,7 +118,7 @@ export default function TimePage() {
             icon={Clock}
             title="No time logged"
             description="Start the timer in the top bar, or log time manually, to bill hours accurately."
-            action={<Button onClick={() => setFormOpen(true)}><Plus className="size-4" /> Log time</Button>}
+            action={<Button onClick={() => { setEditing(null); setFormOpen(true) }}><Plus className="size-4" /> Log time</Button>}
           />
         )
       ) : (

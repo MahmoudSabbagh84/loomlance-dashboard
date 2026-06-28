@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, FileText, List, LayoutGrid, Repeat, SearchX, Users } from 'lucide-react'
+import { Plus, FileText, List, LayoutGrid, Repeat, SearchX, Users, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Table, THead, TR, TH, TD } from '@/components/ui/Table'
@@ -135,7 +135,7 @@ export default function InvoicesPage() {
             icon={Users}
             title="Add a client first"
             description="Invoices are billed to a client. Add your first client, then come back to create and send invoices."
-            action={<Button onClick={() => navigate('/clients')}><Plus className="size-4" /> Add a client</Button>}
+            action={<Button onClick={() => navigate('/clients')}>Add a client <ArrowRight className="size-4" /></Button>}
           />
         ) : (
           <EmptyState
