@@ -14,8 +14,8 @@ const TABS = [
   { key: 'business', label: 'Business' },
   { key: 'branding', label: 'Branding' },
   { key: 'payments', label: 'Payments' },
-  { key: 'subscription', label: 'Subscription' },
   { key: 'integrations', label: 'Integrations' },
+  { key: 'subscription', label: 'Subscription' },
 ]
 
 export default function ProfilePage() {

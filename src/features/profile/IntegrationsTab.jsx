@@ -86,13 +86,14 @@ export function IntegrationsTab() {
       {installation ? (
         <Card className="space-y-3">
           <h3 className="text-sm font-semibold text-fg">Commit completion scope</h3>
-          <div className="space-y-2">
+          <div className="space-y-2" role="radiogroup" aria-label="Commit completion scope">
             {SCOPES.map((s) => (
               <button
                 key={s.value}
                 type="button"
                 onClick={() => setScope(s.value)}
-                aria-pressed={scope === s.value}
+                role="radio"
+                aria-checked={scope === s.value}
                 className={`block w-full rounded-lg border p-3 text-left transition-colors ${scope === s.value ? 'border-primary bg-primary/5' : 'border-border hover:border-border-strong'}`}
               >
                 <div className="flex items-center justify-between">
