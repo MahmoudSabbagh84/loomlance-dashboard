@@ -3,7 +3,7 @@
 // Deploy: supabase functions deploy github-webhook
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { verifyGithubSignature } from '../_shared/git-provider/verifySignature.ts'
-// (parseCommit/resolveRefs are imported in Task 4, where handlePush uses them.)
+import { parseCommit, resolveRefs } from '../_shared/git-provider/commitParse.ts'
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 })
@@ -96,6 +96,70 @@ async function handleIssues(admin: SupabaseClient, payload: any): Promise<void> 
     synced_at: new Date().toISOString(),
   }, { onConflict: 'project_id,issue_number' })
 }
-async function handlePush(_admin: SupabaseClient, _payload: any): Promise<void> {}
+
+// push: parse default-branch commit messages, resolve refs per the user's scope mode,
+// move matched tasks to the project's done column, and notify on unmatched refs.
+async function handlePush(admin: SupabaseClient, payload: any): Promise<void> {
+  const repoId = payload?.repository?.id
+  const defaultBranch = payload?.repository?.default_branch
+  if (!repoId || !defaultBranch) return
+  if (payload.ref !== `refs/heads/${defaultBranch}`) return // default branch only
+
+  const repo = await linkedRepo(admin, repoId)
+  if (!repo) return
+
+  // Collect deduped refs across all commits in the push.
+  const refs: Array<{ key: string; number: number }> = []
+  const seen = new Set<string>()
+  for (const c of Array.isArray(payload.commits) ? payload.commits : []) {
+    for (const r of parseCommit(c?.message ?? '')) {
+      const id = `${r.key}-${r.number}`
+      if (!seen.has(id)) { seen.add(id); refs.push(r) }
+    }
+  }
+  if (refs.length === 0) return
+
+  const { data: profile } = await admin.from('profiles')
+    .select('commit_completion_scope').eq('id', repo.user_id).single()
+  const mode = profile?.commit_completion_scope === 'cross_project' ? 'cross_project' : 'project'
+
+  const { data: projects } = await admin.from('projects')
+    .select('id, task_key').eq('user_id', repo.user_id)
+
+  const { matched, unmatched } = resolveRefs(refs, {
+    mode,
+    linkedProjectId: repo.project_id,
+    projects: projects ?? [],
+  })
+
+  for (const m of matched) {
+    const doneColId = await findDoneColumn(admin, m.projectId)
+    if (!doneColId) continue
+    await admin.from('tasks').update({ column_id: doneColId })
+      .eq('project_id', m.projectId).eq('ref_number', m.number)
+  }
+
+  for (const u of unmatched) {
+    await admin.from('user_notifications').insert({
+      user_id: repo.user_id,
+      kind: 'commit_unmatched_ref',
+      payload: { title: `Commit referenced ${u.key}-${u.number}`, body: 'No matching task — check the task key.' },
+      link_to: `/projects/${repo.project_id}`,
+    })
+  }
+}
+
+// The project's "done" column: prefer a column named like "done" (matching the board's /done/i
+// rule), else the highest-position column.
+async function findDoneColumn(admin: SupabaseClient, projectId: string): Promise<string | null> {
+  const named = await admin.from('kanban_columns').select('id')
+    .eq('project_id', projectId).ilike('name', '%done%')
+    .order('position', { ascending: false }).limit(1).maybeSingle()
+  if (named.data?.id) return named.data.id
+  const last = await admin.from('kanban_columns').select('id')
+    .eq('project_id', projectId).order('position', { ascending: false }).limit(1).maybeSingle()
+  return last.data?.id ?? null
+}
+
 async function handleInstallation(_admin: SupabaseClient, _payload: any): Promise<void> {}
 async function handleInstallationRepos(_admin: SupabaseClient, _payload: any): Promise<void> {}
