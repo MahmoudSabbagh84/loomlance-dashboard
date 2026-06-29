@@ -14,10 +14,12 @@ import { useTasks, useUpdateTask } from '@/hooks/useTasks'
 import { useProject } from '@/hooks/useProjects'
 import { positionBetween } from '@/api/tasks'
 import { daysUntil } from '@/lib/date'
+import { useProjectRepo } from '@/hooks/useGithub'
 import { KanbanColumn } from './KanbanColumn'
 import { TaskCard } from './TaskCard'
 import { KanbanFilters } from './KanbanFilters'
 import { AddColumn } from './AddColumn'
+import { GithubIssuesColumn } from './GithubIssuesColumn'
 
 const EMPTY_FILTERS = { search: '', priority: '', dueSoon: false, hideDone: false }
 
@@ -27,6 +29,7 @@ export function KanbanBoard({ projectId, onTaskClick }) {
   const updateTask = useUpdateTask(projectId)
   const { data: project } = useProject(projectId)
   const taskKey = project?.task_key
+  const { data: linkedRepo } = useProjectRepo(projectId)
   const [activeTask, setActiveTask] = useState(null)
   const [filters, setFilters] = useState(EMPTY_FILTERS)
 
@@ -131,6 +134,7 @@ export function KanbanBoard({ projectId, onTaskClick }) {
               </SortableContext>
             ))}
             <AddColumn projectId={projectId} position={columns.length} />
+            {linkedRepo ? <GithubIssuesColumn projectId={projectId} /> : null}
           </div>
         </div>
         <DragOverlay>{activeTask ? <TaskCard task={activeTask} taskKey={taskKey} asOverlay /> : null}</DragOverlay>
