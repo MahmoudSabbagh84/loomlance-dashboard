@@ -46,6 +46,11 @@ describe('parseCommit', () => {
       { key: 'API', number: 7 },
     ])
   })
+  it('discards a ref whose key is itself a keyword (e.g. FIX-3)', () => {
+    // FIX matches the ref regex (3 chars) but is a completion keyword, so the
+    // keyword-as-key guard drops it — exercises that guard directly.
+    expect(parseCommit('FIX-3 done')).toEqual([])
+  })
 })
 
 const PROJECTS = [
