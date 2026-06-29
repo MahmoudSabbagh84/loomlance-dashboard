@@ -12,7 +12,6 @@ export function suggestTaskKey(name) {
   if (!cleaned) return 'PRJ'
   const words = cleaned.split(/\s+/).filter(Boolean)
   let key = words.length >= 2 ? words.map((w) => w[0]).join('') : words[0].slice(0, 4)
-  key = key.replace(/[^A-Z0-9]/g, '')
   if (!/^[A-Z]/.test(key)) key = 'P' + key
   if (key.length < 2) key = (words[0] + 'XX').slice(0, 3)
   return key.slice(0, 5)

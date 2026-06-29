@@ -12,6 +12,9 @@ describe('taskRef', () => {
     expect(taskRef('LLM', null)).toBe('')
     expect(taskRef('LLM', undefined)).toBe('')
   })
+  it('treats 0 as a real number, not missing', () => {
+    expect(taskRef('LLM', 0)).toBe('LLM-000')
+  })
 })
 
 describe('suggestTaskKey', () => {
@@ -31,6 +34,10 @@ describe('suggestTaskKey', () => {
   })
   it('always starts with a letter', () => {
     expect(suggestTaskKey('123 build')).toMatch(/^[A-Z]/)
+    expect(suggestTaskKey('123 build')).toBe('P1B')
+  })
+  it('produces at least 2 characters', () => {
+    expect(suggestTaskKey('A').length).toBeGreaterThanOrEqual(2)
   })
   it('never exceeds 5 characters', () => {
     expect(suggestTaskKey('one two three four five six').length).toBeLessThanOrEqual(5)
