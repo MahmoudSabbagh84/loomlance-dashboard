@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
   try {
     payload = JSON.parse(bodyText)
   } catch {
+    if (deliveryId) await admin.from('github_events').delete().eq('delivery_id', deliveryId)
     return new Response('bad json', { status: 400 })
   }
 
@@ -75,7 +76,7 @@ async function handleIssues(admin: SupabaseClient, payload: any): Promise<void> 
   const repo = await linkedRepo(admin, repoId)
   if (!repo) return // repo not linked to a project — ignore
 
-  if (payload.action === 'closed' || payload.action === 'deleted') {
+  if (payload.action === 'closed' || payload.action === 'deleted' || issue.state !== 'open') {
     await admin.from('github_issue_cards').delete()
       .eq('project_id', repo.project_id)
       .eq('issue_number', issue.number)
@@ -120,7 +121,7 @@ async function handlePush(admin: SupabaseClient, payload: any): Promise<void> {
   if (refs.length === 0) return
 
   const { data: profile } = await admin.from('profiles')
-    .select('commit_completion_scope').eq('id', repo.user_id).single()
+    .select('commit_completion_scope').eq('id', repo.user_id).maybeSingle()
   const mode = profile?.commit_completion_scope === 'cross_project' ? 'cross_project' : 'project'
 
   const { data: projects } = await admin.from('projects')
