@@ -98,7 +98,7 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
             })}
           />
           <p className="mt-1 text-xs text-fg-muted">
-            Used for task refs like {watch('task_key') || 'KEY'}-001. 2–5 letters or numbers.
+            Used for task refs like {watch('task_key') || 'KEY'}-001. Starts with a letter; 2–5 letters or numbers.
           </p>
           <FieldError>{errors.task_key?.message}</FieldError>
         </div>
