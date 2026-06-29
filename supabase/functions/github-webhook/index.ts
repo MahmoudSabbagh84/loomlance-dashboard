@@ -161,5 +161,26 @@ async function findDoneColumn(admin: SupabaseClient, projectId: string): Promise
   return last.data?.id ?? null
 }
 
-async function handleInstallation(_admin: SupabaseClient, _payload: any): Promise<void> {}
-async function handleInstallationRepos(_admin: SupabaseClient, _payload: any): Promise<void> {}
+// installation: on delete, remove the installation row and disconnect its linked repos.
+// (Row CREATION is done by the authenticated connect callback in Plan 2c — the webhook
+// cannot know which LoomLance user a brand-new installation belongs to.)
+async function handleInstallation(admin: SupabaseClient, payload: any): Promise<void> {
+  const installationId = payload?.installation?.id
+  if (!installationId) return
+  if (payload.action === 'deleted') {
+    await admin.from('project_repos').update({ disconnected_at: new Date().toISOString() })
+      .eq('installation_id', installationId).is('disconnected_at', null)
+    await admin.from('github_installations').delete().eq('installation_id', installationId)
+  }
+}
+
+// installation_repositories: when repos are removed from the installation, disconnect any
+// project linked to them. (Additions need no action — the connect UI reads repos on demand.)
+async function handleInstallationRepos(admin: SupabaseClient, payload: any): Promise<void> {
+  const removed = Array.isArray(payload?.repositories_removed) ? payload.repositories_removed : []
+  for (const r of removed) {
+    if (!r?.id) continue
+    await admin.from('project_repos').update({ disconnected_at: new Date().toISOString() })
+      .eq('repo_id', r.id).is('disconnected_at', null)
+  }
+}
