@@ -425,6 +425,15 @@ verify_jwt = true
 [functions.github-webhook]
 verify_jwt = false
 
+[functions.github-connect]
+verify_jwt = true
+
+[functions.github-repos]
+verify_jwt = true
+
+[functions.github-link-repo]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
