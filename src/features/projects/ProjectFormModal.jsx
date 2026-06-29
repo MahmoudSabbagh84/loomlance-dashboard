@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -15,6 +16,7 @@ import { projectCreateSchema } from '@/api/schemas/projects'
 import { useCreateProject, useUpdateProject } from '@/hooks/useProjects'
 import { useClients } from '@/hooks/useClients'
 import { useAutosaveForm } from '@/hooks/useAutosave'
+import { suggestTaskKey } from '@/lib/taskRef'
 
 export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
   const isEdit = !!project
@@ -28,6 +30,7 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
     defaultValues: {
       client_id: project?.client_id ?? defaultClientId ?? '',
       name: project?.name ?? '',
+      task_key: project?.task_key ?? '',
       description: project?.description ?? '',
       color: project?.color ?? PROJECT_COLORS[0],
     },
@@ -41,6 +44,14 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
       await update.mutateAsync({ id: project.id, patch: getValues() })
     },
   })
+
+  const [keyEdited, setKeyEdited] = useState(false)
+  const nameValue = watch('name')
+  useEffect(() => {
+    if (!isEdit && !keyEdited) {
+      setValue('task_key', suggestTaskKey(nameValue), { shouldValidate: false })
+    }
+  }, [nameValue, keyEdited, isEdit, setValue])
 
   const onCreate = async (values) => {
     try {
@@ -71,6 +82,25 @@ export function ProjectFormModal({ open, onClose, project, defaultClientId }) {
           <Label htmlFor="name" required>Name</Label>
           <Input id="name" {...register('name')} />
           <FieldError>{errors.name?.message}</FieldError>
+        </div>
+        <div>
+          <Label htmlFor="task_key">Task key</Label>
+          <Input
+            id="task_key"
+            maxLength={5}
+            placeholder="LLM"
+            className="uppercase"
+            {...register('task_key', {
+              onChange: (e) => {
+                setKeyEdited(true)
+                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5)
+              },
+            })}
+          />
+          <p className="mt-1 text-xs text-fg-muted">
+            Used for task refs like {watch('task_key') || 'KEY'}-001. 2–5 letters or numbers.
+          </p>
+          <FieldError>{errors.task_key?.message}</FieldError>
         </div>
         <div>
           <Label htmlFor="description">Description</Label>
