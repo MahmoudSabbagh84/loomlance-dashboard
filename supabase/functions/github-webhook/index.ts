@@ -67,7 +67,35 @@ async function linkedRepo(admin: SupabaseClient, repoId: number): Promise<{ proj
 }
 
 // --- stub handlers (filled in Tasks 3–5) ---
-async function handleIssues(_admin: SupabaseClient, _payload: any): Promise<void> {}
+// issues: upsert the open-issue card; on closed/deleted, remove it (the lane shows only open issues).
+async function handleIssues(admin: SupabaseClient, payload: any): Promise<void> {
+  const repoId = payload?.repository?.id
+  const issue = payload?.issue
+  if (!repoId || !issue) return
+  const repo = await linkedRepo(admin, repoId)
+  if (!repo) return // repo not linked to a project — ignore
+
+  if (payload.action === 'closed' || payload.action === 'deleted') {
+    await admin.from('github_issue_cards').delete()
+      .eq('project_id', repo.project_id)
+      .eq('issue_number', issue.number)
+    return
+  }
+
+  await admin.from('github_issue_cards').upsert({
+    user_id: repo.user_id,
+    project_id: repo.project_id,
+    repo_id: repoId,
+    issue_number: issue.number,
+    title: issue.title,
+    state: issue.state,
+    html_url: issue.html_url,
+    labels: (issue.labels ?? []).map((l: any) => (typeof l === 'string' ? l : l?.name)).filter(Boolean),
+    assignee_login: issue.assignee?.login ?? null,
+    github_updated_at: issue.updated_at,
+    synced_at: new Date().toISOString(),
+  }, { onConflict: 'project_id,issue_number' })
+}
 async function handlePush(_admin: SupabaseClient, _payload: any): Promise<void> {}
 async function handleInstallation(_admin: SupabaseClient, _payload: any): Promise<void> {}
 async function handleInstallationRepos(_admin: SupabaseClient, _payload: any): Promise<void> {}
