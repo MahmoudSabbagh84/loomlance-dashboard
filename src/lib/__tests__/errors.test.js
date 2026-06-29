@@ -1,4 +1,4 @@
-// src/lib/__tests__/errors.test.js
+﻿// src/lib/__tests__/errors.test.js
 import { describe, it, expect } from 'vitest'
 import { mapPostgresError, AppError } from '@/lib/errors'
 
@@ -18,6 +18,15 @@ describe('mapPostgresError', () => {
     }
     const e = mapPostgresError(supabaseError)
     expect(e.code).toBe('INVOICE_NUMBER_TAKEN')
+  })
+
+  it('maps the task_key unique violation to TASK_KEY_TAKEN', () => {
+    const err = mapPostgresError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint "projects_user_id_task_key_key"',
+    })
+    expect(err.code).toBe('TASK_KEY_TAKEN')
+    expect(err.userMessage.toLowerCase()).toContain('task key')
   })
 
   it('falls back to UNKNOWN for unhandled errors', () => {
