@@ -14,11 +14,14 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { taskUpdateSchema } from '@/api/schemas/tasks'
 import { useUpdateTask, useDeleteTask } from '@/hooks/useTasks'
 import { useKanbanColumns } from '@/hooks/useKanbanColumns'
+import { useProject } from '@/hooks/useProjects'
+import { taskRef } from '@/lib/taskRef'
 
 export function TaskDrawer({ open, onClose, projectId, task }) {
   const update = useUpdateTask(projectId)
   const del = useDeleteTask(projectId)
   const { data: columns = [] } = useKanbanColumns(projectId)
+  const { data: project } = useProject(projectId)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
@@ -70,7 +73,7 @@ export function TaskDrawer({ open, onClose, projectId, task }) {
 
   return (
     <>
-      <Drawer open={open} onClose={onClose} title="Task">
+      <Drawer open={open} onClose={onClose} title={taskRef(project?.task_key, task?.ref_number) || 'Task'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <Label htmlFor="title" required>Title</Label>

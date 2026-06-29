@@ -4,10 +4,11 @@ import { CSS } from '@dnd-kit/utilities'
 import { Badge } from '@/components/ui/Badge'
 import { formatDate, isOverdue } from '@/lib/date'
 import { cn } from '@/components/ui/cn'
+import { taskRef } from '@/lib/taskRef'
 
 const PRIORITY_VARIANT = { low: 'default', medium: 'info', high: 'danger' }
 
-export function TaskCard({ task, onClick, asOverlay = false }) {
+export function TaskCard({ task, taskKey, onClick, asOverlay = false }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id })
   const style = asOverlay ? undefined : { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
   const overdue = isOverdue(task.due_date, 'sent')
@@ -23,6 +24,9 @@ export function TaskCard({ task, onClick, asOverlay = false }) {
       onKeyDown={(e) => { if (e.key === 'Enter') onClick?.() }}
       className="rounded-md border border-border bg-bg p-3 text-sm hover:border-border-strong cursor-pointer"
     >
+      {taskKey && task.ref_number != null ? (
+        <p className="mb-1 font-mono text-xs text-fg-muted">{taskRef(taskKey, task.ref_number)}</p>
+      ) : null}
       <p className="font-medium leading-snug">{task.title}</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Badge variant={PRIORITY_VARIANT[task.priority]}>{task.priority}</Badge>

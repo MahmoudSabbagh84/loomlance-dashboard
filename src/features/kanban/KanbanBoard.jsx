@@ -11,6 +11,7 @@ import {
 import { SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useKanbanColumns } from '@/hooks/useKanbanColumns'
 import { useTasks, useUpdateTask } from '@/hooks/useTasks'
+import { useProject } from '@/hooks/useProjects'
 import { positionBetween } from '@/api/tasks'
 import { daysUntil } from '@/lib/date'
 import { KanbanColumn } from './KanbanColumn'
@@ -24,6 +25,8 @@ export function KanbanBoard({ projectId, onTaskClick }) {
   const { data: columns = [] } = useKanbanColumns(projectId)
   const { data: tasks = [] } = useTasks(projectId)
   const updateTask = useUpdateTask(projectId)
+  const { data: project } = useProject(projectId)
+  const taskKey = project?.task_key
   const [activeTask, setActiveTask] = useState(null)
   const [filters, setFilters] = useState(EMPTY_FILTERS)
 
@@ -124,13 +127,13 @@ export function KanbanBoard({ projectId, onTaskClick }) {
           <div className="flex items-start gap-3 snap-x">
             {columns.map((col) => (
               <SortableContext key={col.id} id={col.id} items={(filteredTasksByColumn.get(col.id) || []).map((t) => t.id)}>
-                <KanbanColumn column={col} tasks={filteredTasksByColumn.get(col.id) || []} onTaskClick={onTaskClick} />
+                <KanbanColumn column={col} tasks={filteredTasksByColumn.get(col.id) || []} onTaskClick={onTaskClick} taskKey={taskKey} />
               </SortableContext>
             ))}
             <AddColumn projectId={projectId} position={columns.length} />
           </div>
         </div>
-        <DragOverlay>{activeTask ? <TaskCard task={activeTask} asOverlay /> : null}</DragOverlay>
+        <DragOverlay>{activeTask ? <TaskCard task={activeTask} taskKey={taskKey} asOverlay /> : null}</DragOverlay>
       </DndContext>
     </div>
   )

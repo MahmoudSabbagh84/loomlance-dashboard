@@ -5,7 +5,7 @@ import { ColumnSettingsMenu } from './ColumnSettingsMenu'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/components/ui/cn'
 
-export function KanbanColumn({ column, tasks, onTaskClick }) {
+export function KanbanColumn({ column, tasks, onTaskClick, taskKey }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id })
   const overLimit = column.wip_limit != null && tasks.length > column.wip_limit
 
@@ -27,7 +27,7 @@ export function KanbanColumn({ column, tasks, onTaskClick }) {
         <ColumnSettingsMenu projectId={column.project_id} column={column} tasksInColumn={tasks.length} />
       </div>
       <div ref={setNodeRef} className="flex min-h-[100px] flex-col gap-2">
-        {tasks.map((t) => <TaskCard key={t.id} task={t} onClick={() => onTaskClick?.(t)} />)}
+        {tasks.map((t) => <TaskCard key={t.id} task={t} taskKey={taskKey} onClick={() => onTaskClick?.(t)} />)}
       </div>
       <InlineAddTask projectId={column.project_id} columnId={column.id} lastPosition={tasks[tasks.length - 1]?.position} />
     </div>
