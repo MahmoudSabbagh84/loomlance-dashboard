@@ -7,6 +7,7 @@ import { BusinessTab } from '@/features/profile/BusinessTab'
 import { BrandingTab } from '@/features/profile/BrandingTab'
 import { PaymentsTab } from '@/features/profile/PaymentsTab'
 import { SubscriptionTab } from '@/features/profile/SubscriptionTab'
+import { IntegrationsTab } from '@/features/profile/IntegrationsTab'
 
 const TABS = [
   { key: 'account', label: 'Account' },
@@ -14,6 +15,7 @@ const TABS = [
   { key: 'branding', label: 'Branding' },
   { key: 'payments', label: 'Payments' },
   { key: 'subscription', label: 'Subscription' },
+  { key: 'integrations', label: 'Integrations' },
 ]
 
 export default function ProfilePage() {
@@ -30,6 +32,7 @@ export default function ProfilePage() {
         {tab === 'branding' && <BrandingTab />}
         {tab === 'payments' && <PaymentsTab />}
         {tab === 'subscription' && <SubscriptionTab />}
+        {tab === 'integrations' && <IntegrationsTab />}
       </div>
     </div>
   )
