@@ -17,7 +17,7 @@ Connect a GitHub repository to a LoomLance project so that (1) the project's ope
 - **GitHub App** auth (read-only): install → grant repos → link **one repo per project**.
 - Read-only **GitHub Issues lane** on connected projects (mirrors open issues; updates via webhook).
 - **Per-project task keys** (user-set, 2–5 letters) → tasks auto-number `KEY-001`.
-- **Smart-commit completion**: a push whose commit message contains a task ref + completion keyword moves that task to its project's Done column (board-wide, column-agnostic).
+- **Smart-commit completion** with a per-user **scope toggle** (Project-scoped default / Cross-project) and typo tolerance: a push whose commit message contains a task ref + completion keyword moves matched task(s) to their project's Done column (board-wide, column-agnostic).
 - Webhook-driven real-time sync + initial backfill on link + manual "Resync".
 
 **Out (later versions):**
@@ -63,7 +63,8 @@ github_events:          delivery_id text pk, event_type text, received_at timest
 ```
 
 **Changes to existing tables:**
-- `projects`: add `task_key text` (2–5 uppercase letters) with `unique(user_id, task_key)`, and `last_task_number int not null default 0` (per-project counter).
+- `profiles`: add `commit_completion_scope text not null default 'project'` (CHECK in `('project','cross_project')`) — the per-user toggle controlling smart-commit resolution (see *Smart-Commit Parsing & Resolution*).
+- `projects`: add `task_key text` (2–5 uppercase letters) with `unique(user_id, task_key)` — per-user-unique keys are required so Cross-project mode resolves unambiguously — and `last_task_number int not null default 0` (per-project counter).
 - `tasks`: add `ref_number int` (per-project sequential). A `BEFORE INSERT` trigger assigns `ref_number` by atomically incrementing the project's `last_task_number`. Display ref = `task_key || '-' || lpad(ref_number::text, 3, '0')` (≥3 digits, grows naturally).
 - **Backfill migration:** generate a `task_key` for every existing project (derive from name → uppercase alnum, 2–5 chars, de-duplicated per user), and assign `ref_number` to existing tasks per project ordered by `created_at`.
 
@@ -72,19 +73,28 @@ All new tables: RLS `user_id = auth.uid()` for select; writes happen via the web
 ## Sync & Webhooks
 
 - **`issues`** (opened/edited/reopened/labeled/assigned): upsert into `github_issue_cards` for the linked project. On `closed`/`deleted`: delete the card row — the lane shows only **open** issues, so a closed issue's card disappears (this is how `Closes #N` commits make an issue card "complete").
-- **`push`**: only commits to the repo's **default branch** are processed (mirrors GitHub's own `Closes #N` behavior; avoids feature-branch false-completions). For each commit message, `parseSmartCommits` extracts `(KEY, number)` refs that co-occur with a completion keyword; resolve `KEY` → the caller's project with that `task_key` (keys are unique per user, so a monorepo commit may complete tasks across that user's projects), find the task by `ref_number`, and move it to that project's **terminal (highest-position) kanban column** ("Done" by default).
+- **`push`**: only commits to the repo's **default branch** are processed (mirrors GitHub's own `Closes #N` behavior; avoids feature-branch false-completions). For each commit, the parser extracts normalized `{key, number}` refs and the resolver maps them to tasks per the user's `commit_completion_scope` mode (see *Smart-Commit Parsing & Resolution*), moving each matched task to its project's **terminal (highest-position) kanban column** ("Done" by default). A ref with a keyword that resolves to no task emits a notification.
 - **`installation`** (created/deleted): upsert/remove `github_installations` (and cascade-disconnect `project_repos` on delete).
 - **`installation_repositories`** (added/removed): on `removed`, mark any `project_repos` referencing that repo as disconnected. (Available repos are read on demand, not cached, so additions need no handling beyond appearing in `github-repos`.)
 - **Backfill**: on link, fetch current open issues via the provider and seed `github_issue_cards`.
 - **Manual "Resync"**: re-runs backfill for the linked repo.
 - **Idempotency**: each webhook delivery id is recorded in `github_events`; duplicate deliveries are skipped.
 
-## Smart-Commit Parser (the high-risk unit — unit-tested)
+## Smart-Commit Parsing & Resolution (the high-risk unit — unit-tested)
 
-- Input: a commit message string. Output: list of `{ key, number }` to complete.
-- A ref is `\b([A-Z]{2,5})-(\d+)\b`. A commit completes a ref **only if** the message also contains a completion keyword from the set `{done, completed, complete, closes, close, closed, fixes, fix, fixed, resolves, resolve, resolved}` (case-insensitive; parens optional, e.g. `(done)`). Keyword and ref may appear in any order.
-- Multiple refs → all completed. No ref or no keyword → no-op.
-- Pure function in `_shared/git-provider`; covered by unit tests (ref-only, keyword-only, both, multiple, `(done)`, lowercase, punctuation, no-match).
+Two stages: a pure **parser** (extract candidate refs) and a **resolver** (map refs to tasks per the user's mode).
+
+**Parser** (`_shared/git-provider`, pure, unit-tested):
+- A ref is `\b([A-Za-z]{2,5})[-\s#]0*(\d+)\b` — **case-insensitive**, leading zeros ignored, separator may be `-`, space, or `#`. So `LLM-1`, `llm-001`, `LLM 1`, `LLM#1` all normalize to the same `(KEY, number)`.
+- A ref counts only if the message also contains a **completion keyword**: `{done, completed, complete, closes, close, closed, fixes, fix, fixed, resolves, resolve, resolved}` **plus a curated list of common misspellings** (`doen, donne, completd, compelted, clsoe, cloes, fixs, resloves, resoled`). Case-insensitive; parens/brackets optional (`(done)`, `[done]`). A **curated** misspelling list — not blind fuzzing — to avoid false positives like `dont → done`.
+- Output: normalized `[{ key, number }]`. No ref or no keyword → empty.
+
+**Resolver** (in the webhook; honors `profiles.commit_completion_scope`):
+- **Project-scoped (default):** only the repo's **linked project** is in scope. Match the ref's key to that project's `task_key` with **fuzzy correction** (Levenshtein ≤1) — safe because exactly one valid key is in scope (`LMM-3`→`LLM-3`). Resolve the task by `number`; move it to the project's terminal column.
+- **Cross-project:** the key resolves **globally** against the user's projects by **exact** `task_key` (keys are unique per user). **No fuzzy correction** — a typo must never silently complete a task in a different project. Complete each matched task.
+- **Both modes:** parser normalization (case / separator / zero-padding) always applies. A ref carrying a keyword that resolves to **no** task (unknown/typo'd key in cross-project, or number not found) emits a `commit_unmatched_ref` notification ("Commit referenced `LLM-99` — no matching task") so the dev catches it. We never complete a task we aren't confident about.
+- Default-branch commits only. Idempotent via webhook delivery id.
+- Unit tests cover: normalization variants, keyword + misspellings, ref-only / keyword-only / both / multiple, `(done)`/`[done]`, and per-mode resolution (fuzzy hit in Project-scoped, exact-only + unmatched-notify in Cross-project).
 
 ## Security
 
@@ -100,7 +110,8 @@ All new tables: RLS `user_id = auth.uid()` for select; writes happen via the web
 
 - **Issues lane is connected-only and read-only**, and is **not** a gate — commit-completion works on any task in any column (decoupled from the lane).
 - **Task keys are per-project, user-set** (2–5 letters, default-suggested, unique per user) → `KEY-NNN`. (Not per-user global, to avoid ever-growing numbers.)
-- **One repo per project** in v1.
+- **Commit-completion scope is a per-user toggle** (`profiles.commit_completion_scope`): **Project-scoped** (default; safest + fuzzy key-typo correction) or **Cross-project** (one commit completes tasks across projects by exact key — for monorepo/multi-project-per-repo workflows). Format normalization + unmatched-ref notifications apply in both modes; fuzzy key correction is Project-scoped only.
+- **One repo per project** in v1 (the repo↔project link drives the issues lane; commit-completion scope is governed by the toggle above, independent of the link).
 - **GitHub App** auth (not OAuth/PAT) — scoped, no stored long-lived tokens, native webhooks, future-proof for two-way.
 - **GitHub first**, GitLab behind the provider abstraction.
 - **Default-branch commits only** trigger completion in v1.
