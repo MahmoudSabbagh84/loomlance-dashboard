@@ -44,3 +44,65 @@ export function parseCommit(message: string): Array<{ key: string; number: numbe
   }
   return out
 }
+
+export function levenshtein(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+  const dp = Array.from({ length: m + 1 }, (_, i) => i)
+  for (let j = 1; j <= n; j++) {
+    let prev = dp[0]
+    dp[0] = j
+    for (let i = 1; i <= m; i++) {
+      const tmp = dp[i]
+      dp[i] = a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, dp[i], dp[i - 1])
+      prev = tmp
+    }
+  }
+  return dp[m]
+}
+
+interface ResolveOpts {
+  mode: 'project' | 'cross_project'
+  linkedProjectId: string | null
+  projects: Array<{ id: string; task_key: string }>
+}
+
+// Map parsed refs to the tasks they should complete, honoring the user's scope mode.
+// Project-scoped: only the repo's linked project, with fuzzy key correction (Levenshtein <= 1).
+// Cross-project: exact key match against any of the user's projects (no fuzzy).
+// Refs that resolve to no project are returned as `unmatched` (the webhook notifies on these).
+export function resolveRefs(
+  refs: Array<{ key: string; number: number }>,
+  opts: ResolveOpts,
+): { matched: Array<{ projectId: string; key: string; number: number }>; unmatched: Array<{ key: string; number: number }> } {
+  const matched: Array<{ projectId: string; key: string; number: number }> = []
+  const unmatched: Array<{ key: string; number: number }> = []
+  const seen = new Set<string>()
+  const byKey = new Map(opts.projects.map((p) => [p.task_key, p]))
+  const linked = opts.projects.find((p) => p.id === opts.linkedProjectId) ?? null
+
+  const push = (projectId: string, key: string, number: number) => {
+    const id = `${projectId}-${number}`
+    if (!seen.has(id)) {
+      seen.add(id)
+      matched.push({ projectId, key, number })
+    }
+  }
+
+  for (const ref of refs) {
+    if (opts.mode === 'cross_project') {
+      const proj = byKey.get(ref.key)
+      if (proj) push(proj.id, ref.key, ref.number)
+      else unmatched.push({ key: ref.key, number: ref.number })
+    } else {
+      if (linked && (ref.key === linked.task_key || levenshtein(ref.key, linked.task_key) <= 1)) {
+        push(linked.id, linked.task_key, ref.number)
+      } else {
+        unmatched.push({ key: ref.key, number: ref.number })
+      }
+    }
+  }
+  return { matched, unmatched }
+}

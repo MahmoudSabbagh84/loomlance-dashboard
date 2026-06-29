@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCommit, hasKeyword } from './commitParse'
+import { parseCommit, hasKeyword, resolveRefs, levenshtein } from './commitParse'
 
 describe('hasKeyword', () => {
   it('detects keywords case-insensitively and in (parens)/[brackets]', () => {
@@ -45,5 +45,65 @@ describe('parseCommit', () => {
       { key: 'LLM', number: 3 },
       { key: 'API', number: 7 },
     ])
+  })
+})
+
+const PROJECTS = [
+  { id: 'p-llm', task_key: 'LLM' },
+  { id: 'p-api', task_key: 'API' },
+]
+
+describe('levenshtein', () => {
+  it('measures single-edit distance', () => {
+    expect(levenshtein('LLM', 'LLM')).toBe(0)
+    expect(levenshtein('LMM', 'LLM')).toBe(1)
+    expect(levenshtein('XYZ', 'LLM')).toBe(3)
+  })
+})
+
+describe('resolveRefs — project-scoped (default)', () => {
+  const opts = { mode: 'project', linkedProjectId: 'p-llm', projects: PROJECTS }
+  it('matches the linked project by exact key', () => {
+    expect(resolveRefs([{ key: 'LLM', number: 3 }], opts)).toEqual({
+      matched: [{ projectId: 'p-llm', key: 'LLM', number: 3 }],
+      unmatched: [],
+    })
+  })
+  it('fuzzy-corrects a one-edit key typo to the linked project', () => {
+    expect(resolveRefs([{ key: 'LMM', number: 3 }], opts)).toEqual({
+      matched: [{ projectId: 'p-llm', key: 'LLM', number: 3 }],
+      unmatched: [],
+    })
+  })
+  it('does not match another project key in project-scoped mode', () => {
+    expect(resolveRefs([{ key: 'API', number: 7 }], opts)).toEqual({
+      matched: [],
+      unmatched: [{ key: 'API', number: 7 }],
+    })
+  })
+  it('dedupes refs that resolve to the same linked task', () => {
+    expect(resolveRefs([{ key: 'LLM', number: 3 }, { key: 'LMM', number: 3 }], opts)).toEqual({
+      matched: [{ projectId: 'p-llm', key: 'LLM', number: 3 }],
+      unmatched: [],
+    })
+  })
+})
+
+describe('resolveRefs — cross-project', () => {
+  const opts = { mode: 'cross_project', linkedProjectId: 'p-llm', projects: PROJECTS }
+  it('matches any project by exact key', () => {
+    expect(resolveRefs([{ key: 'LLM', number: 3 }, { key: 'API', number: 7 }], opts)).toEqual({
+      matched: [
+        { projectId: 'p-llm', key: 'LLM', number: 3 },
+        { projectId: 'p-api', key: 'API', number: 7 },
+      ],
+      unmatched: [],
+    })
+  })
+  it('does NOT fuzzy-correct in cross-project mode (typo -> unmatched)', () => {
+    expect(resolveRefs([{ key: 'LMM', number: 3 }], opts)).toEqual({
+      matched: [],
+      unmatched: [{ key: 'LMM', number: 3 }],
+    })
   })
 })
