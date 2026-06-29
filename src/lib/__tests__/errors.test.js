@@ -1,4 +1,4 @@
-﻿// src/lib/__tests__/errors.test.js
+// src/lib/__tests__/errors.test.js
 import { describe, it, expect } from 'vitest'
 import { mapPostgresError, AppError } from '@/lib/errors'
 

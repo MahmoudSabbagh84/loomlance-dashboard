@@ -1,4 +1,4 @@
-﻿import { z } from 'zod'
+import { z } from 'zod'
 
 export const projectCreateSchema = z.object({
   client_id: z.string().uuid(),
@@ -8,7 +8,7 @@ export const projectCreateSchema = z.object({
   task_key: z
     .string()
     .trim()
-    .regex(/^[A-Za-z][A-Za-z0-9]{1,4}$/, 'Start with letter, 2-5 chars total')
+    .regex(/^[A-Za-z][A-Za-z0-9]{1,4}$/, '2–5 letters or numbers, starting with a letter')
     .transform((s) => s.toUpperCase()),
 })
 
