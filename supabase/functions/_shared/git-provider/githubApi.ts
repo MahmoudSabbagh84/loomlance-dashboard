@@ -36,10 +36,10 @@ async function gh(token: string, path: string, init?: RequestInit): Promise<Resp
   const res = await fetch(`${GH_API}${path}`, {
     ...init,
     headers: {
+      ...(init?.headers ?? {}),
       Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'LoomLance',
-      ...(init?.headers ?? {}),
     },
   })
   if (!res.ok) throw new Error(`GitHub ${res.status} ${path}: ${await res.text()}`)
@@ -49,7 +49,9 @@ async function gh(token: string, path: string, init?: RequestInit): Promise<Resp
 export async function getInstallationToken(appId: string, pkcs8Pem: string, installationId: number): Promise<string> {
   const jwt = await createAppJwt(appId, pkcs8Pem)
   const res = await gh(jwt, `/app/installations/${installationId}/access_tokens`, { method: 'POST' })
-  return (await res.json()).token
+  const { token } = await res.json()
+  if (!token) throw new Error('GitHub did not return an installation token')
+  return token
 }
 
 export async function getInstallation(appId: string, pkcs8Pem: string, installationId: number): Promise<{ account_login: string | null; account_type: string | null }> {

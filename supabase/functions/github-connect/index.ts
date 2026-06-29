@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'installation_id' })
     if (error) {
-      // A unique-violation means another user already owns this installation_id.
-      const taken = error.code === '23505'
+      // 23505 = unique violation; 42501 = RLS denies the conflict-UPDATE on another user's row.
+      const taken = error.code === '23505' || error.code === '42501'
       return json({ error: taken ? 'This installation is already connected to another account' : 'Could not save the installation' }, taken ? 409 : 500)
     }
 
