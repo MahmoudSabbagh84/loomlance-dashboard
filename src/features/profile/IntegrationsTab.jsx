@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/Card'
@@ -21,11 +21,13 @@ export function IntegrationsTab() {
   const { data: profile } = useProfile()
   const updateProfile = useUpdateProfile()
   const [connecting, setConnecting] = useState(false)
+  const handledRef = useRef(false)
 
   // Handle the post-install redirect (?installation_id=&state=).
   useEffect(() => {
     const installationId = params.get('installation_id')
     if (!installationId) return
+    if (handledRef.current) return; handledRef.current = true
     const state = params.get('state')
     const expected = sessionStorage.getItem('gh_install_state')
     sessionStorage.removeItem('gh_install_state')

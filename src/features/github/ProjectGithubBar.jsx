@@ -16,6 +16,7 @@ export function ProjectGithubBar({ project }) {
   const [repos, setRepos] = useState(null) // null = not loaded, [] = loaded empty
   const [loading, setLoading] = useState(false)
   const [picking, setPicking] = useState(false)
+  const [selected, setSelected] = useState('')
 
   if (!installation) return null
 
@@ -36,6 +37,7 @@ export function ProjectGithubBar({ project }) {
 
   const onPick = async (e) => {
     const repoId = e.target.value
+    setSelected(repoId)
     if (!repoId) return
     const chosen = (repos || []).find((x) => String(x.id) === String(repoId))
     if (!chosen) return
@@ -50,6 +52,7 @@ export function ProjectGithubBar({ project }) {
       setPicking(false)
     } catch (err) {
       toast.error(err.userMessage || 'Could not link the repository')
+      setSelected('')
     }
   }
 
@@ -79,7 +82,7 @@ export function ProjectGithubBar({ project }) {
           </Button>
         </>
       ) : picking ? (
-        <Select onChange={onPick} defaultValue="" disabled={loading} className="max-w-xs">
+        <Select onChange={onPick} value={selected} disabled={loading || link.isPending} className="max-w-xs">
           <option value="" disabled>
             {loading ? 'Loading…' : 'Choose a repository'}
           </option>
