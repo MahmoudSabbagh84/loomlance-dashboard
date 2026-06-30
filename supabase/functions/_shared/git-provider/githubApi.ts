@@ -60,6 +60,12 @@ export async function getInstallation(appId: string, pkcs8Pem: string, installat
   return { account_login: data.account?.login ?? null, account_type: data.account?.type ?? null }
 }
 
+// Uninstall the App from the account (revokes its repo access). GitHub returns 204.
+export async function deleteInstallation(appId: string, pkcs8Pem: string, installationId: number): Promise<void> {
+  const jwt = await createAppJwt(appId, pkcs8Pem)
+  await gh(jwt, `/app/installations/${installationId}`, { method: 'DELETE' })
+}
+
 export async function listInstallationRepos(token: string): Promise<Array<{ id: number; full_name: string; default_branch: string }>> {
   const data = await (await gh(token, `/installation/repositories?per_page=100`)).json()
   return (data.repositories ?? []).map((r: any) => ({ id: r.id, full_name: r.full_name, default_branch: r.default_branch }))

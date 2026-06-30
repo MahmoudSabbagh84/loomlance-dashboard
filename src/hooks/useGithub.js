@@ -45,3 +45,10 @@ export function useDisconnectRepo(projectId) {
     },
   })
 }
+export function useDisconnectGithub() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: api.disconnectGithub,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['github'] }),
+  })
+}

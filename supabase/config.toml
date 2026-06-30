@@ -434,6 +434,9 @@ verify_jwt = true
 [functions.github-link-repo]
 verify_jwt = true
 
+[functions.github-disconnect]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

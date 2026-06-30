@@ -4,7 +4,8 @@ import { toast } from 'sonner'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { useGithubInstallation, useConnectGithub } from '@/hooks/useGithub'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useGithubInstallation, useConnectGithub, useDisconnectGithub } from '@/hooks/useGithub'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { GITHUB_APP_SLUG, githubInstallUrl } from '@/lib/github'
 
@@ -22,6 +23,8 @@ export function IntegrationsTab() {
   const updateProfile = useUpdateProfile()
   const [connecting, setConnecting] = useState(false)
   const handledRef = useRef(false)
+  const disconnect = useDisconnectGithub()
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false)
 
   // Handle the post-install redirect (?installation_id=&state=).
   useEffect(() => {
@@ -72,9 +75,12 @@ export function IntegrationsTab() {
           {installation ? <Badge variant="success">Connected</Badge> : null}
         </div>
         {installation ? (
-          <p className="text-sm text-fg-muted">
-            Connected{installation.account_login ? ` as @${installation.account_login}` : ''}. Link a repository to a project from that project&apos;s page.
-          </p>
+          <>
+            <p className="text-sm text-fg-muted">
+              Connected{installation.account_login ? ` as @${installation.account_login}` : ''}. Link a repository to a project from that project&apos;s page.
+            </p>
+            <Button variant="secondary" onClick={() => setConfirmDisconnect(true)}>Disconnect GitHub</Button>
+          </>
         ) : (
           <>
             <p className="text-sm text-fg-muted">
@@ -108,6 +114,26 @@ export function IntegrationsTab() {
           </div>
         </Card>
       ) : null}
+
+      <ConfirmDialog
+        open={confirmDisconnect}
+        title="Disconnect GitHub?"
+        body="This uninstalls the LoomLance app from your GitHub account and removes all linked repositories and issue mirrors. You can reconnect anytime."
+        confirmLabel="Disconnect"
+        variant="danger"
+        onCancel={() => setConfirmDisconnect(false)}
+        onConfirm={async () => {
+          try {
+            await disconnect.mutateAsync()
+            toast.success('GitHub disconnected')
+          } catch (e) {
+            toast.error(e.userMessage || 'Could not disconnect GitHub')
+          } finally {
+            setConfirmDisconnect(false)
+          }
+        }}
+        loading={disconnect.isPending}
+      />
     </div>
   )
 }

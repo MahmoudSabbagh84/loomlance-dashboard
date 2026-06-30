@@ -49,3 +49,4 @@ export async function disconnectRepo(projectId) {
 export const connectInstallation = (installationId) => invokeEdge('github-connect', { installationId })
 export const listRepos = () => invokeEdge('github-repos', {})
 export const linkRepo = (payload) => invokeEdge('github-link-repo', payload)
+export const disconnectGithub = () => invokeEdge('github-disconnect', {})
