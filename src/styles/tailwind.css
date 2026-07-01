@@ -5,6 +5,17 @@
 @tailwind utilities;
 
 @layer base {
+  /* Scale the root type up on large / high-res displays so the compact UI stays
+     comfortable to read instead of shrinking into tiny text. Everything is sized in
+     rem, so text AND spacing grow proportionally. Small screens are unchanged. */
+  html {
+    font-size: 16px;
+  }
+  @media (min-width: 1280px) { html { font-size: 17px; } }
+  @media (min-width: 1600px) { html { font-size: 18px; } }
+  @media (min-width: 1920px) { html { font-size: 19px; } }
+  @media (min-width: 2560px) { html { font-size: 21px; } }
+
   :root {
     color-scheme: light;
   }
