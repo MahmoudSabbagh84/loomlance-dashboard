@@ -10,6 +10,7 @@ import {
   Receipt,
   BarChart3,
   Lock,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/components/ui/cn'
 import { useProfile } from '@/hooks/useProfile'
@@ -71,6 +72,23 @@ export function SidebarNav({ onNavigate }) {
             </NavLink>
           )
         })}
+        {profile?.is_admin && (
+          <NavLink
+            to="/admin"
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
+                isActive
+                  ? 'bg-primary/12 font-medium text-primary'
+                  : 'text-fg-muted hover:bg-bg-muted hover:text-fg'
+              )
+            }
+          >
+            <ShieldCheck className="size-4" />
+            Admin
+          </NavLink>
+        )}
       </nav>
       {lockedFeature ? (
         <UpgradeDialog

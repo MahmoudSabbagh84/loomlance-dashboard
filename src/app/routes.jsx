@@ -1,5 +1,6 @@
-import { createBrowserRouter, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { AuthGate } from '@/features/auth/AuthGate'
+import { AdminGate } from '@/features/admin/AdminGate'
 import { AppShell } from '@/components/layout/AppShell'
 import LoginPage from '@/pages/LoginPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
@@ -20,6 +21,9 @@ import ReportsPage from '@/pages/ReportsPage'
 import ProfilePage from '@/pages/ProfilePage'
 import PublicInvoicePage from '@/pages/PublicInvoicePage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import AdminPostsPage from '@/pages/admin/AdminPostsPage'
+import AdminPostEditorPage from '@/pages/admin/AdminPostEditorPage'
+import AdminToolsPage from '@/pages/admin/AdminToolsPage'
 
 export const router = createBrowserRouter([
   // Public
@@ -53,6 +57,17 @@ export const router = createBrowserRouter([
       { path: 'expenses', element: <ExpensesPage /> },
       { path: 'reports', element: <ReportsPage /> },
       { path: 'profile', element: <ProfilePage /> },
+      {
+        path: 'admin',
+        element: <AdminGate><Outlet /></AdminGate>,
+        children: [
+          { index: true, element: <Navigate to="/admin/posts" replace /> },
+          { path: 'posts', element: <AdminPostsPage /> },
+          { path: 'posts/new', element: <AdminPostEditorPage /> },
+          { path: 'posts/:id', element: <AdminPostEditorPage /> },
+          { path: 'tools', element: <AdminToolsPage /> },
+        ],
+      },
     ],
   },
 
