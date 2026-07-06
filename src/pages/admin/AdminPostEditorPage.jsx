@@ -83,6 +83,9 @@ export default function AdminPostEditorPage() {
     }
     if (existing) return update.mutateAsync({ id: existing.id, patch: fields })
     const created = await create.mutateAsync(fields)
+    // The form already holds the saved content — the first detail fetch after
+    // navigating must not rehydrate over keystrokes typed during the RTT.
+    hydratedId.current = created.id
     navigate(`/admin/posts/${created.id}`, { replace: true })
     return created
   }
@@ -124,9 +127,10 @@ export default function AdminPostEditorPage() {
     finally { setUploading(false); e.target.value = '' }
   }
 
-  if (id && isLoading) return null
-
-  if (id && (isError || !existing)) {
+  // Data present → always render the editor, even if a background refetch
+  // errored. No data + error → not-found. No data + no error → still loading.
+  if (id && !existing) {
+    if (!isError) return null
     return (
       <div className="space-y-5">
         <PageHeader title="Post not found" />
