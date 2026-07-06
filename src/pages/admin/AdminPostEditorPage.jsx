@@ -7,7 +7,9 @@ import { usePost, useCreatePost, useUpdatePost, useSetPostStatus } from '@/hooks
 import { uploadBlogImage } from '@/api/blogImages'
 import { triggerBlogPublish } from '@/api/posts'
 import { slugify } from '@/lib/slug'
+import { Newspaper } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
@@ -24,7 +26,7 @@ const EMPTY = { title: '', slug: '', category: 'update', excerpt: '', body_md: '
 export default function AdminPostEditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { data: existing, isLoading } = usePost(id)
+  const { data: existing, isLoading, isError } = usePost(id)
   const create = useCreatePost()
   const update = useUpdatePost()
   const setStatus = useSetPostStatus()
@@ -34,11 +36,15 @@ export default function AdminPostEditorPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const fileRef = useRef(null)
+  const hydratedId = useRef(null)
 
+  // Hydrate the form only once per post id — refetches (triggered by our own
+  // save invalidations) must not clobber keystrokes typed during the round-trip.
   useEffect(() => {
-    if (existing) {
+    if (existing && hydratedId.current !== existing.id) {
       setForm({ ...existing, external_url: existing.external_url ?? '' })
       setSlugTouched(true)
+      hydratedId.current = existing.id
     }
   }, [existing])
 
@@ -53,6 +59,7 @@ export default function AdminPostEditorPage() {
     setForm((f) => {
       const next = { ...f, [field]: value }
       if (field === 'title' && !slugTouched && !slugLocked) next.slug = slugify(value)
+      if (field === 'category' && value !== 'press') next.external_url = ''
       return next
     })
   }
@@ -90,7 +97,9 @@ export default function AdminPostEditorPage() {
         action: { label: 'View build', onClick: () => window.open(ACTIONS_URL, '_blank') },
       })
     } catch (e) {
-      toast.error(e.userMessage || e.message || 'Publish failed — the post is saved; try Publish again')
+      toast.error(e.userMessage || e.message || 'Publish failed', {
+        description: 'Your post is saved — try Publish again.',
+      })
     }
   }
 
@@ -100,7 +109,9 @@ export default function AdminPostEditorPage() {
       await triggerBlogPublish()
       toast.success('Unpublished — removal deploys in ~2 minutes')
     } catch (e) {
-      toast.error(e.userMessage || e.message || 'Unpublish failed')
+      toast.error(e.userMessage || e.message || 'Unpublish failed', {
+        description: 'The post is still published — try Unpublish again.',
+      })
     }
   }
 
@@ -115,6 +126,20 @@ export default function AdminPostEditorPage() {
 
   if (id && isLoading) return null
 
+  if (id && (isError || !existing)) {
+    return (
+      <div className="space-y-5">
+        <PageHeader title="Post not found" />
+        <EmptyState
+          icon={Newspaper}
+          title="Couldn’t load this post"
+          description="It may have been deleted, or something went wrong fetching it."
+          action={<Button onClick={() => navigate('/admin/posts')}>Back to posts</Button>}
+        />
+      </div>
+    )
+  }
+
   const excerptLen = form.excerpt.length
   const saving = create.isPending || update.isPending
 
@@ -126,7 +151,7 @@ export default function AdminPostEditorPage() {
         </Button>
         {isPublished
           ? <Button variant="danger" loading={setStatus.isPending} onClick={handleUnpublish}>Unpublish</Button>
-          : <Button loading={setStatus.isPending} onClick={handlePublish}>Publish</Button>}
+          : <Button loading={saving || setStatus.isPending} onClick={handlePublish}>Publish</Button>}
       </PageHeader>
 
       <div className="grid gap-4 lg:grid-cols-2">
