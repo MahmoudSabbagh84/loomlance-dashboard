@@ -26,7 +26,7 @@ const EMPTY = { title: '', slug: '', category: 'update', excerpt: '', body_md: '
 export default function AdminPostEditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { data: existing, isLoading, isError } = usePost(id)
+  const { data: existing, isError } = usePost(id)
   const create = useCreatePost()
   const update = useUpdatePost()
   const setStatus = useSetPostStatus()
