@@ -33,12 +33,12 @@
 **Interfaces:**
 - Produces: `public.posts` table, `public.is_admin()` SQL fn, `profiles.is_admin` column, public storage bucket `blog-images`. Later tasks rely on these exact names, and on posts columns: `id, slug, title, excerpt, body_md, cover_image_url, category, external_url, status, published_at, created_at, updated_at`.
 
-- [ ] **Step 1: Check for an existing `updated_at` trigger helper**
+- [x] **Step 1: Check for an existing `updated_at` trigger helper**
 
 Run: `grep -rn "updated_at" supabase/migrations/ | grep -i "function\|trigger" | head`
 If a reusable trigger function (e.g. `set_updated_at()` / `moddatetime`) exists, use it in Step 2 instead of creating `set_posts_updated_at`; otherwise keep the block as written.
 
-- [ ] **Step 2: Write the migration file**
+- [x] **Step 2: Write the migration file**
 
 ```sql
 -- Blog + admin foundation: profiles.is_admin, is_admin() helper, posts table, blog-images bucket.
@@ -120,11 +120,11 @@ create policy "blog_images_delete_admin"
   using (bucket_id = 'blog-images' and public.is_admin());
 ```
 
-- [ ] **Step 3: Apply to the hosted dev project**
+- [x] **Step 3: Apply to the hosted dev project**
 
 Use `mcp__supabase__apply_migration` with name `blog_foundation` and the SQL above.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Use `mcp__supabase__execute_sql`:
 ```sql
@@ -139,7 +139,7 @@ update public.profiles set is_admin = true
 where email in ('mahmoudsabbagh8@gmail.com');
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add supabase/migrations/20260706210000_blog_foundation.sql
@@ -156,11 +156,11 @@ git commit -m "feat(db): posts table, is_admin flag/helper, blog-images bucket"
 **Interfaces:**
 - Produces: `public.reset_demo_user()` (no args, returns `void`), callable via `supabase.rpc('reset_demo_user')` by admins only.
 
-- [ ] **Step 1: Bind the fixture to the real schema**
+- [x] **Step 1: Bind the fixture to the real schema**
 
 Open these migrations and copy the exact column lists for the insert statements below: the clients migration, `20260616202137_projects_and_kanban.sql` (projects/tasks — note: inserting a project auto-seeds 4 kanban columns via the `seed_default_columns` trigger), the invoices migration (invoices + invoice_line_items + invoice_number_sequences), the time-tracking and expenses migrations. Use only columns that exist; give every `not null` column a value.
 
-- [ ] **Step 2: Write the migration**
+- [x] **Step 2: Write the migration**
 
 Skeleton (fill INSERT column lists from Step 1; keep the fixture data exactly as specified):
 
@@ -248,9 +248,9 @@ grant execute on function public.reset_demo_user() to authenticated;
 
 Money columns follow the existing money model (cents vs decimal — copy whatever the invoices schema uses; `money.js` is the source of truth for representation).
 
-- [ ] **Step 3: Apply via `mcp__supabase__apply_migration`** (name `reset_demo_user`)
+- [x] **Step 3: Apply via `mcp__supabase__apply_migration`** (name `reset_demo_user`)
 
-- [ ] **Step 4: Verify against the hosted DB**
+- [x] **Step 4: Verify against the hosted DB**
 
 Using `mcp__supabase__execute_sql` (service role bypasses the admin check — expected):
 ```sql
@@ -263,7 +263,7 @@ select public.reset_demo_user();  -- run twice: must be idempotent, same counts 
 ```
 Confirm no other user's row counts changed (spot-check the owner's `clients` count before/after).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add supabase/migrations/20260706211500_reset_demo_user.sql
@@ -281,7 +281,7 @@ git commit -m "feat(db): reset_demo_user() admin function with canonical demo fi
 **Interfaces:**
 - Produces: `slugify(title: string): string` — lowercase, ASCII-ish kebab-case matching the DB check `^[a-z0-9]+(-[a-z0-9]+)*$`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```javascript
 import { describe, it, expect } from 'vitest'
@@ -303,12 +303,12 @@ describe('slugify', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/lib/__tests__/slug.test.js`
 Expected: FAIL — cannot resolve `../slug`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```javascript
 // src/lib/slug.js
@@ -322,11 +322,11 @@ export function slugify(title) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/lib/__tests__/slug.test.js` — Expected: 4 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/slug.js src/lib/__tests__/slug.test.js
@@ -355,7 +355,7 @@ git commit -m "feat: slugify utility for post slugs"
   - `uploadBlogImage(file): Promise<string>` (public URL)
   - Hooks: `usePosts()`, `usePost(id)`, `useCreatePost()`, `useUpdatePost()`, `useDeletePost()`, `useSetPostStatus()` — TanStack Query, key family `['posts', ...]`
 
-- [ ] **Step 1: Write `src/api/posts.js`**
+- [x] **Step 1: Write `src/api/posts.js`**
 
 ```javascript
 import { supabase } from '@/lib/supabase'
@@ -410,7 +410,7 @@ export async function triggerBlogPublish() {
 
 If `mapPostgresError` is not exported from `src/api/clients.js`, locate its actual module (grep `mapPostgresError` in `src/api/`) and import from there; do not duplicate it.
 
-- [ ] **Step 2: Write `src/api/blogImages.js`** (mirrors `src/api/branding.js` — plain upload, unique path, no upsert)
+- [x] **Step 2: Write `src/api/blogImages.js`** (mirrors `src/api/branding.js` — plain upload, unique path, no upsert)
 
 ```javascript
 import { supabase } from '@/lib/supabase'
@@ -429,7 +429,7 @@ export async function uploadBlogImage(file) {
 }
 ```
 
-- [ ] **Step 3: Write `src/hooks/usePosts.js`** (same shape as `src/hooks/useClients.js`)
+- [x] **Step 3: Write `src/hooks/usePosts.js`** (same shape as `src/hooks/useClients.js`)
 
 ```javascript
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -454,11 +454,11 @@ export function useDeletePost() { return useInvalidatingMutation(api.deletePost)
 export function useSetPostStatus() { return useInvalidatingMutation(({ id, status }) => api.setPostStatus(id, status)) }
 ```
 
-- [ ] **Step 4: Verify the app still builds**
+- [x] **Step 4: Verify the app still builds**
 
 Run: `npx vitest run` — Expected: all existing tests pass (new files have no tests yet; API layer is exercised through Task 9's e2e).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/api/posts.js src/api/blogImages.js src/hooks/usePosts.js
@@ -479,7 +479,7 @@ git commit -m "feat: posts API, blog image upload, react-query hooks"
 - Consumes: `useProfile()` from `@/hooks/useProfile` (profile row includes `is_admin` — it selects `*`).
 - Produces: `<AdminGate>{children}</AdminGate>` — renders children only for admins; `Skeleton` while loading; `<Navigate to="/" replace />` otherwise. Routes: `/admin` → redirect `/admin/posts`; `/admin/posts`; `/admin/posts/new`; `/admin/posts/:id`; `/admin/tools`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```javascript
 import { describe, it, expect, vi } from 'vitest'
@@ -522,9 +522,9 @@ describe('AdminGate', () => {
 })
 ```
 
-- [ ] **Step 2: Run it** — `npx vitest run src/features/admin` — Expected: FAIL (module missing).
+- [x] **Step 2: Run it** — `npx vitest run src/features/admin` — Expected: FAIL (module missing).
 
-- [ ] **Step 3: Implement `AdminGate.jsx`**
+- [x] **Step 3: Implement `AdminGate.jsx`**
 
 ```jsx
 import { Navigate } from 'react-router-dom'
@@ -539,9 +539,9 @@ export function AdminGate({ children }) {
 }
 ```
 
-- [ ] **Step 4: Run the test** — Expected: 3 passed.
+- [x] **Step 4: Run the test** — Expected: 3 passed.
 
-- [ ] **Step 5: Register routes**
+- [x] **Step 5: Register routes**
 
 In `src/app/routes.jsx`, inside the authenticated layout route's `children` array, add (imports at top; pages arrive in Tasks 6–8 — create placeholder pages exporting `<PageHeader title="…" />` now so the app compiles, they are replaced next tasks):
 
@@ -559,7 +559,7 @@ In `src/app/routes.jsx`, inside the authenticated layout route's `children` arra
 },
 ```
 
-- [ ] **Step 6: Nav item**
+- [x] **Step 6: Nav item**
 
 In `src/components/layout/SidebarNav.jsx`: the component already reads the profile for tier gating (`profile?.subscription_tier`). After the tier-gated items render, add an admin-only block (do NOT put it in the `NAV` array — it is not tier-gated):
 
@@ -573,7 +573,7 @@ In `src/components/layout/SidebarNav.jsx`: the component already reads the profi
 
 Match the exact classNames/structure of existing items (copy from an existing `NavLink` in the file); `ShieldCheck` from `lucide-react`.
 
-- [ ] **Step 7: Verify & commit**
+- [x] **Step 7: Verify & commit**
 
 Run: `npx vitest run` (all pass) and `npm run dev` — log in as the owner (is_admin=true from Task 1) → "Admin" appears in sidebar → `/admin` redirects to `/admin/posts` placeholder. A non-admin (demo user) must NOT see the item and `/admin` bounces home.
 
@@ -593,7 +593,7 @@ git commit -m "feat(admin): AdminGate, /admin routes, sidebar entry"
 - Consumes: `usePosts()`, `useDeletePost()` from `@/hooks/usePosts`; UI kit; `toast`.
 - Produces: list at `/admin/posts` linking to `/admin/posts/:id` and `/admin/posts/new`.
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 ```jsx
 import { Link, useNavigate } from 'react-router-dom'
@@ -670,9 +670,9 @@ export default function AdminPostsPage() {
 
 Adjust `Badge` variant prop / `PageHeader` `actions` prop names to the actual component APIs (open the component files; if `Badge` uses e.g. `tone`, use that).
 
-- [ ] **Step 2: Verify manually** — `npm run dev`, insert a seed row via SQL if needed, list renders, delete works.
+- [x] **Step 2: Verify manually** — `npm run dev`, insert a seed row via SQL if needed, list renders, delete works.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/pages/admin/AdminPostsPage.jsx
@@ -691,11 +691,11 @@ git commit -m "feat(admin): posts list with delete"
 - Consumes: `usePost`, `useCreatePost`, `useUpdatePost`, `useSetPostStatus`; `uploadBlogImage` from `@/api/blogImages`; `triggerBlogPublish` from `@/api/posts`; `slugify` from `@/lib/slug`.
 - Produces: editor at `/admin/posts/new` and `/admin/posts/:id`. Publish = save → `setPostStatus('published')` → `triggerBlogPublish()`.
 
-- [ ] **Step 1: Add markdown deps**
+- [x] **Step 1: Add markdown deps**
 
 Run: `npm install marked dompurify`
 
-- [ ] **Step 2: Implement the page**
+- [x] **Step 2: Implement the page**
 
 ```jsx
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -877,11 +877,11 @@ export default function AdminPostEditorPage() {
 
 Notes: `field-label` / `field-input` — if the Dashboard doesn't have these utility classes (they exist in the splash), use the existing form classes from `ClientFormModal.jsx` instead; match whatever that file does. If the Dashboard lacks Tailwind typography, plain spacing on the preview div is fine — the authoritative rendering is the generator's.
 
-- [ ] **Step 3: Verify manually** — create a draft with markdown (headings, list, link, an `<script>alert(1)</script>` — preview must strip it), upload a cover, save; reload page → values persist; slug edits lock after publish.
+- [x] **Step 3: Verify manually** — create a draft with markdown (headings, list, link, an `<script>alert(1)</script>` — preview must strip it), upload a cover, save; reload page → values persist; slug edits lock after publish.
 
-- [ ] **Step 4: Run all tests** — `npx vitest run` — Expected: all pass.
+- [x] **Step 4: Run all tests** — `npx vitest run` — Expected: all pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add package.json package-lock.json src/pages/admin/AdminPostEditorPage.jsx
@@ -901,7 +901,7 @@ git commit -m "feat(admin): post editor with markdown preview, cover upload, pub
 - Consumes: `_shared/cors.ts` helpers (`corsHeadersFor`, `json`); secret `GITHUB_BLOG_DISPATCH_TOKEN`.
 - Produces: POST-only function; 401 non-auth, 403 non-admin, 502 GitHub failure, `{ ok: true }` on success. Tools page calls `supabase.rpc('reset_demo_user')`.
 
-- [ ] **Step 1: Write the Edge Function**
+- [x] **Step 1: Write the Edge Function**
 
 ```typescript
 // Deploy: supabase functions deploy trigger-blog-publish
@@ -945,16 +945,16 @@ Deno.serve(async (req) => {
 })
 ```
 
-- [ ] **Step 2: Register in `supabase/config.toml`**
+- [x] **Step 2: Register in `supabase/config.toml`**
 
 ```toml
 [functions.trigger-blog-publish]
 verify_jwt = true
 ```
 
-- [ ] **Step 3: Deploy** — `supabase functions deploy trigger-blog-publish` (or `mcp__supabase__deploy_edge_function`). Setting the `GITHUB_BLOG_DISPATCH_TOKEN` secret is an **owner step** (Task 13 checklist); until then the function returns 502 — expected.
+- [x] **Step 3: Deploy** — `supabase functions deploy trigger-blog-publish` (or `mcp__supabase__deploy_edge_function`). Setting the `GITHUB_BLOG_DISPATCH_TOKEN` secret is an **owner step** (Task 13 checklist); until then the function returns 502 — expected.
 
-- [ ] **Step 4: Tools page**
+- [x] **Step 4: Tools page**
 
 ```jsx
 import { useState } from 'react'
@@ -1008,9 +1008,9 @@ export default function AdminToolsPage() {
 }
 ```
 
-- [ ] **Step 5: Verify** — as owner, `/admin/tools` → Reset → success toast; log in as demo user → fixture data present. Run twice (idempotent).
+- [x] **Step 5: Verify** — as owner, `/admin/tools` → Reset → success toast; log in as demo user → fixture data present. Run twice (idempotent).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add supabase/functions/trigger-blog-publish supabase/config.toml src/pages/admin/AdminToolsPage.jsx
@@ -1027,7 +1027,7 @@ git commit -m "feat(admin): trigger-blog-publish edge function + demo reset tool
 **Interfaces:**
 - Consumes: existing e2e login pattern from `tests/e2e/happy-path.spec.js` (env `E2E_USER_EMAIL` / `E2E_USER_PASSWORD`). **Precondition:** the E2E user's profile has `is_admin = true` on the TEST project (one-time SQL, mirror of Task 1 Step 4 — run against the test project, not dev).
 
-- [ ] **Step 1: Write the spec** (copy the login helper style from `happy-path.spec.js` verbatim, then):
+- [x] **Step 1: Write the spec** (copy the login helper style from `happy-path.spec.js` verbatim, then):
 
 ```javascript
 // tests/e2e/admin-posts.spec.js
@@ -1057,9 +1057,9 @@ test('admin can create, edit, and delete a draft post', async ({ page }) => {
 
 Publish is NOT exercised in e2e (it would fire a real GitHub dispatch).
 
-- [ ] **Step 2: Run** — `npx playwright test tests/e2e/admin-posts.spec.js` — Expected: PASS. Fix selectors against the real DOM if the kit renders differently.
+- [x] **Step 2: Run** — `npx playwright test tests/e2e/admin-posts.spec.js` — Expected: PASS. Fix selectors against the real DOM if the kit renders differently.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/e2e/admin-posts.spec.js
@@ -1085,7 +1085,7 @@ git commit -m "test(e2e): admin post draft CRUD"
   - `renderRss(posts): string`, `renderSitemap(posts): string`
   - `SITE_URL = 'https://loomlance.com'`, `CATEGORY_LABEL = { release: 'Feature release', update: 'Product update', press: 'Press' }`
 
-- [ ] **Step 1: Install deps + wire scripts**
+- [x] **Step 1: Install deps + wire scripts**
 
 ```bash
 cd C:\Users\mahmo\Desktop\LoomLance-Splash
@@ -1100,7 +1100,7 @@ npm install -D marked sanitize-html @tailwindcss/typography
 
 `tailwind.config.js`: `content: ['./*.html', './blog/**/*.html']` and `plugins: [require('@tailwindcss/typography')]`.
 
-- [ ] **Step 2: Write failing tests**
+- [x] **Step 2: Write failing tests**
 
 ```javascript
 // scripts/blog-lib.test.mjs
@@ -1151,9 +1151,9 @@ test('escapeXml', () => {
 })
 ```
 
-- [ ] **Step 3: Run** — `npm test` — Expected: FAIL (module missing).
+- [x] **Step 3: Run** — `npm test` — Expected: FAIL (module missing).
 
-- [ ] **Step 4: Implement `scripts/blog-lib.mjs`**
+- [x] **Step 4: Implement `scripts/blog-lib.mjs`**
 
 Full implementation. The page templates MUST reuse the splash's existing head block (fonts, `app.css`, gtag), header/nav (with Blog added and marked active via `text-fg`), and footer — copy them from `index.html` into template-literal functions `pageShell({ title, description, canonical, og, bodyHtml })`. Key excerpts (write the complete file):
 
@@ -1209,9 +1209,9 @@ export function formatDate(iso) {
 
 (The four render functions must be fully written out in the file — the comments above describe required content, not optional behavior. Test-drive them with Step 2's assertions.)
 
-- [ ] **Step 5: Run tests until green** — `npm test` — Expected: 6 passed.
+- [x] **Step 5: Run tests until green** — `npm test` — Expected: 6 passed.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add package.json package-lock.json tailwind.config.js scripts/blog-lib.mjs scripts/blog-lib.test.mjs
@@ -1229,7 +1229,7 @@ git commit -m "feat(blog): template library with markdown sanitization, RSS, sit
 - Consumes: `blog-lib.mjs` exports; env `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 - Produces: writes `blog.html`, `blog/<slug>.html` (internal posts only), `blog/feed.xml`, `sitemap.xml`. Deletes stale `blog/*.html` not in the current published set (full regeneration).
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 ```javascript
 // scripts/build-blog.mjs — regenerates ALL blog output from the DB. Idempotent.
@@ -1265,7 +1265,7 @@ await writeFile('sitemap.xml', renderSitemap(posts))
 console.log(`Generated: blog.html, ${internal.length} post page(s), blog/feed.xml, sitemap.xml (${posts.length} published post(s))`)
 ```
 
-- [ ] **Step 2: Local end-to-end run**
+- [x] **Step 2: Local end-to-end run**
 
 Insert one published test post in the dev DB (via admin UI from Task 7, or SQL), then:
 ```bash
@@ -1274,9 +1274,9 @@ npm run build:css
 ```
 Expected: files written; open `blog.html` via a local server (or headless-Edge screenshot, `--force-device-scale-factor=1`) — index and post page render in splash styling, prose styles apply, no unstyled markdown.
 
-- [ ] **Step 3: Verify idempotency** — run the script twice; `git status` shows no diff after the second run.
+- [x] **Step 3: Verify idempotency** — run the script twice; `git status` shows no diff after the second run.
 
-- [ ] **Step 4: Commit** (commit the generated files too — they are the deployed site)
+- [x] **Step 4: Commit** (commit the generated files too — they are the deployed site)
 
 ```bash
 git add scripts/build-blog.mjs blog.html blog/ sitemap.xml app.css
@@ -1290,7 +1290,7 @@ git commit -m "feat(blog): generator script + first generated output"
 **Files (splash repo):**
 - Modify: `index.html`, `pricing.html`, `contact.html`, `signin.html`, `signup.html`, `terms.html`, `privacy.html`
 
-- [ ] **Step 1: Add the link** — in each file: desktop nav (after "Pricing"), mobile menu (same position), and footer "Product" column:
+- [x] **Step 1: Add the link** — in each file: desktop nav (after "Pricing"), mobile menu (same position), and footer "Product" column:
 
 ```html
 <a href="/blog" class="hidden rounded-md px-3 py-2 text-sm font-medium text-fg-muted hover:text-fg sm:block">Blog</a>
@@ -1302,9 +1302,9 @@ git commit -m "feat(blog): generator script + first generated output"
 
 Match each page's existing nav markup exactly (auth pages may have a reduced header — add Blog only where Features/Pricing already appear).
 
-- [ ] **Step 2: Rebuild CSS + verify** — `npm run build:css`; screenshot `index.html` desktop + mobile; nav shows Blog, nothing wraps/overflows at 1440 and small widths.
+- [x] **Step 2: Rebuild CSS + verify** — `npm run build:css`; screenshot `index.html` desktop + mobile; nav shows Blog, nothing wraps/overflows at 1440 and small widths.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add *.html app.css
@@ -1318,7 +1318,7 @@ git commit -m "feat(blog): nav + footer links on all pages"
 **Files (splash repo):**
 - Create: `.github/workflows/blog.yml`
 
-- [ ] **Step 1: Write the workflow**
+- [x] **Step 1: Write the workflow**
 
 ```yaml
 name: Publish blog
@@ -1359,7 +1359,7 @@ jobs:
           git push
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add .github/workflows/blog.yml
