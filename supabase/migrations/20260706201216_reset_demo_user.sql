@@ -52,6 +52,7 @@ begin
   delete from public.invoice_number_sequences  where user_id = v_uid;
 
   -- Re-seed canonical screencast fixture
+  -- (Client emails and invoice->client attribution are invented fixture data, not load-bearing.)
   -- Clients: "Globex Digital" <billing@globex.example>, "Initech Labs" <accounts@initech.example>
   insert into public.clients (user_id, name, email)
   values (v_uid, 'Globex Digital', 'billing@globex.example')
@@ -109,6 +110,13 @@ begin
   insert into public.invoice_line_items (user_id, invoice_id, position, description, quantity, unit_price)
   values
     (v_uid, v_invoice_1002, 0, 'API integration', 15, 150.00);
+
+  -- Payment record for INV-1001: every path to 'paid' writes an invoice_payments row
+  -- (see mock_pay_invoice in 20260618163016_send_and_pay.sql) so the payment history
+  -- renders in the UI. Same column list; 'bank' is a plausible manual method
+  -- (payment_method enum: stripe/bank/cash/other/manual); paid_at matches the invoice.
+  insert into public.invoice_payments (user_id, invoice_id, amount, currency, paid_at, method)
+  values (v_uid, v_invoice_1001, 4800.00, 'USD', now() - interval '5 days', 'bank');
 
   -- 3 time entries on "Marketing Site Rebuild" (2h, 3.5h, 1.25h, recent dates), 2 expenses
   -- ('Plugin license' $49.00 non-billable, 'Stock photos' $32.00 billable, on the Globex project)
