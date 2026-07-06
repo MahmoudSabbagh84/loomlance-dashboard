@@ -1366,7 +1366,7 @@ git add .github/workflows/blog.yml
 git commit -m "ci: blog publish workflow (repository_dispatch)"
 ```
 
-- [ ] **Step 3: OWNER checklist (cannot be done by the agent — present these to the owner)**
+- [x] **Step 3: OWNER checklist (cannot be done by the agent — present these to the owner)**
 
 1. Create a **fine-grained GitHub PAT**: repo `MahmoudSabbagh84/loomlance-splah`, permissions **Contents: Read and write** (covers `repository_dispatch`), 1-year expiry.
 2. `supabase secrets set GITHUB_BLOG_DISPATCH_TOKEN=<pat>` (dev project; repeat on prod at go-live).
@@ -1374,7 +1374,7 @@ git commit -m "ci: blog publish workflow (repository_dispatch)"
 4. Push both repos (Dashboard commits + splash commits).
 5. Confirm `is_admin` is set on your profile in every environment you use.
 
-- [ ] **Step 4: End-to-end verification (after owner completes Step 3)**
+- [x] **Step 4: End-to-end verification (after owner completes Step 3)**
 
 1. Admin → New post → category `release`, real markdown, cover image → **Publish**.
 2. Toast appears; Actions run at `github.com/MahmoudSabbagh84/loomlance-splah/actions` goes green in ~1–2 min.
