@@ -1,6 +1,9 @@
 -- Admin-only reset of the demo account (demo@loomlance.com): wipes every row owned by
 -- the demo user and re-seeds a canonical fixture so the owner can reset the account
 -- after screencast sessions without touching any other user's data.
+-- Note: this fixture inserts expenses and time_entries rows, so it requires the demo
+-- account to remain on the tier_2 plan — enforce_tier_feature (20260622034341) gates
+-- both tables' inserts on subscription_tier, and would reject these on a downgraded demo user.
 create or replace function public.reset_demo_user()
 returns void
 language plpgsql

@@ -17,6 +17,7 @@ import { Select } from '@/components/ui/Select'
 import { Label } from '@/components/ui/Label'
 import { FieldError } from '@/components/ui/FieldError'
 import { Card } from '@/components/ui/Card'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const ACTIONS_URL = 'https://github.com/MahmoudSabbagh84/loomlance-splah/actions'
 const EXCERPT_TARGET = 155
@@ -35,6 +36,10 @@ export default function AdminPostEditorPage() {
   const [slugTouched, setSlugTouched] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
+  // Covers the whole save -> status -> dispatch async chain for publish/republish/unpublish
+  // so there's no phase-gap (e.g. between save resolving and setStatus starting) where a
+  // second click could kick off a duplicate pipeline run.
+  const [publishing, setPublishing] = useState(false)
   const fileRef = useRef(null)
   const hydratedId = useRef(null)
 
@@ -91,6 +96,7 @@ export default function AdminPostEditorPage() {
   }
 
   async function handlePublish() {
+    setPublishing(true)
     try {
       const saved = await save()
       if (!saved) return
@@ -103,10 +109,31 @@ export default function AdminPostEditorPage() {
       toast.error(e.userMessage || e.message || 'Publish failed', {
         description: 'Your post is saved — try Publish again.',
       })
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  async function handleRepublish() {
+    setPublishing(true)
+    try {
+      const saved = await save()
+      if (!saved) return
+      await triggerBlogPublish()
+      toast.success('Publish triggered — live in ~2 minutes', {
+        action: { label: 'View build', onClick: () => window.open(ACTIONS_URL, '_blank') },
+      })
+    } catch (e) {
+      toast.error(e.userMessage || e.message || 'Publish failed', {
+        description: 'Your changes are saved — try again.',
+      })
+    } finally {
+      setPublishing(false)
     }
   }
 
   async function handleUnpublish() {
+    setPublishing(true)
     try {
       await setStatus.mutateAsync({ id: existing.id, status: 'draft' })
       await triggerBlogPublish()
@@ -115,6 +142,8 @@ export default function AdminPostEditorPage() {
       toast.error(e.userMessage || e.message || 'Unpublish failed', {
         description: 'The post is still published — try Unpublish again.',
       })
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -130,16 +159,30 @@ export default function AdminPostEditorPage() {
   // Data present → always render the editor, even if a background refetch
   // errored. No data + error → not-found. No data + no error → still loading.
   if (id && !existing) {
-    if (!isError) return null
+    if (isError) {
+      return (
+        <div className="space-y-5">
+          <PageHeader title="Post not found" />
+          <EmptyState
+            icon={Newspaper}
+            title="Couldn’t load this post"
+            description="It may have been deleted, or something went wrong fetching it."
+            action={<Button onClick={() => navigate('/admin/posts')}>Back to posts</Button>}
+          />
+        </div>
+      )
+    }
     return (
       <div className="space-y-5">
-        <PageHeader title="Post not found" />
-        <EmptyState
-          icon={Newspaper}
-          title="Couldn’t load this post"
-          description="It may have been deleted, or something went wrong fetching it."
-          action={<Button onClick={() => navigate('/admin/posts')}>Back to posts</Button>}
-        />
+        <PageHeader title="Edit post" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-9" />)}
+          </Card>
+          <Card>
+            <Skeleton className="h-64" />
+          </Card>
+        </div>
       </div>
     )
   }
@@ -150,12 +193,22 @@ export default function AdminPostEditorPage() {
   return (
     <div className="space-y-5">
       <PageHeader title={existing ? 'Edit post' : 'New post'}>
-        <Button variant="secondary" loading={saving} onClick={() => save().then((s) => s && toast.success('Draft saved'))}>
+        <Button
+          variant="secondary"
+          loading={saving && !publishing}
+          disabled={publishing}
+          onClick={() => save().then((s) => s && toast.success('Draft saved'))}
+        >
           Save draft
         </Button>
-        {isPublished
-          ? <Button variant="danger" loading={setStatus.isPending} onClick={handleUnpublish}>Unpublish</Button>
-          : <Button loading={saving || setStatus.isPending} onClick={handlePublish}>Publish</Button>}
+        {isPublished ? (
+          <>
+            <Button loading={publishing} disabled={publishing} onClick={handleRepublish}>Save &amp; republish</Button>
+            <Button variant="danger" loading={publishing} disabled={publishing} onClick={handleUnpublish}>Unpublish</Button>
+          </>
+        ) : (
+          <Button loading={publishing} disabled={publishing} onClick={handlePublish}>Publish</Button>
+        )}
       </PageHeader>
 
       <div className="grid gap-4 lg:grid-cols-2">
