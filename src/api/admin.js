@@ -1,0 +1,9 @@
+import { supabase } from '@/lib/supabase'
+import { mapPostgresError } from '@/lib/errors'
+
+// Admin-only: wipes demo@loomlance.com and re-seeds the canonical screencast fixture.
+// See migration 20260706201216_reset_demo_user.sql for what gets touched.
+export async function resetDemoUser() {
+  const { error } = await supabase.rpc('reset_demo_user')
+  if (error) throw mapPostgresError(error)
+}
