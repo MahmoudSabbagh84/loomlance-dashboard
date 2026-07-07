@@ -33,7 +33,7 @@ Sorted `created_at desc`. No password hashes, tokens, or any auth internals beyo
 | Action | Input | Behavior |
 |---|---|---|
 | `list` | — | `rpc('admin_user_list')`, returned as-is |
-| `detail` | `userId` | list row for that user + parallel service-role counts (**all-time**, no windowing): clients, projects, invoices (count + total invoiced cents via existing money conventions), hours tracked (Σ `time_entries.duration_minutes`/60, 1-decimal) + last 20 `usage_events` rows with `kind='admin_action'` for that user |
+| `detail` | `userId` | list row for that user + parallel service-role counts (**all-time**, no windowing): clients, projects, invoices (count + total invoiced per currency, computed from line items via `_shared/money.ts` `invoiceTotals` — decimal major units, the house convention), hours tracked (Σ `time_entries.duration_minutes`/60, 1-decimal) + last 20 `usage_events` rows with `kind='admin_action'` for that user |
 | `comp` | `userId, tier` | Guards in order: user exists (404); `tier ∈ {free, tier_1, tier_2}` (400); target has NO `stripe_subscription_id` (409 "This user has a live Stripe subscription — manage it in Stripe"). Then `update profiles set subscription_tier = tier, subscription_status = 'active' where id = userId`. Service role bypasses `protect_billing_columns` — the pin's documented admin path. |
 | `ban` | `userId` | Guards: not yourself (409 lockout guard), not the demo user `d3a70000-0000-4000-8000-000000000001` (409 — breaks screencasts/sale demos), not another admin (409). Then GoTrue admin API `auth.admin.updateUserById(userId, { ban_duration: '87600h' })`. |
 | `unban` | `userId` | `auth.admin.updateUserById(userId, { ban_duration: 'none' })`. |
