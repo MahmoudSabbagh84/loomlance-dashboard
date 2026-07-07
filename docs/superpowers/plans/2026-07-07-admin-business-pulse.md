@@ -15,7 +15,7 @@
 - Repo: **Dashboard** `C:\Users\mahmo\Desktop\LoomLance-Dashboard` only. Commit after every task. **Do NOT `git push`** — the owner pushes manually.
 - Migrations applied to the **hosted dev project** via `mcp__supabase__apply_migration` (no local Docker — house rule); the same SQL is committed to `supabase/migrations/` with a matching name.
 - The owner uses the app live: everything here is read-only against the hosted DB; never bulk-modify data.
-- Demo user `d3a70000-0000-4000-8000-000000000001` (demo@loomlance.com) is **excluded from usage metrics**.
+- Demo user `d3a70000-0000-4000-8000-000000000001` (demo@loomlance.com) is **excluded from ALL metrics** — user counts, signups, tiers, and usage (owner decision 2026-07-07; supersedes the original usage-only scope).
 - Money values are integer cents (`money.js` convention). Weeks are ISO (Monday start, UTC) — `date_trunc('week', …)` gives exactly this.
 - UI kit via `import { X } from '@/components/ui/X'`; toasts via `import { toast } from 'sonner'`.
 - Tests: `npx vitest run` (unit/component — config already includes `supabase/functions/**/*.{test,spec}.{ts,js}`), `npx playwright test` (e2e).

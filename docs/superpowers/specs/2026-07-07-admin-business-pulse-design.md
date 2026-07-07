@@ -12,6 +12,7 @@ A read-only `/admin/pulse` page — the new admin landing page — showing the o
 - **Usage strip: included** — invoices/projects/hours/clients activity from existing tables.
 - **Architecture: single edge function** (`admin-metrics`) rather than RPC-per-metric or client-side admin RLS. One privileged surface, one gate, one loading state.
 - Trial conversions come from Stripe subscription history (the DB stores only current state; `usage_events` exists but is empty, `stripe_events` is a dedup log with no payload).
+- **Demo-user exclusion applies to ALL metrics** (owner decision 2026-07-07, during execution): user counts, signups, tier breakdown, and the usage strip all exclude `d3a70000-…` — not just the usage strip as originally scoped. Keeps the tier mix consistent with Stripe reality.
 
 ## Context findings
 
