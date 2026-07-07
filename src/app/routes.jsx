@@ -24,6 +24,8 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import AdminPulsePage from '@/pages/admin/AdminPulsePage'
 import AdminPostsPage from '@/pages/admin/AdminPostsPage'
 import AdminPostEditorPage from '@/pages/admin/AdminPostEditorPage'
+import AdminUsersPage from '@/pages/admin/AdminUsersPage'
+import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage'
 import AdminToolsPage from '@/pages/admin/AdminToolsPage'
 
 export const router = createBrowserRouter([
@@ -66,6 +68,8 @@ export const router = createBrowserRouter([
           { path: 'posts', element: <AdminPostsPage /> },
           { path: 'posts/new', element: <AdminPostEditorPage /> },
           { path: 'posts/:id', element: <AdminPostEditorPage /> },
+          { path: 'users', element: <AdminUsersPage /> },
+          { path: 'users/:id', element: <AdminUserDetailPage /> },
           { path: 'tools', element: <AdminToolsPage /> },
         ],
       },

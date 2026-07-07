@@ -4,6 +4,7 @@ import { cn } from '@/components/ui/cn'
 const tabs = [
   { to: '/admin', label: 'Pulse', end: true },
   { to: '/admin/posts', label: 'Posts' },
+  { to: '/admin/users', label: 'Users' },
   { to: '/admin/tools', label: 'Tools' },
 ]
 
