@@ -34,7 +34,7 @@
 **Interfaces:**
 - Produces: `public.admin_user_list() returns setof record` — one row per user, columns exactly: `id uuid, email text, display_name text, created_at timestamptz, last_sign_in_at timestamptz, banned_until timestamptz, subscription_tier text, subscription_status text, current_period_end timestamptz, is_admin boolean, has_stripe_subscription boolean`. Ordered `created_at desc`. `service_role`-only. Task 3 calls it via `service.rpc('admin_user_list')`.
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- admin_user_list(): per-user support roster for the admin Users page (Phase 3).
@@ -83,16 +83,16 @@ revoke all on function public.admin_user_list() from authenticated;
 grant execute on function public.admin_user_list() to service_role;
 ```
 
-- [ ] **Step 2: Apply via `mcp__supabase__apply_migration`** (name `admin_user_list`).
+- [x] **Step 2: Apply via `mcp__supabase__apply_migration`** (name `admin_user_list`).
 
-- [ ] **Step 3: Fetch the recorded version and name the committed file to match**
+- [x] **Step 3: Fetch the recorded version and name the committed file to match**
 
 ```sql
 select version from supabase_migrations.schema_migrations where name = 'admin_user_list';
 ```
 Save the SQL to `supabase/migrations/<version>_admin_user_list.sql`.
 
-- [ ] **Step 4: Verify** via `mcp__supabase__execute_sql`:
+- [x] **Step 4: Verify** via `mcp__supabase__execute_sql`:
 
 ```sql
 select count(*), count(*) filter (where is_admin) as admins,
@@ -106,7 +106,7 @@ set role authenticated; select * from public.admin_user_list(); -- expect: permi
 reset role;
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add supabase/migrations/*_admin_user_list.sql
@@ -129,7 +129,7 @@ git commit -m "feat(db): admin_user_list() support roster function, service_role
   - `banGuard(actorId, target): GuardResult` — `target` is `{ id, is_admin }` or `null`
   - `GuardResult = { ok: true } | { ok: false, status: 400|404|409, message: string }`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```typescript
 // supabase/functions/_shared/adminUserGuards.test.ts
@@ -186,9 +186,9 @@ describe('banGuard', () => {
 })
 ```
 
-- [ ] **Step 2: Run** — `npx vitest run supabase/functions/_shared/adminUserGuards.test.ts` — Expected: FAIL (module not found).
+- [x] **Step 2: Run** — `npx vitest run supabase/functions/_shared/adminUserGuards.test.ts` — Expected: FAIL (module not found).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```typescript
 // supabase/functions/_shared/adminUserGuards.ts — pure guard logic for admin-users writes.
@@ -224,9 +224,9 @@ export function banGuard(
 }
 ```
 
-- [ ] **Step 4: Run tests** — Expected: 9 passed.
+- [x] **Step 4: Run tests** — Expected: 9 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add supabase/functions/_shared/adminUserGuards.ts supabase/functions/_shared/adminUserGuards.test.ts
@@ -249,7 +249,7 @@ git commit -m "feat(admin): pure comp/ban guard helpers with tests"
   - `comp`/`ban`/`unban` → `{ ok: true }` or guard error
   - Errors: 400 unknown action/invalid tier · 401/403 gate · 404 unknown user · 409 guards · 500 generic.
 
-- [ ] **Step 1: Write the function**
+- [x] **Step 1: Write the function**
 
 ```typescript
 // admin-users — authenticated, admin-only. Support surface for the admin Users pages:
@@ -386,25 +386,25 @@ Deno.serve(async (req) => {
 
 Note: `DEMO_USER_ID` is imported for clarity of the bundle graph even though only `banGuard` uses it internally — if your linter flags the unused import, drop it from the import list.
 
-- [ ] **Step 2: Register in `supabase/config.toml`** — append below `[functions.admin-metrics]`:
+- [x] **Step 2: Register in `supabase/config.toml`** — append below `[functions.admin-metrics]`:
 
 ```toml
 [functions.admin-users]
 verify_jwt = true
 ```
 
-- [ ] **Step 3: Deploy** via `mcp__supabase__deploy_edge_function` — name `admin-users`, entrypoint `index.ts`, bundle: `admin-users/index.ts` as `source/index.ts` + root-level `_shared/cors.ts`, `_shared/adminUserGuards.ts`, `_shared/money.ts` (match the admin-metrics v3 layout).
+- [x] **Step 3: Deploy** via `mcp__supabase__deploy_edge_function` — name `admin-users`, entrypoint `index.ts`, bundle: `admin-users/index.ts` as `source/index.ts` + root-level `_shared/cors.ts`, `_shared/adminUserGuards.ts`, `_shared/money.ts` (match the admin-metrics v3 layout).
 
-- [ ] **Step 4: Verify the gate**
+- [x] **Step 4: Verify the gate**
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}" -X POST https://zbipqfsqxnvrzhpdjvvy.supabase.co/functions/v1/admin-users
 ```
 Expected: `401`. Do NOT exercise write actions against the live function.
 
-- [ ] **Step 5: Confirm guard tests still pass** — `npx vitest run supabase/functions/_shared/adminUserGuards.test.ts` — 9 passed.
+- [x] **Step 5: Confirm guard tests still pass** — `npx vitest run supabase/functions/_shared/adminUserGuards.test.ts` — 9 passed.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add supabase/functions/admin-users/index.ts supabase/config.toml
@@ -423,7 +423,7 @@ git commit -m "feat(admin): admin-users edge function — roster, detail, audite
 - Consumes: `invokeEdge` (existing import already present in `admin.js` since Phase 2).
 - Produces: `adminUsersAction(body)` API fn; hooks `useAdminUsers()`, `useAdminUserDetail(id)`, `useCompTier()`, `useBanUser()`, `useUnbanUser()`. Mutations take `{ userId, tier? }`, invalidate `['admin','users']` and `['admin','users', userId]`, and surface server errors via the thrown `AppError` (toasting happens in the page).
 
-- [ ] **Step 1: Extend `src/api/admin.js`** — append:
+- [x] **Step 1: Extend `src/api/admin.js`** — append:
 
 ```javascript
 // Admin-only: user lookup & support actions (list/detail/comp/ban/unban).
@@ -433,7 +433,7 @@ export async function adminUsersAction(body) {
 }
 ```
 
-- [ ] **Step 2: Create `src/hooks/useAdminUsers.js`**
+- [x] **Step 2: Create `src/hooks/useAdminUsers.js`**
 
 ```javascript
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -482,9 +482,9 @@ export function useUnbanUser() {
 
 (Note: `['admin', 'users']` invalidation already covers the detail key by prefix; the explicit second invalidate is harmless and self-documenting — keep it.)
 
-- [ ] **Step 3: Verify** — `npx vitest run` — all existing tests pass (hooks are exercised by Task 5/6 component tests).
+- [x] **Step 3: Verify** — `npx vitest run` — all existing tests pass (hooks are exercised by Task 5/6 component tests).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/api/admin.js src/hooks/useAdminUsers.js
@@ -504,13 +504,13 @@ git commit -m "feat(admin): adminUsersAction API + user lookup hooks"
 - Consumes: `useAdminUsers()` (Task 4), kit `Table/THead/TR/TH/TD`, `Badge`, `Input`, `Skeleton`, `EmptyState`, `relativeTime` from `@/lib/date`.
 - Produces: `/admin/users` list page; rows link to `/admin/users/:id` (page created in Task 6 — register both routes NOW with Task 6's page as a placeholder file, see Step 5).
 
-- [ ] **Step 1: Update the AdminTabs test** — in `AdminTabs.test.jsx`, extend the existing assertions:
+- [x] **Step 1: Update the AdminTabs test** — in `AdminTabs.test.jsx`, extend the existing assertions:
 
 ```jsx
 expect(screen.getByRole('link', { name: 'Users' })).toHaveAttribute('href', '/admin/users')
 ```
 
-- [ ] **Step 2: Write the failing page test**
+- [x] **Step 2: Write the failing page test**
 
 ```jsx
 // src/pages/admin/__tests__/AdminUsersPage.test.jsx
@@ -568,9 +568,9 @@ describe('AdminUsersPage', () => {
 })
 ```
 
-- [ ] **Step 3: Run** — `npx vitest run src/pages/admin src/features/admin` — Expected: new tests FAIL, existing pass.
+- [x] **Step 3: Run** — `npx vitest run src/pages/admin src/features/admin` — Expected: new tests FAIL, existing pass.
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 `AdminTabs.jsx` — insert into the `tabs` array between Posts and Tools:
 ```jsx
@@ -671,7 +671,7 @@ export default function AdminUsersPage() {
 ```
 (Reconcile `Badge` variants, `Input` props, and the `Table` body pattern against `AdminPostsPage.jsx` — mirror it exactly; do not change tested texts/roles.)
 
-- [ ] **Step 5: Routes** — in `src/app/routes.jsx`, inside the admin children, after the `posts/:id` entry:
+- [x] **Step 5: Routes** — in `src/app/routes.jsx`, inside the admin children, after the `posts/:id` entry:
 
 ```jsx
   { path: 'users', element: <AdminUsersPage /> },
@@ -693,9 +693,9 @@ export default function AdminUserDetailPage() {
 }
 ```
 
-- [ ] **Step 6: Run tests** — `npx vitest run` — all green. Run the **Impeccable pass** on the list page.
+- [x] **Step 6: Run tests** — `npx vitest run` — all green. Run the **Impeccable pass** on the list page.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/features/admin/AdminTabs.jsx src/features/admin/__tests__/AdminTabs.test.jsx src/pages/admin/AdminUsersPage.jsx src/pages/admin/AdminUserDetailPage.jsx src/pages/admin/__tests__/AdminUsersPage.test.jsx src/app/routes.jsx
@@ -713,7 +713,7 @@ git commit -m "feat(admin): Users tab + searchable roster page"
 **Interfaces:**
 - Consumes: `useAdminUserDetail(id)`, `useCompTier/useBanUser/useUnbanUser` (Task 4), `useProfile` from `@/hooks/useProfile` (for "is this me" — same hook AdminGate uses), `StatTile` from `@/features/admin/pulse/StatTile`, `ConfirmDialog`, `formatCurrency`, `formatDate`/`relativeTime`, `isBanned` exported from `AdminUsersPage`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```jsx
 // src/pages/admin/__tests__/AdminUserDetailPage.test.jsx
@@ -798,9 +798,9 @@ describe('AdminUserDetailPage', () => {
 })
 ```
 
-- [ ] **Step 2: Run** — `npx vitest run src/pages/admin` — Expected: new tests FAIL against the placeholder.
+- [x] **Step 2: Run** — `npx vitest run src/pages/admin` — Expected: new tests FAIL against the placeholder.
 
-- [ ] **Step 3: Implement the page**
+- [x] **Step 3: Implement the page**
 
 Structure (four cards under `AdminTabs` + `PageHeader` with the user's email as title; loading = Skeletons; error = EmptyState with retry; toasts on mutation success/error using the thrown error's `userMessage || message`):
 
@@ -886,11 +886,11 @@ export default function AdminUserDetailPage() {
 
 Write the full JSX (the comments above are required content, not optional). Reconcile kit props against real components; keep tested texts/roles exactly as in Step 1.
 
-- [ ] **Step 4: Run** — `npx vitest run src/pages/admin` — Expected: all pass (fix kit-prop mismatches, not test assertions).
+- [x] **Step 4: Run** — `npx vitest run src/pages/admin` — Expected: all pass (fix kit-prop mismatches, not test assertions).
 
-- [ ] **Step 5: Full suite + build** — `npx vitest run` all green; `npx vite build` succeeds. Run the **Impeccable pass** on the detail page.
+- [x] **Step 5: Full suite + build** — `npx vitest run` all green; `npx vite build` succeeds. Run the **Impeccable pass** on the detail page.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/pages/admin/AdminUserDetailPage.jsx src/pages/admin/__tests__/AdminUserDetailPage.test.jsx
@@ -907,7 +907,7 @@ git commit -m "feat(admin): user detail page — identity, subscription, usage, 
 **Interfaces:**
 - Consumes: same `E2E_USER_EMAIL`/`E2E_USER_PASSWORD` env creds as the other admin specs (must be an admin).
 
-- [ ] **Step 1: Write the spec** — READ-ONLY: no comp, no ban, no clicks on action buttons.
+- [x] **Step 1: Write the spec** — READ-ONLY: no comp, no ban, no clicks on action buttons.
 
 ```javascript
 import { test, expect } from '@playwright/test'
@@ -937,11 +937,11 @@ test('admin can search the roster and open a user detail (read-only)', async ({ 
 })
 ```
 
-- [ ] **Step 2: Run** — `npx playwright test tests/e2e/admin-users.spec.js` with the env creds — Expected: PASS. Adjust selectors against the real DOM if needed, keeping intent (search → detail → counts render → no ban control on demo).
+- [x] **Step 2: Run** — `npx playwright test tests/e2e/admin-users.spec.js` with the env creds — Expected: PASS. Adjust selectors against the real DOM if needed, keeping intent (search → detail → counts render → no ban control on demo).
 
-- [ ] **Step 3: Run everything** — `npx vitest run` and `npx playwright test`. Expected: vitest all green; e2e — admin-users, admin-pulse, admin-posts PASS (`happy-path` known-failing per LOO-95, ignore).
+- [x] **Step 3: Run everything** — `npx vitest run` and `npx playwright test`. Expected: vitest all green; e2e — admin-users, admin-pulse, admin-posts PASS (`happy-path` known-failing per LOO-95, ignore).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add tests/e2e/admin-users.spec.js
