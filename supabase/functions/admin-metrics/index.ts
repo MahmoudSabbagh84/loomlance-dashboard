@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     const tiers = { free: 0, tier_1: 0, tier_2: 0, trialing: 0, pastDue: 0 }
     for (const p of profilesRes.data ?? []) {
-      if (p.subscription_tier in tiers) tiers[p.subscription_tier as 'free' | 'tier_1' | 'tier_2']++
+      if (p.subscription_tier === 'free' || p.subscription_tier === 'tier_1' || p.subscription_tier === 'tier_2') tiers[p.subscription_tier]++
       if (p.subscription_status === 'trialing') tiers.trialing++
       if (p.subscription_status === 'past_due') tiers.pastDue++
     }

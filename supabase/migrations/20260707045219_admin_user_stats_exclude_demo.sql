@@ -35,3 +35,9 @@ as $$
     )
   );
 $$;
+
+-- Restated so this migration is independently replay-safe (create-or-replace above resets grants).
+revoke all on function public.admin_user_stats() from public;
+revoke all on function public.admin_user_stats() from anon;
+revoke all on function public.admin_user_stats() from authenticated;
+grant execute on function public.admin_user_stats() to service_role;
