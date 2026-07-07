@@ -14,12 +14,16 @@ describe('compGuard', () => {
     expect(r).toEqual({ ok: false, status: 400, message: 'Invalid tier' })
   })
   it('409s a user with a live Stripe subscription', () => {
-    const r = compGuard({ id: OTHER, stripe_subscription_id: 'sub_123' }, 'tier_2')
+    const r = compGuard({ id: OTHER, stripe_subscription_id: 'sub_123', subscription_status: 'active' }, 'tier_2')
     expect(r.ok).toBe(false)
     if (!r.ok) {
       expect(r.status).toBe(409)
       expect(r.message).toMatch(/Stripe/)
     }
+  })
+  it('passes a churned ex-subscriber (canceled sub emits no further webhooks)', () => {
+    const r = compGuard({ id: OTHER, stripe_subscription_id: 'sub_123', subscription_status: 'canceled' }, 'tier_1')
+    expect(r).toEqual({ ok: true })
   })
   it('passes a non-subscriber with a valid tier', () => {
     for (const tier of VALID_TIERS) {

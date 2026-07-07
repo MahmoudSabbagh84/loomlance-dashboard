@@ -8,12 +8,15 @@ export const DEMO_USER_ID = 'd3a70000-0000-4000-8000-000000000001'
 export type GuardResult = { ok: true } | { ok: false; status: 400 | 404 | 409; message: string }
 
 export function compGuard(
-  target: { id: string; stripe_subscription_id: string | null } | null,
+  target: { id: string; stripe_subscription_id: string | null; subscription_status?: string } | null,
   tier: string,
 ): GuardResult {
   if (!target) return { ok: false, status: 404, message: 'User not found' }
   if (!(VALID_TIERS as readonly string[]).includes(tier)) return { ok: false, status: 400, message: 'Invalid tier' }
-  if (target.stripe_subscription_id) {
+  // Only a LIVE subscription blocks comping: the Stripe webhook overwrites tier/status on
+  // every event for live subs, but a canceled (deleted) subscription emits no further events,
+  // so comping a churned ex-subscriber is safe — and it's the main win-back support move.
+  if (target.stripe_subscription_id && target.subscription_status !== 'canceled') {
     return { ok: false, status: 409, message: 'This user has a live Stripe subscription — manage it in Stripe' }
   }
   return { ok: true }

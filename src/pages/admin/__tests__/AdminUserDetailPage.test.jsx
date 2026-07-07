@@ -1,6 +1,7 @@
 // src/pages/admin/__tests__/AdminUserDetailPage.test.jsx
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import AdminUserDetailPage from '../AdminUserDetailPage'
 import { useAdminUserDetail, useCompTier, useBanUser, useUnbanUser } from '@/hooks/useAdminUsers'
@@ -76,5 +77,24 @@ describe('AdminUserDetailPage', () => {
     })
     renderPage()
     expect(screen.getByRole('button', { name: /unban/i })).toBeInTheDocument()
+  })
+  it('applying a comp calls the mutation with the chosen tier', async () => {
+    const mutate = vi.fn()
+    useCompTier.mockReturnValue({ mutate, isPending: false })
+    useAdminUserDetail.mockReturnValue({ data: baseDetail, isLoading: false, isError: false, refetch: vi.fn() })
+    renderPage()
+    await userEvent.selectOptions(screen.getByLabelText('Comp tier'), 'tier_1')
+    await userEvent.click(screen.getByRole('button', { name: /apply/i }))
+    expect(mutate).toHaveBeenCalledWith({ userId: 'u1', tier: 'tier_1' }, expect.anything())
+  })
+  it('confirming the ban dialog calls the ban mutation', async () => {
+    const mutate = vi.fn()
+    useBanUser.mockReturnValue({ mutate, isPending: false })
+    useAdminUserDetail.mockReturnValue({ data: baseDetail, isLoading: false, isError: false, refetch: vi.fn() })
+    renderPage()
+    await userEvent.click(screen.getByRole('button', { name: /ban sign-in/i }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: /ban sign-in/i }))
+    expect(mutate).toHaveBeenCalledWith({ userId: 'u1' }, expect.anything())
   })
 })

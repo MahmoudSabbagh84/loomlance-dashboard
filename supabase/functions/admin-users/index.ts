@@ -59,6 +59,8 @@ Deno.serve(async (req) => {
         if (error) throw error
         return n ?? 0
       }
+      // NOTE: invoice totals and hours come from fetched rows, capped by the PostgREST row
+      // limit (1000). Fine at current scale; revisit with pagination if a user exceeds it.
       const [clients, projects, invoicesRes, timeRes, historyRes] = await Promise.all([
         count('clients'),
         count('projects'),
@@ -93,8 +95,9 @@ Deno.serve(async (req) => {
 
     if (action === 'comp') {
       if (!userId) return json({ error: 'userId required' }, 400)
-      const { data: target } = await service.from('profiles')
-        .select('id, subscription_tier, stripe_subscription_id').eq('id', userId).maybeSingle()
+      const { data: target, error: targetErr } = await service.from('profiles')
+        .select('id, subscription_tier, stripe_subscription_id, subscription_status').eq('id', userId).maybeSingle()
+      if (targetErr) throw targetErr
       const guard = compGuard(target, body?.tier)
       if (!guard.ok) return json({ error: guard.message }, guard.status)
       const from = target!.subscription_tier
@@ -107,7 +110,8 @@ Deno.serve(async (req) => {
 
     if (action === 'ban' || action === 'unban') {
       if (!userId) return json({ error: 'userId required' }, 400)
-      const { data: target } = await service.from('profiles').select('id, is_admin').eq('id', userId).maybeSingle()
+      const { data: target, error: targetErr } = await service.from('profiles').select('id, is_admin').eq('id', userId).maybeSingle()
+      if (targetErr) throw targetErr
       if (action === 'ban') {
         const guard = banGuard(user.id, target)
         if (!guard.ok) return json({ error: guard.message }, guard.status)

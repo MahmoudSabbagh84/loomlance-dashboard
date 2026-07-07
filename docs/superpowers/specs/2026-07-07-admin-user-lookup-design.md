@@ -9,7 +9,7 @@ A support surface inside `/admin`: a searchable **Users** list and a per-user de
 ## Decisions (made during brainstorming, 2026-07-07)
 
 - **Deactivate = reversible auth ban** (GoTrue `ban_duration`), keeping all data and public invoice links live. Not deletion, not invoice-link disabling.
-- **Comp only non-subscribers:** the Stripe subscription webhook overwrites `subscription_tier`/`status` for anyone with a `stripe_customer_id` on every event, so comping a paying user would silently revert. Server rejects (409); UI disables with a "manage in Stripe" note.
+- **Comp only users without a LIVE subscription:** the Stripe subscription webhook overwrites `subscription_tier`/`status` for live subscriptions on every event, so comping a paying user would silently revert. Server rejects (409); UI disables with a "manage in Stripe" note. **Churned ex-subscribers CAN be comped** (review finding, 2026-07-07): a canceled/deleted subscription emits no further webhook events, and win-back comps are the main support use — so "live" = `stripe_subscription_id` present AND `subscription_status <> 'canceled'` (`has_stripe_subscription` in `admin_user_list()` v2 carries this meaning).
 - **Audit log = `usage_events`** (exists, currently empty): one row per successful comp/ban/unban; reads not logged.
 - **Architecture: one edge function** `admin-users` with an action switch, over function-per-op or direct SQL RPCs (bans need the GoTrue admin API, which SQL can't reach cleanly).
 - List loads ALL users (25 today) and filters client-side by email/name — superset of the roadmap's "search by email". Pagination out of scope until a few hundred users.
