@@ -440,6 +440,9 @@ verify_jwt = true
 [functions.trigger-blog-publish]
 verify_jwt = true
 
+[functions.admin-metrics]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
