@@ -43,14 +43,14 @@ Deno.serve(async (req) => {
       if (error) throw error
       return count ?? 0
     }
-    const window = async (table: string, col: string) => ({
-      d7: await countSince(table, col, d7),
-      d30: await countSince(table, col, d30),
-    })
+    const window = async (table: string, col: string) => {
+      const [d7c, d30c] = await Promise.all([countSince(table, col, d7), countSince(table, col, d30)])
+      return { d7: d7c, d30: d30c }
+    }
 
     const [userStatsRes, profilesRes, invCreated, invSent, projects, clients, timeRes] = await Promise.all([
       service.rpc('admin_user_stats'),
-      service.from('profiles').select('subscription_tier, subscription_status'),
+      service.from('profiles').select('subscription_tier, subscription_status').neq('id', DEMO_USER_ID),
       window('invoices', 'created_at'),
       window('invoices', 'sent_at'),
       window('projects', 'created_at'),
