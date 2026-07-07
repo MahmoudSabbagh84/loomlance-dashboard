@@ -6,20 +6,23 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAppConfig, useUpdateAppConfig } from '@/hooks/useAppConfig'
 
 export default function AdminToolsPage() {
   const [confirming, setConfirming] = useState(false)
   const [running, setRunning] = useState(false)
-  const { data: config } = useAppConfig()
+  const { data: config, isLoading: configLoading, isError: configError, refetch: refetchConfig } = useAppConfig()
   const update = useUpdateAppConfig()
   const [banner, setBanner] = useState('')
   useEffect(() => {
     setBanner(config?.maintenance_banner ?? '')
   }, [config?.maintenance_banner])
   const hasActiveBanner = !!config?.maintenance_banner?.trim()
-  const dirty = banner.trim() !== (config?.maintenance_banner ?? '').trim() && banner.trim() !== ''
+  // Save requires loaded config (never blind-overwrite an unknown live value) and non-empty,
+  // changed text. Clearing is Clear's job — an emptied input cannot be "saved".
+  const dirty = !!config && banner.trim() !== (config.maintenance_banner ?? '').trim() && banner.trim() !== ''
 
   const onSave = () =>
     update.mutate(
@@ -29,16 +32,17 @@ export default function AdminToolsPage() {
         onError: (e) => toast.error(e.userMessage || e.message),
       }
     )
-  const onClear = () => {
-    setBanner('')
+  const onClear = () =>
     update.mutate(
       { maintenance_banner: null },
       {
-        onSuccess: () => toast.success('Banner cleared'),
+        onSuccess: () => {
+          setBanner('')
+          toast.success('Banner cleared')
+        },
         onError: (e) => toast.error(e.userMessage || e.message),
       }
     )
-  }
 
   async function handleReset() {
     setRunning(true)
@@ -62,24 +66,35 @@ export default function AdminToolsPage() {
         <p className="mt-1 text-sm text-fg-muted">
           Shown across the app and on the sign-in pages while set. Clear it to take it down.
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Input
-            id="maintenance-banner"
-            aria-label="Maintenance banner"
-            placeholder="e.g. Payments degraded — investigating"
-            value={banner}
-            onChange={(e) => setBanner(e.target.value)}
-            className="max-w-md"
-          />
-          <Button onClick={onSave} loading={update.isPending} disabled={!dirty}>
-            Save banner
-          </Button>
-          {hasActiveBanner && (
-            <Button variant="secondary" onClick={onClear} loading={update.isPending}>
-              Clear
+        {configError ? (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <p className="text-sm text-danger">Couldn’t load the current banner state.</p>
+            <Button variant="secondary" onClick={() => refetchConfig()}>
+              Try again
             </Button>
-          )}
-        </div>
+          </div>
+        ) : configLoading ? (
+          <Skeleton className="mt-4 h-9 max-w-md" />
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Input
+              id="maintenance-banner"
+              aria-label="Maintenance banner"
+              placeholder="e.g. Payments degraded — investigating"
+              value={banner}
+              onChange={(e) => setBanner(e.target.value)}
+              className="max-w-md"
+            />
+            <Button onClick={onSave} loading={update.isPending} disabled={!dirty}>
+              Save banner
+            </Button>
+            {hasActiveBanner && (
+              <Button variant="secondary" onClick={onClear} loading={update.isPending}>
+                Clear
+              </Button>
+            )}
+          </div>
+        )}
       </Card>
       <Card>
         <h3 className="font-semibold">Reset demo account</h3>
