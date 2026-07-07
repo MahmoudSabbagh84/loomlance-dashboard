@@ -14,3 +14,9 @@ export async function resetDemoUser() {
 export async function fetchAdminMetrics() {
   return invokeEdge('admin-metrics')
 }
+
+// Admin-only: user lookup & support actions (list/detail/comp/ban/unban).
+// Server enforces all guards; see supabase/functions/admin-users.
+export async function adminUsersAction(body) {
+  return invokeEdge('admin-users', body)
+}
