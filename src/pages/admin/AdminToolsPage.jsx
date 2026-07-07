@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { resetDemoUser } from '@/api/admin'
+import { AdminTabs } from '@/features/admin/AdminTabs'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -25,6 +26,7 @@ export default function AdminToolsPage() {
 
   return (
     <div className="space-y-5">
+      <AdminTabs />
       <PageHeader title="Tools" />
       <Card>
         <h3 className="font-semibold">Reset demo account</h3>

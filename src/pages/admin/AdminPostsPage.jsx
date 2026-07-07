@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, ExternalLink, Newspaper } from 'lucide-react'
 import { usePosts, useDeletePost } from '@/hooks/usePosts'
+import { AdminTabs } from '@/features/admin/AdminTabs'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -31,6 +32,7 @@ export default function AdminPostsPage() {
 
   return (
     <div className="space-y-5">
+      <AdminTabs />
       <PageHeader title="Blog posts" subtitle="Release notes, product updates, and press mentions">
         <Button onClick={() => navigate('/admin/posts/new')}>
           <Plus className="size-4" />
