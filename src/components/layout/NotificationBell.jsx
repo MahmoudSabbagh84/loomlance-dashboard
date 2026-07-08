@@ -51,19 +51,33 @@ export function NotificationBell() {
             <p className="p-4 text-sm text-fg-muted">You’re all caught up.</p>
           ) : (
             <ul className="max-h-96 divide-y divide-border overflow-y-auto">
-              {notes.map((n) => (
-                <li key={n.id} className={cn('transition-colors', !n.read_at && 'bg-bg-muted/50')}>
-                  <Link
-                    to={n.link_to || '#'}
-                    onClick={() => { if (!n.read_at) markRead.mutate(n.id); setOpen(false) }}
-                    className="block p-3 text-sm hover:bg-bg-muted"
-                  >
+              {notes.map((n) => {
+                const rowContent = (
+                  <>
                     <p>{n.payload?.title || n.kind}</p>
                     {n.payload?.body ? <p className="text-xs text-fg-muted">{n.payload.body}</p> : null}
                     <p className="mt-1 text-[10px] text-fg-subtle">{relativeTime(n.created_at)}</p>
-                  </Link>
-                </li>
-              ))}
+                  </>
+                )
+                const onRowClick = () => { if (!n.read_at) markRead.mutate(n.id); setOpen(false) }
+                const rowClass = 'block p-3 text-sm hover:bg-bg-muted'
+                // Announcements link out to the public blog — a router Link can't navigate to
+                // absolute URLs, so external targets get a real anchor in a new tab.
+                const external = n.link_to?.startsWith('http')
+                return (
+                  <li key={n.id} className={cn('transition-colors', !n.read_at && 'bg-bg-muted/50')}>
+                    {external ? (
+                      <a href={n.link_to} target="_blank" rel="noopener noreferrer" onClick={onRowClick} className={rowClass}>
+                        {rowContent}
+                      </a>
+                    ) : (
+                      <Link to={n.link_to || '#'} onClick={onRowClick} className={rowClass}>
+                        {rowContent}
+                      </Link>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </div>
