@@ -27,6 +27,13 @@ function useUserAction(action) {
     onSuccess: (_, { userId }) => {
       qc.invalidateQueries({ queryKey: ['admin', 'users'] })
       qc.invalidateQueries({ queryKey: ['admin', 'users', userId] })
+      // A tier change writes the DB out-of-band from the affected user's own profile cache.
+      // Refetch ['profile'] so that if the acting admin changed their own account, the
+      // Subscription tab and every hasFeature() gate pick up the new tier immediately
+      // (invalidate forces a refetch regardless of staleTime) instead of showing the old
+      // tier until re-login. (A different user logged in elsewhere still refreshes on their
+      // next window-focus refetch or re-login — that path is out-of-band by nature.)
+      qc.invalidateQueries({ queryKey: ['profile'] })
     },
   })
 }
