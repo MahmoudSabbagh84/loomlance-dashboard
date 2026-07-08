@@ -48,6 +48,7 @@ export default function AdminUserDetailPage() {
   const unban = useUnbanUser()
   const [tier, setTier] = useState('')
   const [confirmingBan, setConfirmingBan] = useState(false)
+  const [confirmingComp, setConfirmingComp] = useState(false)
 
   if (isLoading) {
     return (
@@ -95,8 +96,14 @@ export default function AdminUserDetailPage() {
     comp.mutate(
       { userId: u.id, tier },
       {
-        onSuccess: () => toast.success(`Comped to ${TIER_LABEL[tier]}`),
-        onError: (e) => toast.error(e.userMessage || e.message),
+        onSuccess: () => {
+          toast.success(`Comped to ${TIER_LABEL[tier]}`)
+          setConfirmingComp(false)
+        },
+        onError: (e) => {
+          toast.error(e.userMessage || e.message)
+          setConfirmingComp(false)
+        },
       }
     )
   const onBan = () =>
@@ -210,7 +217,7 @@ export default function AdminUserDetailPage() {
               </option>
             ))}
           </Select>
-          <Button onClick={onComp} loading={comp.isPending} disabled={!tier || compBlocked}>
+          <Button onClick={() => setConfirmingComp(true)} loading={comp.isPending} disabled={!tier || compBlocked}>
             Apply
           </Button>
         </div>
@@ -251,6 +258,17 @@ export default function AdminUserDetailPage() {
         </div>
       </Card>
 
+      <ConfirmDialog
+        open={confirmingComp}
+        title="Change subscription tier?"
+        body={`${u.email}: ${TIER_LABEL[u.subscription_tier] ?? u.subscription_tier} → ${TIER_LABEL[tier] ?? tier}.${
+          u.id === myProfile?.id ? ' This is the account you are signed in as.' : ''
+        }`}
+        confirmLabel="Apply change"
+        loading={comp.isPending}
+        onCancel={() => setConfirmingComp(false)}
+        onConfirm={onComp}
+      />
       <ConfirmDialog
         open={confirmingBan}
         title="Ban this user?"

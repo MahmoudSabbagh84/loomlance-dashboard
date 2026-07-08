@@ -78,13 +78,18 @@ describe('AdminUserDetailPage', () => {
     renderPage()
     expect(screen.getByRole('button', { name: /unban/i })).toBeInTheDocument()
   })
-  it('applying a comp calls the mutation with the chosen tier', async () => {
+  it('applying a comp confirms the exact change, then calls the mutation', async () => {
     const mutate = vi.fn()
     useCompTier.mockReturnValue({ mutate, isPending: false })
     useAdminUserDetail.mockReturnValue({ data: baseDetail, isLoading: false, isError: false, refetch: vi.fn() })
     renderPage()
     await userEvent.selectOptions(screen.getByLabelText('Comp tier'), 'tier_1')
-    await userEvent.click(screen.getByRole('button', { name: /apply/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^apply$/i }))
+    const dialog = await screen.findByRole('dialog')
+    // Safeguard spells out the exact account + tier transition before committing.
+    expect(within(dialog).getByText(/Free → Tier 1/)).toBeInTheDocument()
+    expect(mutate).not.toHaveBeenCalled()
+    await userEvent.click(within(dialog).getByRole('button', { name: /apply change/i }))
     expect(mutate).toHaveBeenCalledWith({ userId: 'u1', tier: 'tier_1' }, expect.anything())
   })
   it('confirming the ban dialog calls the ban mutation', async () => {
