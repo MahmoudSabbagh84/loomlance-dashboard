@@ -265,8 +265,10 @@ export default function AdminPostEditorPage() {
               />
               <span>
                 Announce in-app
-                <span className="block text-xs text-fg-muted">
-                  Notifies every user’s bell when this release is published — once only.
+                <span className={`block text-xs ${isPublished ? 'text-warning' : 'text-fg-muted'}`}>
+                  {isPublished
+                    ? 'This post is already live — saving will notify every user immediately.'
+                    : 'Notifies every user’s bell when this release is published — once only.'}
                 </span>
               </span>
             </label>

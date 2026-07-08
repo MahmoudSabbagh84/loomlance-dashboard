@@ -67,6 +67,14 @@ describe('AdminPostEditorPage — announce in-app', () => {
       patch: expect.objectContaining({ announce_in_app: true }),
     })
   })
+  it('warns that saving announces immediately on an already-published post', () => {
+    usePost.mockReturnValue({
+      data: { ...basePost, status: 'published', published_at: '2026-07-08T01:00:00Z' },
+      isError: false,
+    })
+    renderEditor()
+    expect(screen.getByText(/already live — saving will notify every user immediately/)).toBeInTheDocument()
+  })
   it('switching category away from release clears the flag in the next save', async () => {
     const update = idleMutation()
     useUpdatePost.mockReturnValue(update)

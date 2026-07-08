@@ -63,7 +63,7 @@ export function NotificationBell() {
                 const rowClass = 'block p-3 text-sm hover:bg-bg-muted'
                 // Announcements link out to the public blog — a router Link can't navigate to
                 // absolute URLs, so external targets get a real anchor in a new tab.
-                const external = n.link_to?.startsWith('http')
+                const external = /^https?:\/\//.test(n.link_to ?? '')
                 return (
                   <li key={n.id} className={cn('transition-colors', !n.read_at && 'bg-bg-muted/50')}>
                     {external ? (
