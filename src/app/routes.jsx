@@ -27,6 +27,7 @@ import AdminPostEditorPage from '@/pages/admin/AdminPostEditorPage'
 import AdminUsersPage from '@/pages/admin/AdminUsersPage'
 import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage'
 import AdminToolsPage from '@/pages/admin/AdminToolsPage'
+import AdminOpsPage from '@/pages/admin/AdminOpsPage'
 
 export const router = createBrowserRouter([
   // Public
@@ -71,6 +72,7 @@ export const router = createBrowserRouter([
           { path: 'users', element: <AdminUsersPage /> },
           { path: 'users/:id', element: <AdminUserDetailPage /> },
           { path: 'tools', element: <AdminToolsPage /> },
+          { path: 'ops', element: <AdminOpsPage /> },
         ],
       },
     ],

@@ -20,3 +20,8 @@ export async function fetchAdminMetrics() {
 export async function adminUsersAction(body) {
   return invokeEdge('admin-users', body)
 }
+
+// Admin-only: ops feeds (cron health, stripe/email/client failures). See supabase/functions/admin-ops.
+export async function fetchAdminOps() {
+  return invokeEdge('admin-ops')
+}

@@ -6,6 +6,7 @@ const tabs = [
   { to: '/admin/posts', label: 'Posts' },
   { to: '/admin/users', label: 'Users' },
   { to: '/admin/tools', label: 'Tools' },
+  { to: '/admin/ops', label: 'Ops' },
 ]
 
 export function AdminTabs() {

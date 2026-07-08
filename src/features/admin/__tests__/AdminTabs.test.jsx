@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { AdminTabs } from '../AdminTabs'
 
 describe('AdminTabs', () => {
-  it('renders the four admin section links', () => {
+  it('renders the five admin section links', () => {
     render(
       <MemoryRouter initialEntries={['/admin']}>
         <AdminTabs />
@@ -14,5 +14,6 @@ describe('AdminTabs', () => {
     expect(screen.getByRole('link', { name: 'Posts' })).toHaveAttribute('href', '/admin/posts')
     expect(screen.getByRole('link', { name: 'Users' })).toHaveAttribute('href', '/admin/users')
     expect(screen.getByRole('link', { name: 'Tools' })).toHaveAttribute('href', '/admin/tools')
+    expect(screen.getByRole('link', { name: 'Ops' })).toHaveAttribute('href', '/admin/ops')
   })
 })
