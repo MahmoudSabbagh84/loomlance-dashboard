@@ -446,6 +446,9 @@ verify_jwt = true
 [functions.admin-users]
 verify_jwt = true
 
+[functions.admin-ops]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
