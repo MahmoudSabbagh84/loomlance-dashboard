@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { toast } from 'sonner'
@@ -8,7 +8,7 @@ import { uploadBlogImage } from '@/api/blogImages'
 import { triggerBlogPublish } from '@/api/posts'
 import { slugify } from '@/lib/slug'
 import { formatDate } from '@/lib/date'
-import { Newspaper } from 'lucide-react'
+import { ArrowLeft, Newspaper } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
@@ -195,11 +195,15 @@ export default function AdminPostEditorPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={existing ? 'Edit post' : 'New post'}>
-        <Button
-          variant="secondary"
-          loading={saving && !publishing}
-          disabled={publishing}
+      <div className="space-y-1">
+        <Link to="/admin/posts" className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
+          <ArrowLeft className="size-3.5" /> All posts
+        </Link>
+        <PageHeader title={existing ? 'Edit post' : 'New post'}>
+          <Button
+            variant="secondary"
+            loading={saving && !publishing}
+            disabled={publishing}
           onClick={() => save().then((s) => s && toast.success('Draft saved'))}
         >
           Save draft
@@ -212,7 +216,8 @@ export default function AdminPostEditorPage() {
         ) : (
           <Button loading={publishing} disabled={publishing} onClick={handlePublish}>Publish</Button>
         )}
-      </PageHeader>
+        </PageHeader>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="space-y-4">
