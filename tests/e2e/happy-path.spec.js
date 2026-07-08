@@ -17,7 +17,7 @@ test('user can sign in, add a client, create a project, draft an invoice', async
   await page.getByRole('button', { name: /new client/i }).first().click()
   await page.getByLabel('Name').fill(`ZZ E2E Client ${stamp}`)
   await page.getByRole('button', { name: 'Create' }).click()
-  await expect(page.getByRole('heading', { name: 'Clients' })).toBeVisible()
+  await expect(page.getByText(`ZZ E2E Client ${stamp}`).first()).toBeVisible()
 
   // Create a project. The Task key auto-derives to "ZEP1" from the ZZ name and collides with
   // any leftover run's project (unique per user) — set a stamp-unique key explicitly.
