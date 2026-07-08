@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase'
 import { mapPostgresError } from '@/lib/errors'
-import { createInvoice, nextInvoiceNumber } from '@/api/invoices'
 
 const COLS =
   'id, user_id, project_id, contract_id, client_id, title, description, currency, amount, hours, hourly_rate, added_days, status, public_token, link_expires_at, sent_at, decided_at, approver_name, decline_reason, billed_invoice_id, created_at, updated_at'
@@ -46,27 +45,12 @@ export async function regenerateChangeRequestLink(id) {
   return data // token
 }
 
-// Approved change → a draft invoice with the change as a single line item.
-export async function billChangeRequest(cr) {
-  const invoice_number = await nextInvoiceNumber()
-  const today = new Date().toISOString().slice(0, 10)
-  const invoice = await createInvoice({
-    client_id: cr.client_id,
-    project_id: cr.project_id,
-    invoice_number,
-    issue_date: today,
-    due_date: today,
-    currency: cr.currency,
-    line_items: [
-      {
-        description: cr.title,
-        quantity: cr.hours ?? 1,
-        unit_price: cr.hourly_rate ?? cr.amount,
-        tax_rate: 0,
-        discount_rate: 0,
-      },
-    ],
-  })
-  await updateChangeRequest(cr.id, { billed_invoice_id: invoice.id })
-  return invoice
+// Approved change → a draft invoice with the change as a single line item. The RPC creates the
+// invoice, its line item, and stamps billed_invoice_id atomically (guarded: approved + not yet
+// billed), so it can't double-bill and the line total always equals the authoritative amount.
+// Returns the new invoice id.
+export async function billChangeRequest(id) {
+  const { data, error } = await supabase.rpc('bill_change_request', { p_id: id })
+  if (error) throw mapPostgresError(error)
+  return data
 }

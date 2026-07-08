@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, Copy, RefreshCw } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -23,6 +23,7 @@ export function ChangeRequestsPanel({ project }) {
   const send = useSendChangeRequest()
   const regen = useRegenerateChangeRequestLink()
   const bill = useBillChangeRequest()
+  const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
   const base = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin
 
@@ -105,8 +106,11 @@ export function ChangeRequestsPanel({ project }) {
                       size="sm"
                       loading={bill.isPending}
                       onClick={() =>
-                        bill.mutate(cr, {
-                          onSuccess: () => toast.success('Draft invoice created from this change'),
+                        bill.mutate(cr.id, {
+                          onSuccess: (invoiceId) => {
+                            toast.success('Draft invoice created from this change')
+                            navigate(`/invoices/${invoiceId}`)
+                          },
                           onError: (e) => toast.error(e.userMessage || e.message),
                         })
                       }
