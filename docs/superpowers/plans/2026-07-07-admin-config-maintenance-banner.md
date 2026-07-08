@@ -29,7 +29,7 @@
 **Interfaces:**
 - Produces: `public.app_config` single row (`id = true`), column `maintenance_banner text`, world-readable, `is_admin()`-updatable, audit-logged to `usage_events`. Tasks 2–4 read/write it via supabase-js.
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- app_config v2 (Phase 4): rebuilt after the original (mock_payments_enabled only) was
@@ -94,9 +94,9 @@ create trigger app_config_audit
 
 Note: `usage_events.user_id` must be nullable for the SQL-editor case — check with `select is_nullable from information_schema.columns where table_name='usage_events' and column_name='user_id'`. If it is `NO`, change the trigger to `coalesce(auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid)` is NOT acceptable (fake user) — instead skip the insert when `auth.uid()` is null and note it in the migration comment.
 
-- [ ] **Step 2: Apply via `mcp__supabase__apply_migration`** (name `app_config_rebuild`), then fetch the recorded version and save the file as `supabase/migrations/<version>_app_config_rebuild.sql`.
+- [x] **Step 2: Apply via `mcp__supabase__apply_migration`** (name `app_config_rebuild`), then fetch the recorded version and save the file as `supabase/migrations/<version>_app_config_rebuild.sql`.
 
-- [ ] **Step 3: Verify** via `mcp__supabase__execute_sql`:
+- [x] **Step 3: Verify** via `mcp__supabase__execute_sql`:
 
 ```sql
 select * from public.app_config;                          -- exactly one row, banner null
@@ -117,7 +117,7 @@ rollback;
 ```
 Expected: one payload row with `from: null, to: 'probe'` — then rolled back (verify `select maintenance_banner from public.app_config` is still null).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add supabase/migrations/*_app_config_rebuild.sql
@@ -134,7 +134,7 @@ git commit -m "feat(db): rebuild app_config — maintenance banner, is_admin wri
 **Interfaces:**
 - Produces: `fetchAppConfig(): Promise<{ id, maintenance_banner, updated_at }>`, `updateAppConfig(patch)`; hooks `useAppConfig()` (queryKey `['app-config']`, staleTime 60s) and `useUpdateAppConfig()` (invalidates `['app-config']`). Tasks 3–4 consume.
 
-- [ ] **Step 1: `src/api/config.js`**
+- [x] **Step 1: `src/api/config.js`**
 
 ```javascript
 import { supabase } from '@/lib/supabase'
@@ -154,7 +154,7 @@ export async function updateAppConfig(patch) {
 }
 ```
 
-- [ ] **Step 2: `src/hooks/useAppConfig.js`**
+- [x] **Step 2: `src/hooks/useAppConfig.js`**
 
 ```javascript
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -173,7 +173,7 @@ export function useUpdateAppConfig() {
 }
 ```
 
-- [ ] **Step 3: Verify + commit** — `npx vitest run` (all green, no new tests this task):
+- [x] **Step 3: Verify + commit** — `npx vitest run` (all green, no new tests this task):
 
 ```bash
 git add src/api/config.js src/hooks/useAppConfig.js
@@ -193,7 +193,7 @@ git commit -m "feat(config): app_config API + hooks"
 - Consumes: `useAppConfig()` (Task 2).
 - Produces: `<MaintenanceBanner />` — self-contained; renders nothing unless `maintenance_banner` has non-whitespace content.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```jsx
 // src/components/layout/__tests__/MaintenanceBanner.test.jsx
@@ -223,9 +223,9 @@ describe('MaintenanceBanner', () => {
 })
 ```
 
-- [ ] **Step 2: Run** — `npx vitest run src/components/layout` — Expected: FAIL (module missing).
+- [x] **Step 2: Run** — `npx vitest run src/components/layout` — Expected: FAIL (module missing).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```jsx
 import { TriangleAlert } from 'lucide-react'
@@ -248,9 +248,9 @@ export function MaintenanceBanner() {
 
 Mounts: in `AppShell.jsx`, first child of the `flex flex-1 flex-col` div (above `<Topbar />`); in `LoginPage.jsx`, first element inside the page wrapper (above the logo block) — match the page's existing layout structure. Verify `/i/:token` (`PublicInvoicePage`) does NOT render `AppShell` (it doesn't — confirm via routes.jsx) so no banner leaks to clients.
 
-- [ ] **Step 4: Run** — `npx vitest run` — all green (new 5 + baseline). **Impeccable pass** (banner tone/contrast in light + dark).
+- [x] **Step 4: Run** — `npx vitest run` — all green (new 5 + baseline). **Impeccable pass** (banner tone/contrast in light + dark).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/layout/MaintenanceBanner.jsx src/components/layout/__tests__/MaintenanceBanner.test.jsx src/components/layout/AppShell.jsx src/pages/LoginPage.jsx
@@ -268,7 +268,7 @@ git commit -m "feat(config): maintenance banner across app shell + login"
 **Interfaces:**
 - Consumes: `useAppConfig()` / `useUpdateAppConfig()` (Task 2), kit `Card/Input/Button`, sonner.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```jsx
 // src/pages/admin/__tests__/AdminToolsPage.test.jsx
@@ -320,9 +320,9 @@ describe('AdminToolsPage — maintenance banner card', () => {
 
 Note: `AdminToolsPage` renders `resetDemoUser` imports — the test file may need `vi.mock('@/api/admin')` if module side-effects reach supabase; mirror how other admin page tests isolate (AdminUsersPage.test mocks only hooks — check whether Tools imports run clean under jsdom; add `vi.mock('@/api/admin')` if the import chain touches `supabase` env).
 
-- [ ] **Step 2: Run** — Expected: FAIL (missing labels/buttons).
+- [x] **Step 2: Run** — Expected: FAIL (missing labels/buttons).
 
-- [ ] **Step 3: Implement** — in `AdminToolsPage.jsx`, add ABOVE the demo-reset `Card`:
+- [x] **Step 3: Implement** — in `AdminToolsPage.jsx`, add ABOVE the demo-reset `Card`:
 
 ```jsx
 <Card>
@@ -370,9 +370,9 @@ const onClear = () => { setBanner(''); update.mutate({ maintenance_banner: null 
 ```
 Add the imports (`useEffect`, `Input`, `useAppConfig`, `useUpdateAppConfig`). Keep the existing demo-reset card and its behavior untouched.
 
-- [ ] **Step 4: Run all tests** — `npx vitest run` — Expected: all green. `npx vite build` succeeds. **Impeccable pass** on the Tools page.
+- [x] **Step 4: Run all tests** — `npx vitest run` — Expected: all green. `npx vite build` succeeds. **Impeccable pass** on the Tools page.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/pages/admin/AdminToolsPage.jsx src/pages/admin/__tests__/AdminToolsPage.test.jsx
