@@ -26,7 +26,7 @@
 **Files:**
 - Create: `supabase/migrations/<applied-version>_admin_cron_health.sql`
 
-- [ ] **Step 1: Write + apply**
+- [x] **Step 1: Write + apply**
 
 ```sql
 -- admin_cron_health(): per-job pg_cron status for the admin Ops page (Phase 6).
@@ -71,9 +71,9 @@ revoke all on function public.admin_cron_health() from authenticated;
 grant execute on function public.admin_cron_health() to service_role;
 ```
 
-- [ ] **Step 2: Fetch recorded version, save file with matching name.**
-- [ ] **Step 3: Verify live** — `select * from public.admin_cron_health();` → 3 jobs, last_status `succeeded`, failures_7d 0. `set role authenticated; select * from public.admin_cron_health();` → permission denied.
-- [ ] **Step 4: Commit** — `feat(db): admin_cron_health() pg_cron status function, service_role-only`
+- [x] **Step 2: Fetch recorded version, save file with matching name.**
+- [x] **Step 3: Verify live** — `select * from public.admin_cron_health();` → 3 jobs, last_status `succeeded`, failures_7d 0. `set role authenticated; select * from public.admin_cron_health();` → permission denied.
+- [x] **Step 4: Commit** — `feat(db): admin_cron_health() pg_cron status function, service_role-only`
 
 ---
 
@@ -101,26 +101,26 @@ async function logFailure(message: string, context: Record<string, unknown>) {
 
 (In the two webhooks `createClient` is already imported; in `send-invoice` too. Where a service client (`admin`) already exists in scope, still use the helper's own client — it keeps the call sites uniform and the helper self-contained.)
 
-- [ ] **Step 1: `send-invoice`** — insert `await logFailure(...)` at exactly two places, changing nothing else:
+- [x] **Step 1: `send-invoice`** — insert `await logFailure(...)` at exactly two places, changing nothing else:
   - the SES failure return (`return json({ error: 'Email send failed', ... }, 502)` at ~line 155): before the return, `await logFailure('Email send failed: SES ' + sesRes.status, { source: 'send-invoice', invoiceId, status: sesRes.status })` (use the actual invoice-id variable in scope — read the function).
   - the outer catch (~line 160): `await logFailure(e instanceof Error ? e.message : String(e), { source: 'send-invoice' })` before the existing return.
 
-- [ ] **Step 2: `stripe-webhook`** — three insertions:
+- [x] **Step 2: `stripe-webhook`** — three insertions:
   - signature-verification catch (~line 28, currently bare `catch { return new Response('invalid signature', { status: 400 }) }`): log `('invalid webhook signature', { source: 'stripe-webhook' })` before the return.
   - the `ledger error` 500 return (~line 44): log `('webhook ledger error: ' + dupErr.message, { source: 'stripe-webhook', eventId: event.id, eventType: event.type })`.
   - wrap the event-processing body (everything AFTER the ledger insert through the final `return new Response('ok')`) in `try { ... } catch (e) { await logFailure(...m..., { source: 'stripe-webhook', eventId: event.id, eventType: event.type }); return new Response('handler error', { status: 500 }) }`. Read the whole function first; keep the existing early returns inside the try untouched.
 
-- [ ] **Step 3: `stripe-subscription-webhook`** — same three patterns (`source: 'subscription-webhook'`), PLUS convert the two console-only anomalies (~lines 80-82: missing `metadata.tier` / missing price id) to ALSO call `logFailure` with the same message (keep the `console.error` lines).
+- [x] **Step 3: `stripe-subscription-webhook`** — same three patterns (`source: 'subscription-webhook'`), PLUS convert the two console-only anomalies (~lines 80-82: missing `metadata.tier` / missing price id) to ALSO call `logFailure` with the same message (keep the `console.error` lines).
 
-- [ ] **Step 4: Redeploy all three** — for each: `mcp__supabase__get_edge_function` → take its current deployed files → apply the same edit you made to the repo file → deploy. The repo file and deployed file must end up identical (diff them).
+- [x] **Step 4: Redeploy all three** — for each: `mcp__supabase__get_edge_function` → take its current deployed files → apply the same edit you made to the repo file → deploy. The repo file and deployed file must end up identical (diff them).
 
-- [ ] **Step 5: Verify, without simulating events:**
+- [x] **Step 5: Verify, without simulating events:**
   - `curl -s -o /dev/null -w "%{http_code}" -X POST https://zbipqfsqxnvrzhpdjvvy.supabase.co/functions/v1/stripe-webhook` → still `400`/`401`-equivalent it returned before the change (check the BEFORE value first — verify_jwt=false so it reaches the function: expect `400 invalid signature`).
   - Then confirm exactly one new `error_logs` row appeared (`context->>'source' = 'stripe-webhook'`, message about signature) — this proves the writer works end-to-end. Delete that probe row (scoped: `delete from error_logs where context->>'source'='stripe-webhook' and message like '%signature%' and created_at > now() - interval '10 minutes'` — check count first, expect 1... actually leave it if you prefer; it is a REAL failure record of our probe. Owner call: delete it to keep feeds clean; note either way.
   - send-invoice: `curl` unauthenticated → 401 gateway (unchanged; verify_jwt=true).
   - `npx vitest run` still green (no frontend changes yet).
 
-- [ ] **Step 6: Commit** — `feat(ops): best-effort failure logging in send-invoice + stripe webhooks`
+- [x] **Step 6: Commit** — `feat(ops): best-effort failure logging in send-invoice + stripe webhooks`
 
 ---
 
@@ -130,7 +130,7 @@ async function logFailure(message: string, context: Record<string, unknown>) {
 - Create: `supabase/functions/admin-ops/index.ts`
 - Modify: `supabase/config.toml` (append `[functions.admin-ops] verify_jwt = true`)
 
-- [ ] **Step 1: Write the function** — gate copied verbatim from `admin-metrics`, then service client and parallel reads:
+- [x] **Step 1: Write the function** — gate copied verbatim from `admin-metrics`, then service client and parallel reads:
 
 ```typescript
 // admin-ops — authenticated, admin-only. "Is the machinery working?" feeds for /admin/ops:
@@ -207,15 +207,15 @@ Deno.serve(async (req) => {
 ```
 (The JSON-path filters (`context->>source`) in PostgREST `.eq/.in/.not` need verifying — if the client rejects the syntax, fall back to fetching last 60 error_logs rows once and partitioning all four buckets in TS. Behavior over cleverness.)
 
-- [ ] **Step 2: config.toml** append below `[functions.admin-users]`:
+- [x] **Step 2: config.toml** append below `[functions.admin-users]`:
 
 ```toml
 [functions.admin-ops]
 verify_jwt = true
 ```
 
-- [ ] **Step 3: Deploy** (bundle: `source/index.ts` + `_shared/cors.ts`) and verify gate: unauthenticated POST → 401.
-- [ ] **Step 4: Commit** — `feat(admin): admin-ops edge function — cron, stripe, email, client-error feeds`
+- [x] **Step 3: Deploy** (bundle: `source/index.ts` + `_shared/cors.ts`) and verify gate: unauthenticated POST → 401.
+- [x] **Step 4: Commit** — `feat(admin): admin-ops edge function — cron, stripe, email, client-error feeds`
 
 ---
 
@@ -226,7 +226,7 @@ verify_jwt = true
 - Create: `src/hooks/useAdminOps.js`, `src/pages/admin/AdminOpsPage.jsx`
 - Test: `src/pages/admin/__tests__/AdminOpsPage.test.jsx`
 
-- [ ] **Step 1: API + hook**
+- [x] **Step 1: API + hook**
 
 ```javascript
 // in src/api/admin.js
@@ -251,7 +251,7 @@ export function useAdminOps() {
 }
 ```
 
-- [ ] **Step 2: Failing tests** — AdminTabs test gains the Users-style assertion for `Ops → /admin/ops`. `AdminOpsPage.test.jsx` (mock `@/hooks/useAdminOps`):
+- [x] **Step 2: Failing tests** — AdminTabs test gains the Users-style assertion for `Ops → /admin/ops`. `AdminOpsPage.test.jsx` (mock `@/hooks/useAdminOps`):
 
 ```jsx
 // Cases:
@@ -263,23 +263,23 @@ export function useAdminOps() {
 // Fixture mirrors the Task 3 contract exactly.
 ```
 
-- [ ] **Step 3: Implement** — `AdminTabs` gains `{ to: '/admin/ops', label: 'Ops' }` after Tools; route `{ path: 'ops', element: <AdminOpsPage /> }`; page mirrors the Pulse's skeleton/error/refresh scaffolding with four `Card`s:
+- [x] **Step 3: Implement** — `AdminTabs` gains `{ to: '/admin/ops', label: 'Ops' }` after Tools; route `{ path: 'ops', element: <AdminOpsPage /> }`; page mirrors the Pulse's skeleton/error/refresh scaffolding with four `Card`s:
   1. Cron: kit `Table` (Job / Schedule / Last run `relativeTime` / Status `Badge variant={lastStatus === 'succeeded' ? 'success' : 'danger'}` / `failures7d > 0 && <Badge variant="danger">{n} failed · 7d</Badge>`).
   2. Stripe: two sub-lists — lastByType (`type` mono text + relative time; EmptyState "No events recorded yet") and failures (shared `ErrorList`).
   3. Email failures: `ErrorList`.
   4. Client errors: `ErrorList`.
   `ErrorList` = small local component: message (truncated), `context.source ?? context.type ?? '—'` subtle, relative time; renders `<p>Nothing to report.</p>` styled muted when empty.
 
-- [ ] **Step 4: Green** — target tests, then full `npx vitest run`, `npx vite build`. **Impeccable pass** on the page.
-- [ ] **Step 5: Commit** — `feat(admin): Ops page — cron health, stripe, email, client-error feeds`
+- [x] **Step 4: Green** — target tests, then full `npx vitest run`, `npx vite build`. **Impeccable pass** on the page.
+- [x] **Step 5: Commit** — `feat(admin): Ops page — cron health, stripe, email, client-error feeds`
 
 ---
 
 ### Task 5: E2E (read-only) + full verification
 
-- [ ] **Step 1:** `tests/e2e/admin-ops.spec.js` — login (env creds), `/admin/ops`, expect the three cron job names visible (real data), tab navigation works. Read-only.
-- [ ] **Step 2:** Full `npx vitest run` + `npx playwright test` (all 5 specs green).
-- [ ] **Step 3: Commit** — `test(e2e): admin ops page renders live cron health`
+- [x] **Step 1:** `tests/e2e/admin-ops.spec.js` — login (env creds), `/admin/ops`, expect the three cron job names visible (real data), tab navigation works. Read-only.
+- [x] **Step 2:** Full `npx vitest run` + `npx playwright test` (all 5 specs green).
+- [x] **Step 3: Commit** — `test(e2e): admin ops page renders live cron health`
 
 ---
 
