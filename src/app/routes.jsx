@@ -19,6 +19,7 @@ import TimePage from '@/pages/TimePage'
 import ExpensesPage from '@/pages/ExpensesPage'
 import ReportsPage from '@/pages/ReportsPage'
 import ProfilePage from '@/pages/ProfilePage'
+import VaultPage from '@/pages/VaultPage'
 import PublicInvoicePage from '@/pages/PublicInvoicePage'
 import PublicChangeRequestPage from '@/pages/PublicChangeRequestPage'
 import NotFoundPage from '@/pages/NotFoundPage'
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
       { path: 'time', element: <TimePage /> },
       { path: 'expenses', element: <ExpensesPage /> },
       { path: 'reports', element: <ReportsPage /> },
+      { path: 'vault', element: <VaultPage /> },
       { path: 'profile', element: <ProfilePage /> },
       {
         path: 'admin',
