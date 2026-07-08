@@ -19,18 +19,23 @@ test('user can sign in, add a client, create a project, draft an invoice', async
   await page.getByRole('button', { name: 'Create' }).click()
   await expect(page.getByRole('heading', { name: 'Clients' })).toBeVisible()
 
-  // Create a project
+  // Create a project. The Task key auto-derives to "ZEP1" from the ZZ name and collides with
+  // any leftover run's project (unique per user) — set a stamp-unique key explicitly.
   await page.getByRole('link', { name: 'Projects' }).click()
   await page.getByRole('button', { name: /new project/i }).first().click()
-  await page.getByLabel('Client').selectOption({ index: 1 })
+  await page.getByLabel('Client').selectOption({ label: `ZZ E2E Client ${stamp}` })
   await page.getByLabel('Name').fill(`ZZ E2E Project ${stamp}`)
+  await page.getByLabel('Task key').fill(`Z${String(stamp).slice(-4)}`)
   await page.getByRole('button', { name: 'Create' }).click()
   await expect(page.getByText(`ZZ E2E Project ${stamp}`).first()).toBeVisible()
 
-  // Draft an invoice (wait for the clients query to resolve so the draft can be seeded)
+  // Draft an invoice: "New invoice" opens a dialog (client select + Create draft) since the
+  // LOO-91 pay-flow rework — drive it with the ZZ client created above.
   await page.getByRole('link', { name: 'Invoices' }).click()
   await expect(page.getByRole('heading', { name: 'Invoices' })).toBeVisible()
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: /new invoice/i }).first().click()
+  await page.getByLabel('Client').selectOption({ label: `ZZ E2E Client ${stamp}` })
+  await page.getByRole('button', { name: 'Create draft' }).click()
   await expect(page.getByRole('heading', { name: /INV-/ })).toBeVisible({ timeout: 10000 })
 })
