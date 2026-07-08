@@ -17,6 +17,19 @@ const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)))
 // quarantines messages with one giant unwrapped base64 line (esp. large attachments).
 const wrap76 = (s: string) => s.replace(/(.{76})/g, '$1\r\n')
 
+// Best-effort ops logging to public.error_logs (Phase 6 admin Ops page) — a logging failure
+// must never change this function's response. user_id stays null for server-side rows.
+async function logFailure(message: string, context: Record<string, unknown>) {
+  try {
+    const svc = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+      auth: { persistSession: false },
+    })
+    await svc.from('error_logs').insert({ message: message.slice(0, 500), context })
+  } catch (e) {
+    console.error('logFailure:', e instanceof Error ? e.message : String(e))
+  }
+}
+
 Deno.serve(async (req) => {
   const json = (obj: unknown, status = 200) => jsonBase(obj, status, req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(req) })
@@ -152,12 +165,15 @@ Deno.serve(async (req) => {
       body: JSON.stringify({ Content: { Raw: { Data: b64(rawMime) } } }),
     })
     if (!sesRes.ok) {
-      return json({ error: 'Email send failed', detail: await sesRes.text() }, 502)
+      const detail = await sesRes.text()
+      await logFailure(`Email send failed: SES ${sesRes.status}`, { source: 'send-invoice', invoiceId, status: sesRes.status })
+      return json({ error: 'Email send failed', detail }, 502)
     }
 
     await supabase.from('invoices').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', invoiceId)
     return json({ ok: true })
   } catch (e) {
+    await logFailure(e instanceof Error ? e.message : String(e), { source: 'send-invoice' })
     return json({ error: e instanceof Error ? e.message : String(e) }, 500)
   }
 })

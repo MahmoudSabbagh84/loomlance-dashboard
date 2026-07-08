@@ -26,6 +26,20 @@ const STATUS_MAP: Record<string, string> = {
   paused: 'canceled',
 }
 
+// Best-effort ops logging to public.error_logs (Phase 6 admin Ops page) — a logging failure
+// must never change this webhook's response or Stripe's retry semantics. Own client because
+// the signature-failure path runs before the request-scoped `admin` client exists.
+async function logFailure(message: string, context: Record<string, unknown>) {
+  try {
+    const svc = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+      auth: { persistSession: false },
+    })
+    await svc.from('error_logs').insert({ message: message.slice(0, 500), context })
+  } catch (e) {
+    console.error('logFailure:', e instanceof Error ? e.message : String(e))
+  }
+}
+
 Deno.serve(async (req) => {
   const signature = req.headers.get('stripe-signature')
   const bodyText = await req.text()
@@ -38,6 +52,7 @@ Deno.serve(async (req) => {
       Deno.env.get('STRIPE_SUBSCRIPTION_WEBHOOK_SECRET') ?? '',
     )
   } catch {
+    await logFailure('invalid webhook signature', { source: 'subscription-webhook' })
     return new Response('invalid signature', { status: 400 })
   }
 
@@ -50,9 +65,11 @@ Deno.serve(async (req) => {
   const { error: dupErr } = await admin.from('stripe_events').insert({ id: event.id, type: event.type })
   if (dupErr) {
     if (dupErr.code === '23505') return new Response('already processed', { status: 200 })
+    await logFailure(`webhook ledger error: ${dupErr.message}`, { source: 'subscription-webhook', eventId: event.id, eventType: event.type })
     return new Response('ledger error', { status: 500 })
   }
 
+  try {
   if (event.type.startsWith('customer.subscription.')) {
     const sub = event.data.object as Stripe.Subscription
 
@@ -77,9 +94,13 @@ Deno.serve(async (req) => {
           const product = price.product as Stripe.Product
           const metaTier = product?.metadata?.tier as string | undefined
           if (metaTier) tier = metaTier
-          else console.error(`[subscription-webhook] sub ${sub.id}: product ${product?.id} missing metadata.tier — leaving tier unchanged`)
+          else {
+            console.error(`[subscription-webhook] sub ${sub.id}: product ${product?.id} missing metadata.tier — leaving tier unchanged`)
+            await logFailure(`sub ${sub.id}: product ${product?.id} missing metadata.tier — tier unchanged`, { source: 'subscription-webhook', eventId: event.id, eventType: event.type })
+          }
         } else {
           console.error(`[subscription-webhook] sub ${sub.id}: no price id — leaving tier unchanged`)
+          await logFailure(`sub ${sub.id}: no price id — tier unchanged`, { source: 'subscription-webhook', eventId: event.id, eventType: event.type })
         }
       }
 
@@ -95,6 +116,12 @@ Deno.serve(async (req) => {
 
       await admin.from('profiles').update(patch).eq('id', uid)
     }
+  }
+  } catch (e) {
+    // Event ledgered but processing threw. Log + 500 so Stripe retries — same status an
+    // unhandled throw produced before, so retry semantics are unchanged.
+    await logFailure(e instanceof Error ? e.message : String(e), { source: 'subscription-webhook', eventId: event.id, eventType: event.type })
+    return new Response('handler error', { status: 500 })
   }
 
   return new Response('ok', { status: 200 })

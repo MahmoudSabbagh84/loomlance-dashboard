@@ -18,6 +18,20 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', { apiVersion:
 // Using the shared helper guarantees reconciliation can never drift from what was charged.
 const expectedAmountCents = (items: any[]) => Math.round(invoiceTotals(items ?? []).total * 100)
 
+// Best-effort ops logging to public.error_logs (Phase 6 admin Ops page) — a logging failure
+// must never change this webhook's response or Stripe's retry semantics. Own client because
+// the signature-failure path runs before the request-scoped `admin` client exists.
+async function logFailure(message: string, context: Record<string, unknown>) {
+  try {
+    const svc = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+      auth: { persistSession: false },
+    })
+    await svc.from('error_logs').insert({ message: message.slice(0, 500), context })
+  } catch (e) {
+    console.error('logFailure:', e instanceof Error ? e.message : String(e))
+  }
+}
+
 Deno.serve(async (req) => {
   const signature = req.headers.get('stripe-signature')
   const bodyText = await req.text()
@@ -26,6 +40,7 @@ Deno.serve(async (req) => {
   try {
     event = await stripe.webhooks.constructEventAsync(bodyText, signature ?? '', Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '')
   } catch {
+    await logFailure('invalid webhook signature', { source: 'stripe-webhook' })
     return new Response('invalid signature', { status: 400 })
   }
 
@@ -41,9 +56,11 @@ Deno.serve(async (req) => {
   const { error: dupErr } = await admin.from('stripe_events').insert({ id: event.id, type: event.type })
   if (dupErr) {
     if (dupErr.code === '23505') return new Response('already processed', { status: 200 })
+    await logFailure(`webhook ledger error: ${dupErr.message}`, { source: 'stripe-webhook', eventId: event.id, eventType: event.type })
     return new Response('ledger error', { status: 500 })
   }
 
+  try {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const invoiceId = session.metadata?.invoice_id
@@ -130,6 +147,14 @@ Deno.serve(async (req) => {
         )
       }
     }
+  }
+  } catch (e) {
+    // Event was ledgered but processing threw. Log it and 500 so Stripe retries — same status
+    // an unhandled throw produced before, so retry semantics are unchanged. NOTE: the retry
+    // will hit the 23505 "already processed" path and 200 without reprocessing; a handler that
+    // throws mid-way is therefore not automatically completed. Surfacing it here is the point.
+    await logFailure(e instanceof Error ? e.message : String(e), { source: 'stripe-webhook', eventId: event.id, eventType: event.type })
+    return new Response('handler error', { status: 500 })
   }
 
   return new Response('ok', { status: 200 })
