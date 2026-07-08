@@ -1,0 +1,4 @@
+# LoomLance responsible-disclosure contact (RFC 9116)
+Contact: https://loomlance.com/contact
+Expires: 2027-07-08T00:00:00.000Z
+Preferred-Languages: en
