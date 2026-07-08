@@ -20,6 +20,7 @@ import ExpensesPage from '@/pages/ExpensesPage'
 import ReportsPage from '@/pages/ReportsPage'
 import ProfilePage from '@/pages/ProfilePage'
 import PublicInvoicePage from '@/pages/PublicInvoicePage'
+import PublicChangeRequestPage from '@/pages/PublicChangeRequestPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import AdminPulsePage from '@/pages/admin/AdminPulsePage'
 import AdminPostsPage from '@/pages/admin/AdminPostsPage'
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
   { path: '/i/:token', element: <PublicInvoicePage /> },
+  { path: '/cr/:token', element: <PublicChangeRequestPage /> },
 
   // Protected
   {
