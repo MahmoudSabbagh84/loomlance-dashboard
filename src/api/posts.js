@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { mapPostgresError } from '@/lib/errors'
 import { invokeEdge } from '@/api/edge'
 
-const COLS = 'id, slug, title, excerpt, body_md, cover_image_url, category, external_url, status, published_at, created_at, updated_at'
+const COLS = 'id, slug, title, excerpt, body_md, cover_image_url, category, external_url, status, published_at, announce_in_app, announced_at, created_at, updated_at'
 
 export async function listPosts() {
   const { data, error } = await supabase.from('posts').select(COLS).order('created_at', { ascending: false })

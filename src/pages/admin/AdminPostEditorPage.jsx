@@ -7,6 +7,7 @@ import { usePost, useCreatePost, useUpdatePost, useSetPostStatus } from '@/hooks
 import { uploadBlogImage } from '@/api/blogImages'
 import { triggerBlogPublish } from '@/api/posts'
 import { slugify } from '@/lib/slug'
+import { formatDate } from '@/lib/date'
 import { Newspaper } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -22,7 +23,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 const ACTIONS_URL = 'https://github.com/MahmoudSabbagh84/loomlance-splah/actions'
 const EXCERPT_TARGET = 155
 
-const EMPTY = { title: '', slug: '', category: 'update', excerpt: '', body_md: '', cover_image_url: null, external_url: '' }
+const EMPTY = { title: '', slug: '', category: 'update', excerpt: '', body_md: '', cover_image_url: null, external_url: '', announce_in_app: false }
 
 export default function AdminPostEditorPage() {
   const { id } = useParams()
@@ -65,6 +66,7 @@ export default function AdminPostEditorPage() {
       const next = { ...f, [field]: value }
       if (field === 'title' && !slugTouched && !slugLocked) next.slug = slugify(value)
       if (field === 'category' && value !== 'press') next.external_url = ''
+      if (field === 'category' && value !== 'release') next.announce_in_app = false
       return next
     })
   }
@@ -84,7 +86,8 @@ export default function AdminPostEditorPage() {
     const fields = {
       title: form.title.trim(), slug: form.slug, category: form.category,
       excerpt: form.excerpt.trim(), body_md: form.body_md,
-      cover_image_url: form.cover_image_url, external_url: form.external_url || null, ...extra,
+      cover_image_url: form.cover_image_url, external_url: form.external_url || null,
+      announce_in_app: form.announce_in_app, ...extra,
     }
     if (existing) return update.mutateAsync({ id: existing.id, patch: fields })
     const created = await create.mutateAsync(fields)
@@ -250,6 +253,26 @@ export default function AdminPostEditorPage() {
                 onChange={(e) => set('external_url', e.target.value)}
               />
             </div>
+          )}
+
+          {form.category === 'release' && !existing?.announced_at && (
+            <label className="flex items-start gap-2.5 text-sm">
+              <input
+                type="checkbox"
+                checked={form.announce_in_app}
+                onChange={(e) => set('announce_in_app', e.target.checked)}
+                className="mt-0.5 size-4 accent-primary"
+              />
+              <span>
+                Announce in-app
+                <span className="block text-xs text-fg-muted">
+                  Notifies every user’s bell when this release is published — once only.
+                </span>
+              </span>
+            </label>
+          )}
+          {form.category === 'release' && existing?.announced_at && (
+            <p className="text-sm text-fg-muted">Announced {formatDate(existing.announced_at)}</p>
           )}
 
           <div>
