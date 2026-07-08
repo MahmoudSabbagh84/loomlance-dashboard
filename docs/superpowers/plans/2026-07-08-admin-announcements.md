@@ -28,7 +28,7 @@
 **Interfaces:**
 - Produces: `posts.announce_in_app boolean not null default false`, `posts.announced_at timestamptz`, trigger `posts_announce` calling `announce_release_post()`. Fan-out contract consumed by the bell: `user_notifications` rows `kind='announcement'`, `payload {title, body}`, `link_to` = external_url or `https://loomlance.com/blog/<slug>`.
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- Phase 5: in-app announcements. Publishing a release post with announce_in_app fans out one
@@ -73,9 +73,9 @@ create trigger posts_announce
   for each row execute function public.announce_release_post();
 ```
 
-- [ ] **Step 2: Apply via `mcp__supabase__apply_migration`** (name `announce_release_posts`); fetch the recorded version; save the file with the matching name.
+- [x] **Step 2: Apply via `mcp__supabase__apply_migration`** (name `announce_release_posts`); fetch the recorded version; save the file with the matching name.
 
-- [ ] **Step 3: Verify with a rollback probe** via `mcp__supabase__execute_sql` — ALL inside one transaction:
+- [x] **Step 3: Verify with a rollback probe** via `mcp__supabase__execute_sql` — ALL inside one transaction:
 
 ```sql
 begin;
@@ -101,7 +101,7 @@ select count(*) as residue from public.user_notifications where kind = 'announce
 
 Expected: `fanout_rows = user_count` (≈26), `stamped = true`, `fanout_rows_after_retouch` unchanged, `residue = 0`. Check the actual `posts` NOT NULL columns first (`author_id` name, etc.) and adapt the probe insert — the probe must satisfy the real schema. If the posts INSERT trigger path fires on the draft insert (it must not — status is 'draft'), that's a finding to fix, not adapt around.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add supabase/migrations/*_announce_release_posts.sql
@@ -120,7 +120,7 @@ git commit -m "feat(db): announce-release-post fan-out trigger, once-only via an
 - Consumes: existing form state (`EMPTY` at ~line 25, `set()` field helper ~line 64 with the category-switch clearing pattern, `payload()` builder ~line 85, category `Select` ~line 235, press-only block ~line 243), hooks from `@/hooks/usePosts`, upload API `@/api/blogImages`.
 - Produces: `announce_in_app` flows through create/update payloads; UI rules per spec.
 
-- [ ] **Step 1: Write the failing tests** — mock `@/hooks/usePosts` (all five exports used by the editor: `usePost`, `useCreatePost`, `useUpdatePost`, `useSetPostStatus`, and any others the file imports — check its import line and mock exactly those) and `@/api/blogImages`. Mount via `MemoryRouter` route `/admin/posts/:id` with a mocked existing post.
+- [x] **Step 1: Write the failing tests** — mock `@/hooks/usePosts` (all five exports used by the editor: `usePost`, `useCreatePost`, `useUpdatePost`, `useSetPostStatus`, and any others the file imports — check its import line and mock exactly those) and `@/api/blogImages`. Mount via `MemoryRouter` route `/admin/posts/:id` with a mocked existing post.
 
 ```jsx
 // Cases (write them fully, mirroring AdminUserDetailPage.test.jsx conventions):
@@ -131,9 +131,9 @@ git commit -m "feat(db): announce-release-post fan-out trigger, once-only via an
 // 5. switch category release → update with the box checked → next save patch has announce_in_app: false
 ```
 
-- [ ] **Step 2: Run** — `npx vitest run src/pages/admin/__tests__/AdminPostEditorPage.test.jsx` — Expected: FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/pages/admin/__tests__/AdminPostEditorPage.test.jsx` — Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - `EMPTY` gains `announce_in_app: false`.
 - Hydration (`setForm({ ...existing, ... })`) already carries the column once selected — confirm `src/api/posts.js` selects `*` (it does for detail; verify) so `announce_in_app`/`announced_at` arrive.
@@ -164,9 +164,9 @@ git commit -m "feat(db): announce-release-post fan-out trigger, once-only via an
 ```
 where `existingAnnouncedAt` comes from the loaded post row (`existing?.announced_at` — thread it from the `usePost` data the same way `hydratedId` handling works; check the file). Import `formatDate` from `@/lib/date`. If the kit has a `Checkbox` component (`ls src/components/ui`), use it instead of the raw input.
 
-- [ ] **Step 4: Run tests until green**, then the full suite `npx vitest run`. Run the **Impeccable pass** on the editor block.
+- [x] **Step 4: Run tests until green**, then the full suite `npx vitest run`. Run the **Impeccable pass** on the editor block.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/pages/admin/AdminPostEditorPage.jsx src/pages/admin/__tests__/AdminPostEditorPage.test.jsx
@@ -181,7 +181,7 @@ git commit -m "feat(admin): announce-in-app toggle on release posts"
 - Modify: `src/components/layout/NotificationBell.jsx`
 - Test: `src/components/layout/__tests__/NotificationBell.test.jsx` (new)
 
-- [ ] **Step 1: Failing tests** — mock `@/hooks/useNotifications` (all four exports the bell imports: `useNotifications`, `useUnreadCount`, `useMarkAllRead`, `useMarkRead`).
+- [x] **Step 1: Failing tests** — mock `@/hooks/useNotifications` (all four exports the bell imports: `useNotifications`, `useUnreadCount`, `useMarkAllRead`, `useMarkRead`).
 
 ```jsx
 // Cases:
@@ -192,9 +192,9 @@ git commit -m "feat(admin): announce-in-app toggle on release posts"
 // (Render inside MemoryRouter; open the popover by clicking the "Notifications" button.)
 ```
 
-- [ ] **Step 2: Run** — Expected: FAIL (all rows are router Links today).
+- [x] **Step 2: Run** — Expected: FAIL (all rows are router Links today).
 
-- [ ] **Step 3: Implement** — in the notes `.map()`, branch on `const external = n.link_to?.startsWith('http')`:
+- [x] **Step 3: Implement** — in the notes `.map()`, branch on `const external = n.link_to?.startsWith('http')`:
 
 ```jsx
 {external ? (
@@ -215,9 +215,9 @@ git commit -m "feat(admin): announce-in-app toggle on release posts"
 ```
 Extract the row body (title/body/relativeTime block) into a small local `rowContent` JSX variable or inline component so the two branches don't duplicate it.
 
-- [ ] **Step 4: Run tests until green**, then full suite.
+- [x] **Step 4: Run tests until green**, then full suite.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/layout/NotificationBell.jsx src/components/layout/__tests__/NotificationBell.test.jsx
@@ -228,9 +228,9 @@ git commit -m "feat(notifications): render external link_to as real anchors (ann
 
 ### Task 4: Full verification
 
-- [ ] **Step 1:** `npx vitest run` all green; `npx vite build` succeeds.
-- [ ] **Step 2:** `npx playwright test` with the usual admin env creds — all 4 specs green (announce path deliberately untested e2e).
-- [ ] **Step 3:** No commit needed unless fixes were made.
+- [x] **Step 1:** `npx vitest run` all green; `npx vite build` succeeds.
+- [x] **Step 2:** `npx playwright test` with the usual admin env creds — all 4 specs green (announce path deliberately untested e2e).
+- [x] **Step 3:** No commit needed unless fixes were made.
 
 ---
 
