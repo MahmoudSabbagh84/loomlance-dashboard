@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { ProjectFinancialsPanel } from '@/features/projects/ProjectFinancialsPanel'
+import { ChangeRequestsPanel } from '@/features/projects/ChangeRequestsPanel'
 import { ProjectGithubBar } from '@/features/github/ProjectGithubBar'
 
 export default function ProjectDetailPage() {
@@ -23,6 +24,7 @@ export default function ProjectDetailPage() {
       <Breadcrumbs items={[{ label: 'Projects', to: '/projects' }, { label: project.name }]} />
       <PageHeader title={project.name} subtitle={project.clients?.name} />
       <ProjectFinancialsPanel project={project} />
+      <ChangeRequestsPanel project={project} />
       <ProjectGithubBar project={project} />
       <KanbanBoard projectId={project.id} onTaskClick={setDrawerTask} />
       <TaskDrawer open={!!drawerTask} onClose={() => setDrawerTask(null)} projectId={project.id} task={drawerTask} />
