@@ -66,3 +66,37 @@ export async function getSignedPdfUrl(path) {
   if (error) throw mapPostgresError(error)
   return data.signedUrl
 }
+
+// A long-expiry (~30-day) signed URL for the contract PDF, so the public signing page can show it.
+export async function signedPdfUrlForSigning(path) {
+  const { data, error } = await supabase.storage.from('contract-pdfs').createSignedUrl(path, 60 * 60 * 24 * 30)
+  if (error) throw mapPostgresError(error)
+  return data.signedUrl
+}
+
+export async function sendContract(id) {
+  const { data, error } = await supabase.rpc('send_contract', { p_id: id })
+  if (error) throw mapPostgresError(error)
+  return data // token
+}
+
+export async function regenerateContractLink(id) {
+  const { data, error } = await supabase.rpc('regenerate_contract_link', { p_id: id })
+  if (error) throw mapPostgresError(error)
+  return data // token
+}
+
+async function storeSigningUrl(id, url) {
+  const { error } = await supabase.from('contracts').update({ signing_pdf_url: url }).eq('id', id)
+  if (error) throw mapPostgresError(error)
+}
+
+// Orchestrates the Send action: issue the token, then (if a PDF exists) store its long-lived signed URL.
+export async function sendContractForSignature(contract) {
+  const token = await sendContract(contract.id)
+  if (contract.pdf_storage_path) {
+    const url = await signedPdfUrlForSigning(contract.pdf_storage_path)
+    await storeSigningUrl(contract.id, url)
+  }
+  return token
+}

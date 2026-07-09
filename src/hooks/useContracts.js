@@ -38,3 +38,11 @@ export function useUploadContractPdf() {
   const inv = useInvalidate()
   return useMutation({ mutationFn: ({ id, file }) => api.uploadContractPdf(id, file), onSuccess: inv })
 }
+export function useSendContract() {
+  const inv = useInvalidate()
+  return useMutation({ mutationFn: (contract) => api.sendContractForSignature(contract), onSuccess: inv })
+}
+export function useRegenerateContractLink() {
+  const inv = useInvalidate()
+  return useMutation({ mutationFn: api.regenerateContractLink, onSuccess: inv })
+}
