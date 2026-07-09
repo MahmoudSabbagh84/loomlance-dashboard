@@ -104,12 +104,20 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Stripe API 2024-06-20+ keeps the period end on the subscription ITEM, not the top-level
+      // subscription (`sub.current_period_end` is undefined here); during a trial it equals
+      // trial_end. Fall through all three so the trial countdown always has a date.
+      const item = sub.items?.data?.[0] as (Stripe.SubscriptionItem & { current_period_end?: number }) | undefined
+      const periodEndUnix =
+        (sub as { current_period_end?: number }).current_period_end ??
+        item?.current_period_end ??
+        sub.trial_end ??
+        null
+
       const patch: Record<string, unknown> = {
         subscription_status: STATUS_MAP[sub.status] ?? 'active',
         stripe_subscription_id: sub.id,
-        current_period_end: sub.current_period_end
-          ? new Date(sub.current_period_end * 1000).toISOString()
-          : null,
+        current_period_end: periodEndUnix ? new Date(periodEndUnix * 1000).toISOString() : null,
       }
       // Only touch the tier when we actually resolved one.
       if (tier !== null) patch.subscription_tier = tier
