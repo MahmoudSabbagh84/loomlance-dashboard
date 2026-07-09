@@ -22,6 +22,7 @@ import ProfilePage from '@/pages/ProfilePage'
 import VaultPage from '@/pages/VaultPage'
 import PublicInvoicePage from '@/pages/PublicInvoicePage'
 import PublicChangeRequestPage from '@/pages/PublicChangeRequestPage'
+import PublicContractPage from '@/pages/PublicContractPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import AdminPulsePage from '@/pages/admin/AdminPulsePage'
 import AdminPostsPage from '@/pages/admin/AdminPostsPage'
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
   { path: '/reset-password', element: <ResetPasswordPage /> },
   { path: '/i/:token', element: <PublicInvoicePage /> },
   { path: '/cr/:token', element: <PublicChangeRequestPage /> },
+  { path: '/c/:token', element: <PublicContractPage /> },
 
   // Protected
   {

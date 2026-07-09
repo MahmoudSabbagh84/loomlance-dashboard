@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ContractFormModal } from '@/features/contracts/ContractFormModal'
 import { ContractStatusBadge } from '@/features/contracts/ContractStatusBadge'
 import { ContractPdfUploader } from '@/features/contracts/ContractPdfUploader'
+import { ContractSignaturePanel } from '@/features/contracts/ContractSignaturePanel'
 import { formatCurrency } from '@/lib/currency'
 import { formatDate } from '@/lib/date'
 
@@ -58,6 +59,9 @@ export default function ContractDetailPage() {
           ) : null}
         </Card>
         <ContractPdfUploader contract={contract} />
+        <div className="md:col-span-2">
+          <ContractSignaturePanel contract={contract} />
+        </div>
       </div>
 
       {editOpen ? <ContractFormModal open onClose={() => setEditOpen(false)} contract={contract} /> : null}
