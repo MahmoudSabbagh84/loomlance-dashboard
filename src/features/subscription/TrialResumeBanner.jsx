@@ -13,13 +13,13 @@ export function TrialResumeBanner({ planName, onResume, onDismiss }) {
       <div className="flex items-start gap-2.5">
         <Sparkles className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
         <p className="text-sm text-fg">
-          <span className="font-semibold">Finish starting your {planName} trial</span>
-          <span className="text-fg-muted"> — 14 days free, cancel anytime.</span>
+          <span className="font-semibold">Pick up where you left off</span>
+          <span className="text-fg-muted"> — you chose {planName} at signup but didn’t finish checkout. Start your 14-day free trial, cancel anytime before it ends.</span>
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
         <Button size="sm" onClick={onResume}>
-          Start trial
+          Start 14-day trial
         </Button>
         <button
           type="button"

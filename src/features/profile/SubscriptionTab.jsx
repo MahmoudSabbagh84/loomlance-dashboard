@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, Loader2 } from 'lucide-react'
+import { ExternalLink, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { useProfile } from '@/hooks/useProfile'
 import { useBilling } from '@/hooks/useBilling'
 import { formatDate } from '@/lib/date'
+import { TrialCountdown } from '@/features/subscription/TrialCountdown'
 
 // Display prices mirror the Stripe Prices (see the pricing spec). The actual charge comes from
 // Stripe; the plan/period is mapped to a price ID in the create-subscription-checkout function.
@@ -49,8 +50,7 @@ export function SubscriptionTab() {
     if (finalizing && tier !== 'free') setFinalizing(false)
   }, [finalizing, tier])
 
-  const periodLabel =
-    status === 'trialing' ? 'Trial ends' : status === 'canceled' ? 'Access until' : 'Renews'
+  const periodLabel = status === 'canceled' ? 'Access until' : 'Renews'
 
   return (
     <div className="max-w-2xl space-y-4">
@@ -63,13 +63,19 @@ export function SubscriptionTab() {
       {/* Current plan */}
       <Card>
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm text-fg-muted">Current plan</p>
-            <p className="text-xl font-semibold">{TIER_NAME[tier] ?? tier}</p>
-            <Badge variant={status === 'active' || status === 'trialing' ? 'success' : 'warning'} className="mt-1 capitalize">
-              {status}
-            </Badge>
-            {periodEnd ? (
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <p className="text-xl font-semibold">{TIER_NAME[tier] ?? tier}</p>
+              {status === 'trialing' ? (
+                <Badge variant="primary" className="gap-1">
+                  <Sparkles className="size-3" aria-hidden /> Trial
+                </Badge>
+              ) : status !== 'active' ? (
+                <Badge variant="warning" className="capitalize">{status}</Badge>
+              ) : null}
+            </div>
+            {status !== 'trialing' && periodEnd ? (
               <p className="mt-2 text-xs text-fg-muted">{periodLabel} {formatDate(periodEnd)}</p>
             ) : null}
           </div>
@@ -79,6 +85,9 @@ export function SubscriptionTab() {
             </Button>
           ) : null}
         </div>
+        {status === 'trialing' && periodEnd ? (
+          <TrialCountdown endsAt={periodEnd} planName={TIER_NAME[tier] ?? tier} />
+        ) : null}
         {tier === 'free' ? (
           <p className="mt-3 text-xs text-fg-muted">
             You’re on the free Solo plan. Start a 14-day trial of a paid plan below — card required, cancel anytime before it ends.
