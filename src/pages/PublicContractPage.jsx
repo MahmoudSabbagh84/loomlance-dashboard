@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { CheckCircle2, FileText } from 'lucide-react'
+import { CheckCircle2, XCircle, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
+import { Textarea } from '@/components/ui/Textarea'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { SignaturePad } from '@/features/contracts/SignaturePad'
-import { usePublicContract, useSignContract } from '@/hooks/usePublicContract'
+import { usePublicContract, useSignContract, useDeclineContract } from '@/hooks/usePublicContract'
 import { validSignInput } from '@/lib/contractSignature'
 import { formatCurrency } from '@/lib/currency'
 import { formatDate } from '@/lib/date'
@@ -17,10 +18,13 @@ export default function PublicContractPage() {
   const { token } = useParams()
   const { data, isLoading } = usePublicContract(token)
   const sign = useSignContract()
+  const decline = useDeclineContract()
   const [name, setName] = useState('')
   const [sig, setSig] = useState('')
   const [consent, setConsent] = useState(false)
+  const [reason, setReason] = useState('')
   const [justSigned, setJustSigned] = useState(null) // { content_hash } after a successful sign
+  const [justDeclined, setJustDeclined] = useState(false)
 
   if (isLoading) {
     return (
@@ -41,7 +45,9 @@ export default function PublicContractPage() {
     )
   }
 
-  const signed = data.already_signed || data.status !== 'sent' || !!justSigned
+  const signed = data.already_signed || !!justSigned
+  // Declined/withdrawn/cancelled: not signed, not the active sign state, and this session didn't just decline.
+  const unavailable = !signed && !justDeclined && data.status !== 'sent'
   const canSubmit = validSignInput({ name, consent, signatureImage: sig })
 
   const onSign = () => {
@@ -57,6 +63,23 @@ export default function PublicContractPage() {
             toast('This contract was already signed')
           } else {
             toast.error('Could not sign — please check the form')
+          }
+        },
+        onError: (e) => toast.error(e.userMessage || e.message),
+      }
+    )
+  }
+
+  const onDecline = () => {
+    decline.mutate(
+      { token, reason: reason.trim() || null },
+      {
+        onSuccess: (res) => {
+          if (res?.ok) {
+            setJustDeclined(true)
+            toast('Contract declined')
+          } else if (res?.already) {
+            toast('This contract was already decided')
           }
         },
         onError: (e) => toast.error(e.userMessage || e.message),
@@ -136,6 +159,15 @@ export default function PublicContractPage() {
               </Button>
             ) : null}
           </Card>
+        ) : justDeclined ? (
+          <Card className="flex items-center gap-3">
+            <XCircle className="size-6 shrink-0 text-danger" />
+            <p className="font-medium text-fg">You declined this contract</p>
+          </Card>
+        ) : unavailable ? (
+          <Card>
+            <p className="text-sm text-fg-muted">This contract is no longer available for signing.</p>
+          </Card>
         ) : (
           <Card className="space-y-4">
             <div>
@@ -150,9 +182,20 @@ export default function PublicContractPage() {
               <input type="checkbox" className="mt-0.5" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
               <span>I agree to these terms, and intend this as my electronic signature.</span>
             </label>
-            <Button onClick={onSign} loading={sign.isPending} disabled={!canSubmit}>
-              Sign
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={onSign} loading={sign.isPending} disabled={!canSubmit}>
+                Sign
+              </Button>
+            </div>
+            <details className="text-sm text-fg-muted">
+              <summary className="cursor-pointer">Decline this contract instead</summary>
+              <div className="mt-2 space-y-2">
+                <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (optional)" />
+                <Button variant="secondary" loading={decline.isPending} onClick={onDecline}>
+                  Decline
+                </Button>
+              </div>
+            </details>
           </Card>
         )}
       </div>
