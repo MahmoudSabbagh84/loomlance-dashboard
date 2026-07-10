@@ -15,13 +15,15 @@ function Segment({ value, unit }) {
 // trial end. Uses the brand violet at low tint (active/positive state), flat with a hairline —
 // no shadow, no gradient. Once the trial elapses (webhook lag before the plan finalizes) it
 // falls back to a quiet finalizing note rather than showing 00 · 00 · 00.
-export function TrialCountdown({ endsAt, planName }) {
+export function TrialCountdown({ endsAt, planName, canceling = false }) {
   const { days, hours, minutes, expired } = useCountdown(endsAt)
 
   if (expired) {
     return (
       <p className="mt-3 rounded-lg border border-border bg-bg-muted px-3.5 py-3 text-sm text-fg-muted">
-        Your free trial has ended — finalizing your {planName} plan. This can take a moment.
+        {canceling
+          ? 'Your free trial has ended and won’t convert to a paid plan.'
+          : `Your free trial has ended — finalizing your ${planName} plan. This can take a moment.`}
       </p>
     )
   }
@@ -31,7 +33,7 @@ export function TrialCountdown({ endsAt, planName }) {
       <div className="flex items-center gap-2 text-sm">
         <Clock className="size-4 shrink-0 text-primary" aria-hidden />
         <span className="font-medium text-fg">Free trial</span>
-        <span className="text-fg-muted">· ends {formatDate(endsAt)}</span>
+        <span className="text-fg-muted">· ends {formatDate(endsAt)}{canceling ? ' · won’t renew' : ''}</span>
       </div>
       <div
         role="timer"

@@ -118,6 +118,9 @@ Deno.serve(async (req) => {
         subscription_status: STATUS_MAP[sub.status] ?? 'active',
         stripe_subscription_id: sub.id,
         current_period_end: periodEndUnix ? new Date(periodEndUnix * 1000).toISOString() : null,
+        // Whether the plan is set to lapse at period end (portal "cancel") — drives the
+        // "won't renew / cancels on <date>" treatment in the Subscription tab.
+        subscription_cancel_at_period_end: sub.cancel_at_period_end ?? false,
       }
       // Only touch the tier when we actually resolved one.
       if (tier !== null) patch.subscription_tier = tier

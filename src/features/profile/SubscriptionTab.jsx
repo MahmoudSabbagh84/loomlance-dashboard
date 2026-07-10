@@ -25,6 +25,7 @@ export function SubscriptionTab() {
   const status = profile?.subscription_status ?? 'active'
   const hasCustomer = !!profile?.stripe_customer_id
   const periodEnd = profile?.current_period_end
+  const canceling = !!profile?.subscription_cancel_at_period_end
   const [period, setPeriod] = useState('monthly')
   const { loading, startCheckout, openPortal } = useBilling()
 
@@ -50,7 +51,7 @@ export function SubscriptionTab() {
     if (finalizing && tier !== 'free') setFinalizing(false)
   }, [finalizing, tier])
 
-  const periodLabel = status === 'canceled' ? 'Access until' : 'Renews'
+  const periodLabel = status === 'canceled' ? 'Access until' : canceling ? 'Cancels' : 'Renews'
 
   return (
     <div className="max-w-2xl space-y-4">
@@ -74,6 +75,7 @@ export function SubscriptionTab() {
               ) : status !== 'active' ? (
                 <Badge variant="warning" className="capitalize">{status}</Badge>
               ) : null}
+              {canceling && status === 'active' ? <Badge variant="warning">Canceling</Badge> : null}
             </div>
             {status !== 'trialing' && periodEnd ? (
               <p className="mt-2 text-xs text-fg-muted">{periodLabel} {formatDate(periodEnd)}</p>
@@ -86,7 +88,7 @@ export function SubscriptionTab() {
           ) : null}
         </div>
         {status === 'trialing' && periodEnd ? (
-          <TrialCountdown endsAt={periodEnd} planName={TIER_NAME[tier] ?? tier} />
+          <TrialCountdown endsAt={periodEnd} planName={TIER_NAME[tier] ?? tier} canceling={canceling} />
         ) : null}
         {tier === 'free' ? (
           <p className="mt-3 text-xs text-fg-muted">
