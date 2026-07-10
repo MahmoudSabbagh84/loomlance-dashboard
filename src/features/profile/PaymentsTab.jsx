@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { CreditCard, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/Card'
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Label } from '@/components/ui/Label'
 import { SaveStatus } from '@/components/ui/SaveStatus'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { invokeEdge } from '@/api/edge'
 import { paymentsAreReal } from '@/lib/providers'
@@ -109,7 +111,10 @@ function PayPalLinkCard({ profile, update }) {
 export function PaymentsTab() {
   const { data: profile } = useProfile()
   const update = useUpdateProfile()
+  const qc = useQueryClient()
   const [connecting, setConnecting] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const connected = !!profile?.stripe_connect_account_id && profile.stripe_connect_account_id !== 'mock_connect'
   const mockConnected = profile?.stripe_connect_account_id === 'mock_connect'
 
@@ -121,6 +126,22 @@ export function PaymentsTab() {
     } catch (e) {
       toast.error(e.userMessage || 'Could not start Stripe onboarding')
       setConnecting(false)
+    }
+  }
+
+  // Unlink-only: clears the connected account server-side (the column is trigger-protected), so
+  // clients can no longer pay by card. The Stripe account itself is left intact.
+  const disconnectReal = async () => {
+    setDisconnecting(true)
+    try {
+      await invokeEdge('stripe-disconnect', {})
+      await qc.invalidateQueries({ queryKey: ['profile'] })
+      setConfirmOpen(false)
+      toast.success('Stripe disconnected')
+    } catch (e) {
+      toast.error(e.userMessage || 'Could not disconnect Stripe')
+    } finally {
+      setDisconnecting(false)
     }
   }
 
@@ -160,9 +181,14 @@ export function PaymentsTab() {
         </div>
         <p className="text-sm text-fg-muted">Connect Stripe so clients can pay invoices by card. Available in Stripe-supported countries.</p>
         {paymentsAreReal ? (
-          <Button onClick={connectReal} loading={connecting}>
-            {connected ? 'Manage Stripe account' : 'Connect Stripe'}
-          </Button>
+          connected ? (
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={connectReal} loading={connecting}>Manage Stripe account</Button>
+              <Button variant="ghost" onClick={() => setConfirmOpen(true)} disabled={disconnecting}>Disconnect</Button>
+            </div>
+          ) : (
+            <Button onClick={connectReal} loading={connecting}>Connect Stripe</Button>
+          )
         ) : mockConnected ? (
           <Button variant="secondary" onClick={() => toggleStripe(false)} loading={update.isPending}>Disconnect</Button>
         ) : (
@@ -172,6 +198,17 @@ export function PaymentsTab() {
 
       {/* PayPal (link MVP) — always live. */}
       {profile ? <PayPalLinkCard key={profile.id} profile={profile} update={update} /> : null}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={disconnectReal}
+        title="Disconnect Stripe?"
+        body="Clients will no longer be able to pay your invoices by card, and any open invoice links fall back to your payment instructions. Payments you've already received aren't affected, and you can reconnect anytime."
+        confirmLabel="Disconnect"
+        variant="danger"
+        loading={disconnecting}
+      />
     </div>
   )
 }
