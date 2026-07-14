@@ -15,6 +15,8 @@ import { useProject } from '@/hooks/useProjects'
 import { positionBetween } from '@/api/tasks'
 import { daysUntil } from '@/lib/date'
 import { useProjectRepo } from '@/hooks/useGithub'
+import { useProfile } from '@/hooks/useProfile'
+import { hasFeature, FEATURES } from '@/lib/tier'
 import { KanbanColumn } from './KanbanColumn'
 import { TaskCard } from './TaskCard'
 import { KanbanFilters } from './KanbanFilters'
@@ -30,6 +32,8 @@ export function KanbanBoard({ projectId, onTaskClick }) {
   const { data: project } = useProject(projectId)
   const taskKey = project?.task_key
   const { data: linkedRepo } = useProjectRepo(projectId)
+  const { data: profile } = useProfile()
+  const tier = profile?.subscription_tier ?? 'free'
   const [activeTask, setActiveTask] = useState(null)
   const [filters, setFilters] = useState(EMPTY_FILTERS)
 
@@ -134,7 +138,7 @@ export function KanbanBoard({ projectId, onTaskClick }) {
               </SortableContext>
             ))}
             <AddColumn projectId={projectId} position={columns.length} />
-            {linkedRepo ? <GithubIssuesColumn projectId={projectId} /> : null}
+            {linkedRepo && hasFeature(tier, FEATURES.GITHUB) ? <GithubIssuesColumn projectId={projectId} /> : null}
           </div>
         </div>
         <DragOverlay>{activeTask ? <TaskCard task={activeTask} taskKey={taskKey} asOverlay /> : null}</DragOverlay>

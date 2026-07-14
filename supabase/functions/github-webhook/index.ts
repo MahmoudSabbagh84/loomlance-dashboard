@@ -4,6 +4,7 @@
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { verifyGithubSignature } from '../_shared/git-provider/verifySignature.ts'
 import { parseCommit, resolveRefs } from '../_shared/git-provider/commitParse.ts'
+import { getSubscriptionTier, isPaidTier } from '../_shared/tier.ts'
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 })
@@ -58,11 +59,15 @@ Deno.serve(async (req) => {
 
 // Map a GitHub repo id to its linked LoomLance project (or null if not linked).
 async function linkedRepo(admin: SupabaseClient, repoId: number): Promise<{ project_id: string; user_id: string } | null> {
+  // order + limit(1) is belt-and-suspenders with the project_repos_active_repo_uniq index: never let
+  // a duplicate active repo_id make this lookup ambiguous and silently resolve to "not linked".
   const { data } = await admin
     .from('project_repos')
     .select('project_id, user_id')
     .eq('repo_id', repoId)
     .is('disconnected_at', null)
+    .order('connected_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
   return data ?? null
 }
@@ -82,6 +87,10 @@ async function handleIssues(admin: SupabaseClient, payload: any): Promise<void> 
       .eq('issue_number', issue.number)
     return
   }
+
+  // Tier gate: a downgraded/free owner's still-linked repo stops mirroring issues
+  // (the closed/deleted cleanup above stays open so nothing is left orphaned).
+  if (!isPaidTier(await getSubscriptionTier(admin, repo.user_id))) return
 
   await admin.from('github_issue_cards').upsert({
     user_id: repo.user_id,
@@ -108,6 +117,9 @@ async function handlePush(admin: SupabaseClient, payload: any): Promise<void> {
 
   const repo = await linkedRepo(admin, repoId)
   if (!repo) return
+
+  // Tier gate: a downgraded/free owner's still-linked repo stops auto-completing tasks from commits.
+  if (!isPaidTier(await getSubscriptionTier(admin, repo.user_id))) return
 
   // Collect deduped refs across all commits in the push.
   const refs: Array<{ key: string; number: number }> = []

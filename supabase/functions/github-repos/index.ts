@@ -4,6 +4,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeadersFor, json as jsonBase } from '../_shared/cors.ts'
 import { getInstallationToken, listInstallationRepos } from '../_shared/git-provider/githubApi.ts'
+import { getSubscriptionTier, isPaidTier } from '../_shared/tier.ts'
 
 Deno.serve(async (req) => {
   const json = (obj: unknown, status = 200) => jsonBase(obj, status, req)
@@ -14,6 +15,9 @@ Deno.serve(async (req) => {
     })
     const { data: { user } } = await userClient.auth.getUser()
     if (!user) return json({ error: 'Not authenticated' }, 401)
+
+    if (!isPaidTier(await getSubscriptionTier(userClient, user.id)))
+      return json({ error: 'GitHub integration requires a Freelancer or Studio plan' }, 403)
 
     // The user's most recent installation (RLS-scoped to this user).
     const { data: inst } = await userClient.from('github_installations')

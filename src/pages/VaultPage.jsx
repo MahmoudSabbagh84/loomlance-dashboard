@@ -11,6 +11,9 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { VaultEntryModal } from '@/features/vault/VaultEntryModal'
 import { useVaultCredentials, useRevealVaultSecret, useDeleteVaultCredential } from '@/hooks/useVault'
+import { useProfile } from '@/hooks/useProfile'
+import { hasFeature, FEATURES } from '@/lib/tier'
+import { UpgradeCard } from '@/components/gates/UpgradeCard'
 import { relativeTime } from '@/lib/date'
 
 const TYPE_LABEL = {
@@ -59,6 +62,17 @@ export default function VaultPage() {
       (!typeFilter || r.type === typeFilter) &&
       (!q || `${r.label} ${r.username ?? ''} ${r.url ?? ''} ${r.notes ?? ''}`.toLowerCase().includes(q.toLowerCase()))
   )
+
+  const { data: profile } = useProfile()
+  const tier = profile?.subscription_tier ?? 'free'
+  if (!hasFeature(tier, FEATURES.VAULT)) {
+    return (
+      <div className="space-y-4">
+        <PageHeader title="Vault" subtitle="Encrypted API keys, secrets, and client credentials." />
+        <UpgradeCard feature={FEATURES.VAULT} currentTier={tier} target="tier_1" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">

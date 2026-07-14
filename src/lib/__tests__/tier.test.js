@@ -42,4 +42,13 @@ describe('hasFeature', () => {
   it('tier_1 cannot use expenses', () => {
     expect(hasFeature('tier_1', FEATURES.EXPENSES)).toBe(false)
   })
+
+  it.each([FEATURES.GITHUB, FEATURES.CHANGE_REQUESTS, FEATURES.VAULT])(
+    'differentiator %s is gated to Freelancer+ (free=false, tier_1=true, tier_2=true)',
+    (feature) => {
+      expect(hasFeature('free', feature)).toBe(false)
+      expect(hasFeature('tier_1', feature)).toBe(true)
+      expect(hasFeature('tier_2', feature)).toBe(true)
+    }
+  )
 })

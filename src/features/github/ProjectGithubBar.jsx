@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { listRepos } from '@/api/github'
 import { useGithubInstallation, useProjectRepo, useLinkRepo, useDisconnectRepo } from '@/hooks/useGithub'
+import { useProfile } from '@/hooks/useProfile'
+import { hasFeature, FEATURES } from '@/lib/tier'
 import { taskRef } from '@/lib/taskRef'
 
 export function ProjectGithubBar({ project }) {
@@ -13,12 +15,14 @@ export function ProjectGithubBar({ project }) {
   const { data: repo } = useProjectRepo(projectId)
   const link = useLinkRepo(projectId)
   const disconnect = useDisconnectRepo(projectId)
+  const { data: profile } = useProfile()
+  const tier = profile?.subscription_tier ?? 'free'
   const [repos, setRepos] = useState(null) // null = not loaded, [] = loaded empty
   const [loading, setLoading] = useState(false)
   const [picking, setPicking] = useState(false)
   const [selected, setSelected] = useState('')
 
-  if (!installation) return null
+  if (!installation || !hasFeature(tier, FEATURES.GITHUB)) return null
 
   const openPicker = async () => {
     setPicking(true)

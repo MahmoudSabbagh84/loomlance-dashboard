@@ -14,6 +14,9 @@ import {
   useRegenerateChangeRequestLink,
   useBillChangeRequest,
 } from '@/hooks/useChangeRequests'
+import { useProfile } from '@/hooks/useProfile'
+import { hasFeature, FEATURES } from '@/lib/tier'
+import { UpgradeCard } from '@/components/gates/UpgradeCard'
 import { formatCurrency } from '@/lib/currency'
 
 const STATUS_VARIANT = { draft: 'default', sent: 'info', approved: 'success', declined: 'danger' }
@@ -25,6 +28,8 @@ export function ChangeRequestsPanel({ project }) {
   const bill = useBillChangeRequest()
   const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
+  const { data: profile } = useProfile()
+  const tier = profile?.subscription_tier ?? 'free'
   const base = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin
 
   const copyLink = async (token) => {
@@ -34,6 +39,15 @@ export function ChangeRequestsPanel({ project }) {
     } catch {
       toast.error('Could not copy')
     }
+  }
+
+  if (!hasFeature(tier, FEATURES.CHANGE_REQUESTS)) {
+    return (
+      <Card className="space-y-4">
+        <h3 className="font-semibold">Change requests</h3>
+        <UpgradeCard feature={FEATURES.CHANGE_REQUESTS} currentTier={tier} target="tier_1" />
+      </Card>
+    )
   }
 
   return (

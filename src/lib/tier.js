@@ -4,6 +4,9 @@ export const FEATURES = Object.freeze({
   TIME_TRACKING: 'time_tracking',
   EXPENSES: 'expenses',
   REPORTS: 'reports',
+  GITHUB: 'github',
+  CHANGE_REQUESTS: 'change_requests',
+  VAULT: 'vault',
 })
 
 export const TIER_LIMITS = Object.freeze({
@@ -13,7 +16,14 @@ export const TIER_LIMITS = Object.freeze({
   },
   tier_1: {
     maxActiveProjects: 5,
-    features: new Set([FEATURES.CUSTOM_BRANDING, FEATURES.RECURRING_INVOICES, FEATURES.TIME_TRACKING]),
+    features: new Set([
+      FEATURES.CUSTOM_BRANDING,
+      FEATURES.RECURRING_INVOICES,
+      FEATURES.TIME_TRACKING,
+      FEATURES.GITHUB,
+      FEATURES.CHANGE_REQUESTS,
+      FEATURES.VAULT,
+    ]),
   },
   tier_2: {
     maxActiveProjects: Infinity,
@@ -23,6 +33,9 @@ export const TIER_LIMITS = Object.freeze({
       FEATURES.TIME_TRACKING,
       FEATURES.EXPENSES,
       FEATURES.REPORTS,
+      FEATURES.GITHUB,
+      FEATURES.CHANGE_REQUESTS,
+      FEATURES.VAULT,
     ]),
   },
 })
@@ -65,6 +78,18 @@ export const UPGRADE_COPY = Object.freeze({
   [FEATURES.REPORTS]: {
     title: 'Run revenue and P&L reports',
     body: () => 'Detailed reporting on revenue, profit & loss, aging, and time. Available on Studio.',
+  },
+  [FEATURES.GITHUB]: {
+    title: 'Connect your GitHub repos',
+    body: () => 'Mirror repo issues onto your board and complete tasks from commit messages. Available on Freelancer and Studio.',
+  },
+  [FEATURES.CHANGE_REQUESTS]: {
+    title: 'Bill scope creep, cleanly',
+    body: () => 'Send clients an approvable change request, then turn it into an invoice in one click. Available on Freelancer and Studio.',
+  },
+  [FEATURES.VAULT]: {
+    title: 'Store secrets securely',
+    body: () => 'An encrypted vault for API keys, .env files, and client logins. Available on Freelancer and Studio.',
   },
 })
 

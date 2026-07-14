@@ -4,6 +4,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { corsHeadersFor, json as jsonBase } from '../_shared/cors.ts'
 import { encryptSecret } from '../_shared/vaultCrypto.ts'
+import { getSubscriptionTier, isPaidTier } from '../_shared/tier.ts'
 
 Deno.serve(async (req) => {
   const json = (o: unknown, s = 200) => jsonBase(o, s, req)
@@ -17,6 +18,9 @@ Deno.serve(async (req) => {
     })
     const { data: { user } } = await userClient.auth.getUser()
     if (!user) return json({ error: 'Not authenticated' }, 401)
+
+    if (!isPaidTier(await getSubscriptionTier(userClient, user.id)))
+      return json({ error: 'The credential vault requires a Freelancer or Studio plan' }, 403)
 
     const body = await req.json().catch(() => ({}))
     const secret = typeof body?.secret === 'string' ? body.secret : ''

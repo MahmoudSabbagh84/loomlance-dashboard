@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useGithubInstallation, useConnectGithub, useDisconnectGithub } from '@/hooks/useGithub'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
+import { hasFeature, FEATURES } from '@/lib/tier'
+import { UpgradeCard } from '@/components/gates/UpgradeCard'
 import { GITHUB_APP_SLUG, githubInstallUrl } from '@/lib/github'
 
 const SCOPES = [
@@ -25,6 +27,7 @@ export function IntegrationsTab() {
   const handledRef = useRef(false)
   const disconnect = useDisconnectGithub()
   const [confirmDisconnect, setConfirmDisconnect] = useState(false)
+  const tier = profile?.subscription_tier ?? 'free'
 
   // Handle the post-install redirect (?installation_id=&state=).
   useEffect(() => {
@@ -41,6 +44,11 @@ export function IntegrationsTab() {
       clear()
       return
     }
+    if (!hasFeature(tier, FEATURES.GITHUB)) {
+      toast.error('GitHub integration requires a Freelancer or Studio plan.')
+      clear()
+      return
+    }
     connect.mutateAsync(installationId)
       .then((r) => toast.success(`Connected to GitHub${r?.account ? ` (@${r.account})` : ''}`))
       .catch((e) => toast.error(e.userMessage || 'Could not connect GitHub'))
@@ -49,6 +57,7 @@ export function IntegrationsTab() {
   }, [params])
 
   const startConnect = () => {
+    if (!hasFeature(tier, FEATURES.GITHUB)) return
     if (!GITHUB_APP_SLUG) { toast.error('GitHub integration is not configured yet.'); return }
     setConnecting(true)
     const nonce = crypto.randomUUID()
@@ -66,6 +75,14 @@ export function IntegrationsTab() {
   }
 
   const scope = profile?.commit_completion_scope || 'project'
+
+  if (!hasFeature(tier, FEATURES.GITHUB)) {
+    return (
+      <div className="max-w-xl">
+        <UpgradeCard feature={FEATURES.GITHUB} currentTier={tier} target="tier_1" />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-xl space-y-4">

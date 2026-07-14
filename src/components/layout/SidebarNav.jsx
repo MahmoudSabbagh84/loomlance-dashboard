@@ -27,7 +27,7 @@ const NAV = [
   { to: '/time', label: 'Time', icon: Clock, feature: FEATURES.TIME_TRACKING, target: 'tier_1' },
   { to: '/expenses', label: 'Expenses', icon: Receipt, feature: FEATURES.EXPENSES, target: 'tier_2' },
   { to: '/reports', label: 'Reports', icon: BarChart3, feature: FEATURES.REPORTS, target: 'tier_2' },
-  { to: '/vault', label: 'Vault', icon: KeyRound },
+  { to: '/vault', label: 'Vault', icon: KeyRound, feature: FEATURES.VAULT, target: 'tier_1' },
 ]
 
 export function SidebarNav({ onNavigate }) {
